@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BuildEstate.API/BuildEstate.API.csproj" />
+    <Project Path="src/BuildEstate.Application/BuildEstate.Application.csproj" />
+    <Project Path="src/BuildEstate.Domain/BuildEstate.Domain.csproj" />
+    <Project Path="src/BuildEstate.Infrastructure/BuildEstate.Infrastructure.csproj" />
+    <Project Path="src/BuildEstate.Shared/BuildEstate.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BuildEstate.Tests/BuildEstate.Tests.csproj" />
+  </Folder>
+</Solution>

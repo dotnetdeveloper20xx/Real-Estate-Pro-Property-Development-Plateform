@@ -1,0 +1,41 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstats
+.vs/
+*.nupkg
+*.snupkg
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+*.tgz
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment
+.env
+*.local
+appsettings.Local.json
+
+# Build
+[Bb]uild[Ll]og.*
+*.log
+npm-debug.log*
+
+# Test
+coverage/
+TestResults/

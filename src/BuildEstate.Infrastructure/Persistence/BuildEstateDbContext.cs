@@ -1,0 +1,81 @@
+using System.Reflection;
+using BuildEstate.Domain.Entities.LandAcquisition;
+using BuildEstate.Infrastructure.Identity;
+using BuildEstate.Infrastructure.Persistence.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+
+namespace BuildEstate.Infrastructure.Persistence;
+
+public class BuildEstateDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
+{
+    public BuildEstateDbContext(DbContextOptions<BuildEstateDbContext> options)
+        : base(options)
+    {
+    }
+
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+    // Land Acquisition entities
+    public DbSet<LandOpportunity> LandOpportunities => Set<LandOpportunity>();
+    public DbSet<LandOwner> LandOwners => Set<LandOwner>();
+    public DbSet<DueDiligence> DueDiligences => Set<DueDiligence>();
+    public DbSet<Offer> Offers => Set<Offer>();
+    public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<Document> Documents => Set<Document>();
+    public DbSet<LandAcquisitionRecord> LandAcquisitions => Set<LandAcquisitionRecord>();
+    public DbSet<FeasibilityAssessment> FeasibilityAssessments => Set<FeasibilityAssessment>();
+    public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        EnforceAuditLogAppendOnly();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override int SaveChanges()
+    {
+        EnforceAuditLogAppendOnly();
+        return base.SaveChanges();
+    }
+
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
+    {
+        EnforceAuditLogAppendOnly();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    public override Task<int> SaveChangesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        EnforceAuditLogAppendOnly();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Enforces append-only semantics for AuditLog entities.
+    /// Any attempt to modify or delete an AuditLog record is rejected.
+    /// </summary>
+    private void EnforceAuditLogAppendOnly()
+    {
+        var auditLogEntries = ChangeTracker.Entries<AuditLog>()
+            .Where(e => e.State == EntityState.Modified || e.State == EntityState.Deleted);
+
+        if (auditLogEntries.Any())
+        {
+            throw new InvalidOperationException(
+                "AuditLog records are append-only. Modification or deletion of audit log entries is not permitted.");
+        }
+    }
+}
