@@ -40,4 +40,27 @@ public sealed class AuditLogQueryService : IAuditLogQueryService
             })
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<List<AuditEntryDto>> GetRecentActivitiesAsync(
+        IReadOnlyList<string> entityNames,
+        int count,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.AuditLogs
+            .AsNoTracking()
+            .Where(a => entityNames.Contains(a.EntityName))
+            .OrderByDescending(a => a.Timestamp)
+            .Take(count)
+            .Select(a => new AuditEntryDto
+            {
+                EntityId = a.EntityId,
+                EntityName = a.EntityName,
+                Action = a.Action,
+                OldValues = a.OldValues,
+                NewValues = a.NewValues,
+                UserName = a.UserName,
+                Timestamp = a.Timestamp
+            })
+            .ToListAsync(cancellationToken);
+    }
 }

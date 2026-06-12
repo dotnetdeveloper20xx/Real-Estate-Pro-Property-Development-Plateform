@@ -95,7 +95,7 @@ public class PlanningStateMachinePropertyTests
                 var act = () => _planningStateMachine.ValidateTransition(pair.from, pair.to);
 
                 act.Should().Throw<InvalidStateTransitionException>()
-                    .Which.CurrentState.Should().Be(pair.from.ToString());
+                    .Which.CurrentStatus.Should().Be(pair.from.ToString());
 
                 return true;
             });
@@ -208,7 +208,7 @@ public class PlanningStateMachinePropertyTests
                 var act = () => _conditionStateMachine.ValidateTransition(pair.from, pair.to);
 
                 act.Should().Throw<InvalidStateTransitionException>()
-                    .Which.CurrentState.Should().Be(pair.from.ToString());
+                    .Which.CurrentStatus.Should().Be(pair.from.ToString());
 
                 return true;
             });

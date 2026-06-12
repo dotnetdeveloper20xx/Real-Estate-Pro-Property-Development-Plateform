@@ -8,4 +8,9 @@ public interface ICurrentUserService
 {
     string? UserId { get; }
     string? UserName { get; }
+
+    /// <summary>
+    /// Determines whether the current user belongs to the specified role.
+    /// </summary>
+    bool IsInRole(string role);
 }

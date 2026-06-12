@@ -1,48 +1,67 @@
 namespace BuildEstate.Domain.Exceptions;
 
 /// <summary>
-/// Thrown when an invalid state transition is attempted on an entity.
-/// Includes the current state, the attempted state, and the list of permitted transitions.
+/// Thrown when an invalid status transition is attempted on an entity.
+/// Includes the current status, the attempted status, the entity type,
+/// and the list of permitted transitions from the current status.
 /// </summary>
 public class InvalidStateTransitionException : DomainException
 {
-    public string CurrentState { get; }
-    public string AttemptedState { get; }
+    public string CurrentStatus { get; }
+    public string AttemptedStatus { get; }
     public IReadOnlyList<string> PermittedTransitions { get; }
+    public string EntityType { get; }
 
     public InvalidStateTransitionException(
-        string currentState,
-        string attemptedState,
-        IReadOnlyList<string> permittedTransitions)
-        : base(BuildMessage(currentState, attemptedState, permittedTransitions))
+        string currentStatus,
+        string attemptedStatus,
+        IReadOnlyList<string> permittedTransitions,
+        string entityType)
+        : base(BuildMessage(currentStatus, attemptedStatus, permittedTransitions, entityType))
     {
-        CurrentState = currentState;
-        AttemptedState = attemptedState;
+        CurrentStatus = currentStatus;
+        AttemptedStatus = attemptedStatus;
         PermittedTransitions = permittedTransitions;
+        EntityType = entityType;
+    }
+
+    /// <summary>
+    /// Backward-compatible constructor without entityType (defaults to empty string).
+    /// </summary>
+    public InvalidStateTransitionException(
+        string currentStatus,
+        string attemptedStatus,
+        IReadOnlyList<string> permittedTransitions)
+        : this(currentStatus, attemptedStatus, permittedTransitions, string.Empty)
+    {
     }
 
     public InvalidStateTransitionException(
-        string currentState,
-        string attemptedState,
+        string currentStatus,
+        string attemptedStatus,
         IReadOnlyList<string> permittedTransitions,
+        string entityType,
         Exception innerException)
-        : base(BuildMessage(currentState, attemptedState, permittedTransitions), innerException)
+        : base(BuildMessage(currentStatus, attemptedStatus, permittedTransitions, entityType), innerException)
     {
-        CurrentState = currentState;
-        AttemptedState = attemptedState;
+        CurrentStatus = currentStatus;
+        AttemptedStatus = attemptedStatus;
         PermittedTransitions = permittedTransitions;
+        EntityType = entityType;
     }
 
     private static string BuildMessage(
-        string currentState,
-        string attemptedState,
-        IReadOnlyList<string> permittedTransitions)
+        string currentStatus,
+        string attemptedStatus,
+        IReadOnlyList<string> permittedTransitions,
+        string entityType)
     {
         var permitted = permittedTransitions.Count > 0
             ? string.Join(", ", permittedTransitions)
             : "none";
 
-        return $"Cannot transition from '{currentState}' to '{attemptedState}'. " +
-               $"Permitted transitions from '{currentState}': [{permitted}].";
+        return string.IsNullOrEmpty(entityType)
+            ? $"Invalid state transition from '{currentStatus}' to '{attemptedStatus}'. Permitted transitions: {permitted}"
+            : $"Invalid state transition from '{currentStatus}' to '{attemptedStatus}' for entity type '{entityType}'. Permitted transitions: {permitted}";
     }
 }

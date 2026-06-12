@@ -42,8 +42,8 @@ public class ApproveFeeCommandHandlerTests
 
         // Assert
         var exception = await act.Should().ThrowAsync<EntityNotFoundException>();
-        exception.Which.EntityName.Should().Be(nameof(PlanningFee));
-        exception.Which.EntityId.Should().Be(feeId);
+        exception.Which.EntityType.Should().Be(nameof(PlanningFee));
+        exception.Which.EntityId.Should().Be(feeId.ToString());
     }
 
     [Theory]

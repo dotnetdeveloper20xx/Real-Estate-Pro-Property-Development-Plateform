@@ -77,7 +77,7 @@ public class DueDiligenceAndOfferStateMachinePropertyTests
                 var act = () => _ddStateMachine.ValidateTransition(pair.from, pair.to);
 
                 act.Should().Throw<InvalidStateTransitionException>()
-                    .Which.CurrentState.Should().Be(pair.from.ToString());
+                    .Which.CurrentStatus.Should().Be(pair.from.ToString());
 
                 return true;
             });
@@ -186,7 +186,7 @@ public class DueDiligenceAndOfferStateMachinePropertyTests
                 var act = () => _offerStateMachine.ValidateTransition(pair.from, pair.to);
 
                 act.Should().Throw<InvalidStateTransitionException>()
-                    .Which.CurrentState.Should().Be(pair.from.ToString());
+                    .Which.CurrentStatus.Should().Be(pair.from.ToString());
 
                 return true;
             });

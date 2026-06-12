@@ -1,25 +1,36 @@
 namespace BuildEstate.Domain.Exceptions;
 
 /// <summary>
-/// Thrown when a duplicate entity is detected based on a unique business constraint
-/// (e.g., duplicate Name + Location for an opportunity).
+/// Thrown when uniqueness constraints are violated for an entity.
+/// Includes the entity type, the field that must be unique, and the duplicate value.
 /// </summary>
 public class DuplicateEntityException : DomainException
 {
-    public string EntityName { get; }
+    public string EntityType { get; }
     public string DuplicateField { get; }
+    public string DuplicateValue { get; }
 
-    public DuplicateEntityException(string entityName, string duplicateField)
-        : base($"A duplicate '{entityName}' already exists with the same {duplicateField}.")
+    public DuplicateEntityException(string entityType, string duplicateField, string duplicateValue)
+        : base($"A '{entityType}' with '{duplicateField}' = '{duplicateValue}' already exists.")
     {
-        EntityName = entityName;
+        EntityType = entityType;
         DuplicateField = duplicateField;
+        DuplicateValue = duplicateValue;
     }
 
-    public DuplicateEntityException(string entityName, string duplicateField, Exception innerException)
-        : base($"A duplicate '{entityName}' already exists with the same {duplicateField}.", innerException)
+    /// <summary>
+    /// Backward-compatible constructor without duplicateValue (defaults to empty string).
+    /// </summary>
+    public DuplicateEntityException(string entityType, string duplicateField)
+        : this(entityType, duplicateField, string.Empty)
     {
-        EntityName = entityName;
+    }
+
+    public DuplicateEntityException(string entityType, string duplicateField, string duplicateValue, Exception innerException)
+        : base($"A '{entityType}' with '{duplicateField}' = '{duplicateValue}' already exists.", innerException)
+    {
+        EntityType = entityType;
         DuplicateField = duplicateField;
+        DuplicateValue = duplicateValue;
     }
 }

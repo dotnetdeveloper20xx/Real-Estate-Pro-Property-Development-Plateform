@@ -1,10 +1,14 @@
 using System.Reflection;
 using BuildEstate.Domain.Entities.LandAcquisition;
+using BuildEstate.Domain.Entities.LegalCompliance;
 using BuildEstate.Domain.Entities.PlanningApprovals;
 using BuildEstate.Infrastructure.Identity;
 using BuildEstate.Infrastructure.Persistence.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+
+using LandAcquisitionContract = BuildEstate.Domain.Entities.LandAcquisition.Contract;
+using LegalContract = BuildEstate.Domain.Entities.LegalCompliance.Contract;
 
 namespace BuildEstate.Infrastructure.Persistence;
 
@@ -23,7 +27,7 @@ public class BuildEstateDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<LandOwner> LandOwners => Set<LandOwner>();
     public DbSet<DueDiligence> DueDiligences => Set<DueDiligence>();
     public DbSet<Offer> Offers => Set<Offer>();
-    public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<LandAcquisitionContract> Contracts => Set<LandAcquisitionContract>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<LandAcquisitionRecord> LandAcquisitions => Set<LandAcquisitionRecord>();
     public DbSet<FeasibilityAssessment> FeasibilityAssessments => Set<FeasibilityAssessment>();
@@ -38,6 +42,15 @@ public class BuildEstateDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<PlanningDocument> PlanningDocuments => Set<PlanningDocument>();
     public DbSet<PlanningFee> PlanningFees => Set<PlanningFee>();
     public DbSet<PlanningMilestone> PlanningMilestones => Set<PlanningMilestone>();
+
+    // Legal & Compliance entities
+    public DbSet<LegalCase> LegalCases => Set<LegalCase>();
+    public DbSet<LegalContract> LegalContracts => Set<LegalContract>();
+    public DbSet<ComplianceRequirement> ComplianceRequirements => Set<ComplianceRequirement>();
+    public DbSet<ComplianceCheck> ComplianceChecks => Set<ComplianceCheck>();
+    public DbSet<InsuranceRecord> InsuranceRecords => Set<InsuranceRecord>();
+    public DbSet<AuditRecord> AuditRecords => Set<AuditRecord>();
+    public DbSet<LegalDocument> LegalDocuments => Set<LegalDocument>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

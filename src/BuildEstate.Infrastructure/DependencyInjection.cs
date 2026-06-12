@@ -1,4 +1,5 @@
 using BuildEstate.Application.Common.Interfaces;
+using BuildEstate.Application.Features.LegalCompliance.AuditTrail;
 using BuildEstate.Application.Interfaces;
 using BuildEstate.Application.Settings;
 using BuildEstate.Domain.Common;
@@ -9,6 +10,7 @@ using BuildEstate.Infrastructure.Persistence.Interceptors;
 using BuildEstate.Infrastructure.Persistence.Services;
 using BuildEstate.Infrastructure.Services;
 using BuildEstate.Infrastructure.Services.BackgroundServices;
+using BuildEstate.Infrastructure.Services.LegalCompliance;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -108,8 +110,26 @@ public static class InfrastructureDependencyInjection
         // 12. Register audit log query service (Scoped — uses DbContext)
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
 
-        // 13. Register background services
+        // 12a. Register audit trail query service for Legal & Compliance (Scoped — uses DbContext)
+        services.AddScoped<IAuditTrailQueryService, AuditTrailQueryService>();
+
+        // 13. Register Legal & Compliance services (Scoped — uses DbContext)
+        services.AddScoped<ILegalReferenceNumberGenerator, LegalReferenceNumberGenerator>();
+
+        // 14. Register Legal & Compliance state machines (stateless — Singleton)
+        services.AddSingleton<ILegalCaseStateMachine, LegalCaseStateMachine>();
+        services.AddSingleton<ILegalContractStateMachine, LegalContractStateMachine>();
+        services.AddSingleton<IInsuranceStateMachine, InsuranceStateMachine>();
+        services.AddSingleton<IAuditRecordStateMachine, AuditRecordStateMachine>();
+
+        // 15. Register Legal & Compliance settings
+        services.Configure<LegalComplianceSettings>(
+            configuration.GetSection(LegalComplianceSettings.SectionName));
+
+        // 16. Register background services
         services.AddHostedService<OfferExpiryBackgroundService>();
+        services.AddHostedService<InsuranceExpiryCheckService>();
+        services.AddHostedService<ComplianceOverdueCheckService>();
 
         return services;
     }
