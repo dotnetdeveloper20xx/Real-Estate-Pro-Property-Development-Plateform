@@ -29,6 +29,14 @@ export const appRoutes: Routes = [
     data: { breadcrumb: 'Planning & Approvals', icon: 'assignment' }
   },
   {
+    path: 'legal-compliance',
+    loadChildren: () =>
+      import('./features/legal-compliance/legal-compliance.routes').then(
+        m => m.legalComplianceRoutes
+      ),
+    data: { breadcrumb: 'Legal & Compliance', icon: 'gavel' }
+  },
+  {
     path: '**',
     redirectTo: 'land-acquisition'
   }

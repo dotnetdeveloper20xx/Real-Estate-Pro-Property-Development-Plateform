@@ -22,4 +22,7 @@ public class CurrentUserService : ICurrentUserService
     public string? UserName =>
         _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Name)
         ?? _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Email);
+
+    public bool IsInRole(string role) =>
+        _httpContextAccessor.HttpContext?.User.IsInRole(role) ?? false;
 }

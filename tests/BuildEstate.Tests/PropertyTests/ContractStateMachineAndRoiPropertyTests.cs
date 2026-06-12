@@ -82,8 +82,8 @@ public class ContractStateMachineAndRoiPropertyTests
 
             var exception = act.Should().Throw<InvalidStateTransitionException>().Which;
 
-            exception.CurrentState.Should().Be(pair.From.ToString());
-            exception.AttemptedState.Should().Be(pair.To.ToString());
+            exception.CurrentStatus.Should().Be(pair.From.ToString());
+            exception.AttemptedStatus.Should().Be(pair.To.ToString());
 
             // Permitted transitions in exception must match state machine's reported transitions
             var expectedPermitted = _contractStateMachine.GetPermittedTransitions(pair.From)

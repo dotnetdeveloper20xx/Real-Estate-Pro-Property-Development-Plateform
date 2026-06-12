@@ -7,19 +7,19 @@ namespace BuildEstate.Domain.Exceptions;
 public class BusinessRuleViolationException : DomainException
 {
     public string RuleName { get; }
-    public string ViolationDetails { get; }
+    public string Details { get; }
 
-    public BusinessRuleViolationException(string ruleName, string violationDetails)
-        : base($"Business rule '{ruleName}' violated: {violationDetails}")
+    public BusinessRuleViolationException(string ruleName, string details)
+        : base($"Business rule '{ruleName}' was violated: {details}")
     {
         RuleName = ruleName;
-        ViolationDetails = violationDetails;
+        Details = details;
     }
 
-    public BusinessRuleViolationException(string ruleName, string violationDetails, Exception innerException)
-        : base($"Business rule '{ruleName}' violated: {violationDetails}", innerException)
+    public BusinessRuleViolationException(string ruleName, string details, Exception innerException)
+        : base($"Business rule '{ruleName}' was violated: {details}", innerException)
     {
         RuleName = ruleName;
-        ViolationDetails = violationDetails;
+        Details = details;
     }
 }

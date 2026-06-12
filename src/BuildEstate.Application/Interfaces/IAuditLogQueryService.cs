@@ -20,6 +20,19 @@ public interface IAuditLogQueryService
         string affectedColumn,
         int count,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves the most recent audit log entries across multiple entity types.
+    /// Used by the legal dashboard to show the latest activities.
+    /// </summary>
+    /// <param name="entityNames">The entity type names to include.</param>
+    /// <param name="count">Maximum number of entries to return.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of audit entry DTOs ordered by timestamp descending.</returns>
+    Task<List<AuditEntryDto>> GetRecentActivitiesAsync(
+        IReadOnlyList<string> entityNames,
+        int count,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -28,6 +41,8 @@ public interface IAuditLogQueryService
 public sealed record AuditEntryDto
 {
     public string EntityId { get; init; } = string.Empty;
+    public string EntityName { get; init; } = string.Empty;
+    public string Action { get; init; } = string.Empty;
     public string? OldValues { get; init; }
     public string? NewValues { get; init; }
     public string UserName { get; init; } = string.Empty;

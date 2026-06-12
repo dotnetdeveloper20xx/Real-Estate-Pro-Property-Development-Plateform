@@ -1,25 +1,39 @@
 namespace BuildEstate.Domain.Exceptions;
 
 /// <summary>
-/// Thrown when an entity cannot be found by its identifier.
-/// Includes the entity name and the ID that was searched for.
+/// Thrown when a referenced entity cannot be found by its identifier.
+/// Includes the entity type and the identifier that was searched for.
 /// </summary>
 public class EntityNotFoundException : DomainException
 {
-    public string EntityName { get; }
-    public Guid EntityId { get; }
+    public string EntityType { get; }
+    public string EntityId { get; }
 
-    public EntityNotFoundException(string entityName, Guid entityId)
-        : base($"Entity '{entityName}' with Id '{entityId}' was not found.")
+    public EntityNotFoundException(string entityType, Guid entityId)
+        : base($"Entity '{entityType}' with identifier '{entityId}' was not found.")
     {
-        EntityName = entityName;
+        EntityType = entityType;
+        EntityId = entityId.ToString();
+    }
+
+    public EntityNotFoundException(string entityType, string entityId)
+        : base($"Entity '{entityType}' with identifier '{entityId}' was not found.")
+    {
+        EntityType = entityType;
         EntityId = entityId;
     }
 
-    public EntityNotFoundException(string entityName, Guid entityId, Exception innerException)
-        : base($"Entity '{entityName}' with Id '{entityId}' was not found.", innerException)
+    public EntityNotFoundException(string entityType, Guid entityId, Exception innerException)
+        : base($"Entity '{entityType}' with identifier '{entityId}' was not found.", innerException)
     {
-        EntityName = entityName;
+        EntityType = entityType;
+        EntityId = entityId.ToString();
+    }
+
+    public EntityNotFoundException(string entityType, string entityId, Exception innerException)
+        : base($"Entity '{entityType}' with identifier '{entityId}' was not found.", innerException)
+    {
+        EntityType = entityType;
         EntityId = entityId;
     }
 }

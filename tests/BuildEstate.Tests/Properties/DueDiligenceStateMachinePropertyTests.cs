@@ -76,7 +76,7 @@ public class DueDiligenceStateMachinePropertyTests
                 var act = () => _stateMachine.ValidateTransition(pair.from, pair.to);
 
                 act.Should().Throw<InvalidStateTransitionException>()
-                    .Which.CurrentState.Should().Be(pair.from.ToString());
+                    .Which.CurrentStatus.Should().Be(pair.from.ToString());
 
                 return true;
             });
