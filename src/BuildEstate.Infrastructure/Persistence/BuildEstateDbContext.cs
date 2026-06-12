@@ -1,5 +1,6 @@
 using System.Reflection;
 using BuildEstate.Domain.Entities.LandAcquisition;
+using BuildEstate.Domain.Entities.PlanningApprovals;
 using BuildEstate.Infrastructure.Identity;
 using BuildEstate.Infrastructure.Persistence.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -28,6 +29,15 @@ public class BuildEstateDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<FeasibilityAssessment> FeasibilityAssessments => Set<FeasibilityAssessment>();
     public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    // Planning & Approvals entities
+    public DbSet<PlanningApplication> PlanningApplications => Set<PlanningApplication>();
+    public DbSet<CouncilContact> CouncilContacts => Set<CouncilContact>();
+    public DbSet<PlanningCondition> PlanningConditions => Set<PlanningCondition>();
+    public DbSet<PlanningAppeal> PlanningAppeals => Set<PlanningAppeal>();
+    public DbSet<PlanningDocument> PlanningDocuments => Set<PlanningDocument>();
+    public DbSet<PlanningFee> PlanningFees => Set<PlanningFee>();
+    public DbSet<PlanningMilestone> PlanningMilestones => Set<PlanningMilestone>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
