@@ -1,4 +1,6 @@
 using BuildEstate.Application.Common.Interfaces;
+using BuildEstate.Application.Interfaces;
+using BuildEstate.Application.Settings;
 using BuildEstate.Domain.Common;
 using BuildEstate.Domain.Services;
 using BuildEstate.Infrastructure.Identity;
@@ -39,7 +41,11 @@ public static class InfrastructureDependencyInjection
                 "Connection string 'DefaultConnection' is missing, empty, or whitespace in application configuration.");
         }
 
-        // 2. Register AuditInterceptor as scoped
+        // 2. Bind configuration settings
+        services.Configure<PlanningFeeSettings>(
+            configuration.GetSection(PlanningFeeSettings.SectionName));
+
+        // 3. Register AuditInterceptor as scoped
         services.AddScoped<AuditInterceptor>();
 
         // 3. Register BuildEstateDbContext with SQL Server provider
@@ -87,13 +93,22 @@ public static class InfrastructureDependencyInjection
         services.AddSingleton<IDueDiligenceStateMachine, DueDiligenceStateMachine>();
         services.AddSingleton<IContractStateMachine, ContractStateMachine>();
 
-        // 9. Register file storage service (Singleton — uses IConfiguration)
+        // 9. Register Planning & Approvals state machines (stateless — Singleton)
+        services.AddSingleton<IPlanningStatusStateMachine, PlanningStatusStateMachine>();
+        services.AddSingleton<IConditionStatusStateMachine, ConditionStatusStateMachine>();
+        services.AddSingleton<IAppealStatusStateMachine, AppealStatusStateMachine>();
+        services.AddSingleton<IFeeStatusStateMachine, FeeStatusStateMachine>();
+
+        // 10. Register file storage service (Singleton — uses IConfiguration)
         services.AddSingleton<IFileStorageService, FileStorageService>();
 
-        // 10. Register notification service (Scoped — uses DbContext)
+        // 11. Register notification service (Scoped — uses DbContext)
         services.AddScoped<INotificationService, NotificationService>();
 
-        // 11. Register background services
+        // 12. Register audit log query service (Scoped — uses DbContext)
+        services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
+
+        // 13. Register background services
         services.AddHostedService<OfferExpiryBackgroundService>();
 
         return services;
