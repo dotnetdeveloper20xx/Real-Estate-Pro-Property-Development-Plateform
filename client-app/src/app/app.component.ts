@@ -1,8 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
+import { ConfirmDialogService } from './shared/services/confirm-dialog.service';
+import { ToastContainerComponent } from './shared/components/toast-container/toast-container.component';
 
 /**
  * Navigation item with optional children for hierarchical sidebar.
@@ -37,7 +39,7 @@ interface INavItem {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent],
   template: `
     <div class="flex h-screen bg-base-200">
       <!-- Sidebar -->
@@ -48,13 +50,15 @@ interface INavItem {
 
         <!-- Logo / Brand -->
         <div class="flex items-center h-16 px-4 border-b border-neutral-focus/30">
-          <span class="material-symbols-outlined text-primary text-2xl">apartment</span>
-          <span
-            class="ml-3 text-lg font-bold whitespace-nowrap overflow-hidden transition-opacity duration-200"
-            [class.opacity-0]="sidebarCollapsed"
-            [class.w-0]="sidebarCollapsed">
-            BuildEstate Pro
-          </span>
+          <a routerLink="/home" class="flex items-center no-underline text-neutral-content hover:text-primary transition-colors">
+            <span class="material-symbols-outlined text-primary text-2xl">apartment</span>
+            <span
+              class="ml-3 text-lg font-bold whitespace-nowrap overflow-hidden transition-opacity duration-200"
+              [class.opacity-0]="sidebarCollapsed"
+              [class.w-0]="sidebarCollapsed">
+              BuildEstate Pro
+            </span>
+          </a>
         </div>
 
         <!-- Navigation -->
@@ -192,39 +196,47 @@ interface INavItem {
       <!-- Main Content Area -->
       <div class="flex flex-col flex-1 overflow-hidden">
         <!-- Top Header -->
-        <header class="flex items-center justify-between h-16 px-6 bg-base-100 border-b border-base-300 shadow-sm">
+        <header class="flex items-center justify-between h-16 px-6 bg-base-100/80 backdrop-blur-sm border-b border-base-300/50 sticky top-0 z-10">
           <div class="flex items-center gap-3">
-            <h2 class="text-lg font-semibold text-base-content">
+            <h2 class="text-lg font-semibold text-base-content tracking-tight">
               {{ currentPageTitle }}
             </h2>
           </div>
 
-          <div class="flex items-center gap-3">
-            <!-- Notifications -->
-            <button class="btn btn-ghost btn-circle btn-sm" aria-label="Notifications">
+          <div class="flex items-center gap-2">
+            <!-- Notifications with badge -->
+            <button class="btn btn-ghost btn-circle btn-sm relative" aria-label="Notifications">
               <span class="material-symbols-outlined text-xl">notifications</span>
+              <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
             </button>
 
             <!-- User Menu -->
             <div class="dropdown dropdown-end">
-              <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar placeholder">
-                <div class="bg-primary text-primary-content rounded-full w-9">
-                  <span class="text-sm font-bold">JM</span>
+              <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-2 pl-2 pr-3">
+                <div class="avatar placeholder">
+                  <div class="bg-primary text-primary-content rounded-full w-8 ring-2 ring-primary/20 ring-offset-2 ring-offset-base-100">
+                    <span class="text-xs font-bold">JM</span>
+                  </div>
                 </div>
+                <span class="text-sm font-medium text-base-content hidden sm:inline">John Mitchell</span>
+                <span class="material-symbols-outlined text-xs text-base-content/50">expand_more</span>
               </div>
-              <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-50 w-52 p-2 shadow-lg border border-base-300">
-                <li><a [routerLink]="'/profile'" class="text-sm">
+              <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-xl z-50 w-56 p-2 shadow-xl border border-base-200 mt-2">
+                <li class="menu-title px-2 py-1">
+                  <span class="text-xs text-base-content/50 uppercase tracking-wider">Account</span>
+                </li>
+                <li><a [routerLink]="'/profile'" class="text-sm rounded-lg">
                   <span class="material-symbols-outlined text-base">person</span>
-                  Profile
+                  My Profile
                 </a></li>
-                <li><a [routerLink]="'/settings'" class="text-sm">
+                <li><a [routerLink]="'/settings'" class="text-sm rounded-lg">
                   <span class="material-symbols-outlined text-base">settings</span>
                   Settings
                 </a></li>
                 <li class="border-t border-base-200 mt-1 pt-1">
-                  <a class="text-sm text-error" (click)="handleLogout()">
+                  <a class="text-sm text-error rounded-lg" (click)="handleLogout()">
                     <span class="material-symbols-outlined text-base">logout</span>
-                    Logout
+                    Sign Out
                   </a>
                 </li>
               </ul>
@@ -238,6 +250,9 @@ interface INavItem {
         </main>
       </div>
     </div>
+
+    <!-- Toast Notifications -->
+    <app-toast-container></app-toast-container>
   `
 })
 export class AppComponent implements OnInit, OnDestroy {
@@ -421,10 +436,22 @@ export class AppComponent implements OnInit, OnDestroy {
     return this.currentUrl.startsWith(item.routerLink);
   }
 
+  private readonly confirmDialog = inject(ConfirmDialogService);
+
   handleLogout(): void {
-    if (confirm('Are you sure you want to logout?')) {
-      this.router.navigate(['/']);
-    }
+    this.confirmDialog.confirm({
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out of BuildEstate Pro?',
+      confirmText: 'Sign Out',
+      cancelText: 'Cancel',
+      confirmClass: 'btn-error',
+      icon: 'logout',
+      iconClass: 'text-error'
+    }).then(confirmed => {
+      if (confirmed) {
+        this.router.navigate(['/']);
+      }
+    });
   }
 
   /** Auto-expand the module that matches the current URL */

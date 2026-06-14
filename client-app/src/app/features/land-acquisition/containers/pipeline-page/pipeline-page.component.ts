@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, Subscription } from 'rxjs';
 
@@ -29,7 +29,7 @@ import { IOpportunityListItem, OpportunityStatus } from '../../models/opportunit
 @Component({
   selector: 'app-pipeline-page',
   standalone: true,
-  imports: [CommonModule, PipelineColumnComponent],
+  imports: [CommonModule, PipelineColumnComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Page Header -->
@@ -41,10 +41,16 @@ import { IOpportunityListItem, OpportunityStatus } from '../../models/opportunit
             View and manage opportunities across lifecycle stages. Click a card to view details.
           </p>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="badge badge-neutral badge-outline text-xs">
-            {{ getTotalCount() }} total opportunities
-          </span>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-base-100 border border-base-200/80">
+            <span class="material-symbols-outlined text-sm text-primary">apps</span>
+            <span class="text-sm font-semibold text-base-content">{{ getTotalCount() }}</span>
+            <span class="text-xs text-base-content/50">opportunities</span>
+          </div>
+          <a routerLink="/land-acquisition/opportunities/new" class="btn btn-primary btn-sm gap-1.5">
+            <span class="material-symbols-outlined text-lg">add</span>
+            New Opportunity
+          </a>
         </div>
       </div>
 
@@ -122,11 +128,13 @@ import { IOpportunityListItem, OpportunityStatus } from '../../models/opportunit
           role="region"
           aria-label="Opportunity pipeline board"
         >
-          @for (column of pipelineColumns; track column.status) {
+          @for (column of pipelineColumns; track column.status; let i = $index) {
             <app-pipeline-column
               [status]="formatStatusLabel(column.status)"
               [count]="getColumnOpportunities(column.status).length"
               [opportunities]="getColumnOpportunities(column.status)"
+              [statusColor]="column.color"
+              [columnIndex]="i"
               (cardClick)="onCardClick($event)"
             />
           }
@@ -150,15 +158,15 @@ export class PipelinePageComponent implements OnInit, OnDestroy {
   /** Observable of error state. */
   readonly error$: Observable<string | null> = this.store.select(selectOpportunityError);
 
-  /** Pipeline columns definition in display order. */
+  /** Pipeline columns definition in display order with colors. */
   readonly pipelineColumns: readonly PipelineColumn[] = [
-    { status: OpportunityStatus.Identified },
-    { status: OpportunityStatus.InitialReview },
-    { status: OpportunityStatus.DueDiligence },
-    { status: OpportunityStatus.OfferMade },
-    { status: OpportunityStatus.UnderContract },
-    { status: OpportunityStatus.Acquired },
-    { status: OpportunityStatus.Withdrawn }
+    { status: OpportunityStatus.Identified, color: '#6366f1' },
+    { status: OpportunityStatus.InitialReview, color: '#3b82f6' },
+    { status: OpportunityStatus.DueDiligence, color: '#f59e0b' },
+    { status: OpportunityStatus.OfferMade, color: '#8b5cf6' },
+    { status: OpportunityStatus.UnderContract, color: '#06b6d4' },
+    { status: OpportunityStatus.Acquired, color: '#10b981' },
+    { status: OpportunityStatus.Withdrawn, color: '#ef4444' }
   ];
 
   /** Skeleton columns for loading state with varying card counts. */
@@ -241,4 +249,5 @@ export class PipelinePageComponent implements OnInit, OnDestroy {
 /** Pipeline column definition. */
 interface PipelineColumn {
   readonly status: OpportunityStatus;
+  readonly color: string;
 }

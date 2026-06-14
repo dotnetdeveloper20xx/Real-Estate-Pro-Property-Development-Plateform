@@ -138,8 +138,10 @@ interface IActionButton {
       </nav>
 
       <!-- Header Card -->
-      <section aria-label="Opportunity Summary">
-        <div class="card bg-base-100 shadow-sm border border-base-200">
+      <section aria-label="Opportunity Summary" style="animation: slide-up 0.4s ease-out 0.1s backwards">
+        <div class="card bg-base-100 shadow-sm border border-base-200/80 overflow-hidden">
+          <!-- Subtle top accent gradient -->
+          <div class="h-1 bg-gradient-to-r from-primary via-secondary to-accent"></div>
           <div class="card-body p-6">
             <!-- Top Row: Title + Actions -->
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
@@ -195,20 +197,27 @@ interface IActionButton {
       </section>
 
       <!-- Tabbed Content -->
-      <section aria-label="Opportunity Details">
-        <div class="card bg-base-100 shadow-sm border border-base-200">
+      <section aria-label="Opportunity Details" style="animation: slide-up 0.4s ease-out 0.2s backwards">
+        <div class="card bg-base-100 shadow-sm border border-base-200/80">
           <div class="card-body p-6">
-            <!-- DaisyUI Tabs -->
-            <div role="tablist" class="tabs tabs-bordered mb-6">
+            <!-- DaisyUI Tabs — Enhanced -->
+            <div role="tablist" class="flex gap-1 border-b border-base-200 mb-6 -mx-2 px-2 overflow-x-auto">
               <button
                 *ngFor="let tab of tabs"
                 role="tab"
-                class="tab"
-                [class.tab-active]="activeTab() === tab.id"
+                class="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200
+                       border-b-2 -mb-[2px] whitespace-nowrap"
+                [class.border-primary]="activeTab() === tab.id"
+                [class.text-primary]="activeTab() === tab.id"
+                [class.bg-primary/5]="activeTab() === tab.id"
+                [class.border-transparent]="activeTab() !== tab.id"
+                [class.text-base-content/60]="activeTab() !== tab.id"
+                [class.hover:text-base-content]="activeTab() !== tab.id"
+                [class.hover:bg-base-200/50]="activeTab() !== tab.id"
                 [attr.aria-selected]="activeTab() === tab.id"
                 [attr.aria-controls]="'panel-' + tab.id"
                 (click)="setActiveTab(tab.id)">
-                <span class="material-symbols-outlined text-sm mr-1">{{ tab.icon }}</span>
+                <span class="material-symbols-outlined text-base">{{ tab.icon }}</span>
                 {{ tab.label }}
               </button>
             </div>
@@ -219,78 +228,94 @@ interface IActionButton {
               *ngIf="activeTab() === 'overview'"
               id="panel-overview"
               role="tabpanel"
-              aria-labelledby="tab-overview">
+              aria-labelledby="tab-overview"
+              style="animation: fade-in 0.3s ease-out">
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Opportunity Details Card -->
-                <div class="space-y-4">
-                  <h3 class="text-base font-semibold text-base-content">Opportunity Details</h3>
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="flex flex-col gap-0.5">
-                      <span class="text-xs text-base-content/50 uppercase font-medium">Name</span>
-                      <span class="text-sm text-base-content">{{ opportunity()!.name }}</span>
-                    </div>
-                    <div class="flex flex-col gap-0.5">
-                      <span class="text-xs text-base-content/50 uppercase font-medium">Location</span>
-                      <span class="text-sm text-base-content">{{ opportunity()!.location }}</span>
-                    </div>
-                    <div class="flex flex-col gap-0.5">
-                      <span class="text-xs text-base-content/50 uppercase font-medium">Land Size</span>
-                      <span class="text-sm text-base-content">{{ opportunity()!.landSize | number:'1.2-2' }} acres</span>
-                    </div>
-                    <div class="flex flex-col gap-0.5">
-                      <span class="text-xs text-base-content/50 uppercase font-medium">Status</span>
-                      <app-status-badge [status]="opportunity()!.status"></app-status-badge>
-                    </div>
-                    <div class="flex flex-col gap-0.5">
-                      <span class="text-xs text-base-content/50 uppercase font-medium">Source</span>
-                      <span class="text-sm text-base-content">{{ opportunity()!.source ?? 'Not specified' }}</span>
-                    </div>
-                    <div class="flex flex-col gap-0.5">
-                      <span class="text-xs text-base-content/50 uppercase font-medium">Target Acquisition</span>
-                      <span class="text-sm text-base-content">
-                        {{ opportunity()!.expectedAcquisition ? (opportunity()!.expectedAcquisition | date:'dd MMM yyyy') : 'Not set' }}
-                      </span>
-                    </div>
-                    <div class="flex flex-col gap-0.5">
-                      <span class="text-xs text-base-content/50 uppercase font-medium">Created</span>
-                      <span class="text-sm text-base-content">{{ opportunity()!.createdAt | date:'dd MMM yyyy, HH:mm' }}</span>
-                    </div>
-                    <div class="flex flex-col gap-0.5" *ngIf="opportunity()!.withdrawalReason">
-                      <span class="text-xs text-base-content/50 uppercase font-medium">Withdrawal Reason</span>
-                      <span class="text-sm text-base-content text-error">{{ opportunity()!.withdrawalReason }}</span>
+                <div class="rounded-xl border border-base-200/80 bg-base-100 overflow-hidden">
+                  <div class="px-5 py-3 bg-base-200/30 border-b border-base-200/80">
+                    <h3 class="text-sm font-semibold text-base-content flex items-center gap-2">
+                      <span class="material-symbols-outlined text-primary text-base">info</span>
+                      Opportunity Details
+                    </h3>
+                  </div>
+                  <div class="p-5">
+                    <div class="grid grid-cols-2 gap-4">
+                      <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
+                        <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Name</span>
+                        <span class="text-sm font-medium text-base-content">{{ opportunity()!.name }}</span>
+                      </div>
+                      <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
+                        <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Location</span>
+                        <span class="text-sm font-medium text-base-content">{{ opportunity()!.location }}</span>
+                      </div>
+                      <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
+                        <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Land Size</span>
+                        <span class="text-sm font-medium text-base-content">{{ opportunity()!.landSize | number:'1.2-2' }} acres</span>
+                      </div>
+                      <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
+                        <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Status</span>
+                        <app-status-badge [status]="opportunity()!.status"></app-status-badge>
+                      </div>
+                      <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
+                        <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Source</span>
+                        <span class="text-sm font-medium text-base-content">{{ opportunity()!.source ?? 'Not specified' }}</span>
+                      </div>
+                      <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
+                        <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Target Acquisition</span>
+                        <span class="text-sm font-medium text-base-content">
+                          {{ opportunity()!.expectedAcquisition ? (opportunity()!.expectedAcquisition | date:'dd MMM yyyy') : 'Not set' }}
+                        </span>
+                      </div>
+                      <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
+                        <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Created</span>
+                        <span class="text-sm font-medium text-base-content">{{ opportunity()!.createdAt | date:'dd MMM yyyy, HH:mm' }}</span>
+                      </div>
+                      <div class="flex flex-col gap-1 p-3 rounded-lg bg-error/5 border border-error/10" *ngIf="opportunity()!.withdrawalReason">
+                        <span class="text-[11px] text-error/70 uppercase font-semibold tracking-wide">Withdrawal Reason</span>
+                        <span class="text-sm font-medium text-error">{{ opportunity()!.withdrawalReason }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <!-- Land Owner Card -->
-                <div class="space-y-4">
-                  <h3 class="text-base font-semibold text-base-content">Land Owner</h3>
-                  <div *ngIf="opportunity()!.landOwner as owner; else noOwner">
-                    <div class="grid grid-cols-2 gap-3">
-                      <div class="flex flex-col gap-0.5">
-                        <span class="text-xs text-base-content/50 uppercase font-medium">Owner Name</span>
-                        <span class="text-sm text-base-content">{{ owner.name }}</span>
-                      </div>
-                      <div class="flex flex-col gap-0.5">
-                        <span class="text-xs text-base-content/50 uppercase font-medium">Ownership Type</span>
-                        <span class="text-sm text-base-content">{{ owner.ownershipType }}</span>
-                      </div>
-                      <div class="flex flex-col gap-0.5 col-span-2">
-                        <span class="text-xs text-base-content/50 uppercase font-medium">Contact Details</span>
-                        <span class="text-sm text-base-content">{{ owner.contactDetails }}</span>
-                      </div>
-                      <div *ngIf="owner.address" class="flex flex-col gap-0.5 col-span-2">
-                        <span class="text-xs text-base-content/50 uppercase font-medium">Address</span>
-                        <span class="text-sm text-base-content">{{ owner.address }}</span>
-                      </div>
-                    </div>
+                <div class="rounded-xl border border-base-200/80 bg-base-100 overflow-hidden">
+                  <div class="px-5 py-3 bg-base-200/30 border-b border-base-200/80">
+                    <h3 class="text-sm font-semibold text-base-content flex items-center gap-2">
+                      <span class="material-symbols-outlined text-primary text-base">person</span>
+                      Land Owner
+                    </h3>
                   </div>
-                  <ng-template #noOwner>
-                    <div class="flex flex-col items-center justify-center py-6 text-base-content/50">
-                      <span class="material-symbols-outlined text-3xl mb-2">person_off</span>
-                      <p class="text-sm">No land owner recorded yet.</p>
+                  <div class="p-5">
+                    <div *ngIf="opportunity()!.landOwner as owner; else noOwner">
+                      <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
+                          <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Owner Name</span>
+                          <span class="text-sm font-medium text-base-content">{{ owner.name }}</span>
+                        </div>
+                        <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
+                          <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Ownership Type</span>
+                          <span class="text-sm font-medium text-base-content">{{ owner.ownershipType }}</span>
+                        </div>
+                        <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30 col-span-2">
+                          <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Contact Details</span>
+                          <span class="text-sm font-medium text-base-content">{{ owner.contactDetails }}</span>
+                        </div>
+                        <div *ngIf="owner.address" class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30 col-span-2">
+                          <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Address</span>
+                          <span class="text-sm font-medium text-base-content">{{ owner.address }}</span>
+                        </div>
+                      </div>
                     </div>
-                  </ng-template>
+                    <ng-template #noOwner>
+                      <div class="flex flex-col items-center justify-center py-8 text-base-content/40">
+                        <span class="material-symbols-outlined text-4xl mb-2">person_off</span>
+                        <p class="text-sm font-medium">No land owner recorded</p>
+                        <p class="text-xs mt-1">Owner details will appear here once captured.</p>
+                      </div>
+                    </ng-template>
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, OnInit, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
@@ -65,6 +65,7 @@ import { PlanningApplicationStatus, PlanningApplicationType } from '../../models
 export class ApplicationListComponent implements OnInit {
   private readonly applicationService = inject(PlanningApplicationService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   applications: Record<string, unknown>[] = [];
   loading = true;
@@ -196,18 +197,22 @@ export class ApplicationListComponent implements OnInit {
     this.applicationService.getAll(params).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          this.applications = response.data.items as unknown as Record<string, unknown>[];
-          this.totalCount = response.data.totalCount;
+          // response.data is the items array (interceptor unwraps paginated responses)
+          const items = Array.isArray(response.data) ? response.data : (response.data as any).items ?? [];
+          this.applications = items as unknown as Record<string, unknown>[];
+          this.totalCount = (response as any).pagination?.totalCount ?? items.length;
         } else {
           this.applications = [];
           this.totalCount = 0;
         }
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.applications = [];
         this.totalCount = 0;
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }

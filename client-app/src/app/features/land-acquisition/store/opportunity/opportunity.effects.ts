@@ -169,4 +169,31 @@ export class OpportunityEffects {
       ),
     { dispatch: false }
   );
+
+  /**
+   * Show toast notification on successful CRUD operations.
+   */
+  readonly showSuccessToast$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(
+          OpportunityActions.createOpportunitySuccess,
+          OpportunityActions.updateOpportunitySuccess,
+          OpportunityActions.deleteOpportunitySuccess,
+          OpportunityActions.transitionStatusSuccess
+        ),
+        tap((action) => {
+          if (action.type.includes('Create')) {
+            this.toastService.showSuccess('Opportunity created successfully.');
+          } else if (action.type.includes('Update')) {
+            this.toastService.showSuccess('Opportunity updated successfully.');
+          } else if (action.type.includes('Delete')) {
+            this.toastService.showSuccess('Opportunity deleted successfully.');
+          } else if (action.type.includes('Transition')) {
+            this.toastService.showSuccess('Status updated successfully.');
+          }
+        })
+      ),
+    { dispatch: false }
+  );
 }

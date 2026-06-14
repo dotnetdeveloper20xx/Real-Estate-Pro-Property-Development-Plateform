@@ -4,51 +4,64 @@ import { IOpportunityListItem } from '../../models';
 
 /**
  * Presentational component that renders a single land opportunity
- * as a DaisyUI card within the pipeline view.
- *
- * Displays: Name, Location, LandSize, and days since last status change.
- * Emits a click event so the parent can navigate to opportunity detail.
+ * as a polished card within the pipeline view.
  */
 @Component({
   selector: 'app-opportunity-card',
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [`
+    .card-animate {
+      animation: slide-up 0.3s ease-out backwards;
+    }
+  `],
   template: `
     <div
-      class="card card-compact bg-base-100 shadow-sm border border-base-200 cursor-pointer
-             hover:shadow-md hover:border-primary/30 transition-all duration-200"
+      class="group rounded-lg bg-base-100 border border-base-200/80 cursor-pointer
+             hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5
+             transition-all duration-200 overflow-hidden"
       (click)="onCardClick()"
       (keydown.enter)="onCardClick()"
       (keydown.space)="onCardClick()"
       tabindex="0"
       role="button"
-      [attr.aria-label]="'View opportunity: ' + opportunity.name"
-    >
-      <div class="card-body gap-2 p-4">
+      [attr.aria-label]="'View opportunity: ' + opportunity.name">
+
+      <!-- Top accent bar -->
+      <div class="h-0.5" [style.background-color]="statusColor"></div>
+
+      <div class="p-3.5 space-y-2.5">
         <!-- Name -->
-        <h3 class="card-title text-sm font-semibold text-base-content line-clamp-1">
+        <h3 class="text-sm font-semibold text-base-content line-clamp-1 group-hover:text-primary transition-colors">
           {{ opportunity.name }}
         </h3>
 
         <!-- Location -->
-        <div class="flex items-center gap-1.5 text-xs text-base-content/70">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
+        <div class="flex items-center gap-1.5 text-xs text-base-content/60">
+          <span class="material-symbols-outlined text-sm text-base-content/40">location_on</span>
           <span class="line-clamp-1">{{ opportunity.location }}</span>
         </div>
 
-        <!-- Land Size & Days -->
-        <div class="flex items-center justify-between mt-1">
-          <span class="badge badge-ghost badge-sm text-xs">
-            {{ opportunity.landSize | number:'1.0-2' }} acres
-          </span>
-          <span class="text-xs text-base-content/60" [attr.aria-label]="daysSinceLastChange + ' days in current status'">
+        <!-- Footer row -->
+        <div class="flex items-center justify-between pt-1.5 border-t border-base-200/60">
+          <div class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-xs text-base-content/40">square_foot</span>
+            <span class="text-xs font-medium text-base-content/70">
+              {{ opportunity.landSize | number:'1.0-1' }} acres
+            </span>
+          </div>
+          <div class="flex items-center gap-1 text-xs text-base-content/50"
+               [attr.aria-label]="daysSinceLastChange + ' days in current status'">
+            <span class="material-symbols-outlined text-xs">schedule</span>
             {{ daysSinceLastChange }}d
+          </div>
+        </div>
+
+        <!-- Source tag -->
+        <div *ngIf="opportunity.source" class="pt-1">
+          <span class="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-base-content/40 bg-base-200/60 rounded px-1.5 py-0.5">
+            {{ opportunity.source }}
           </span>
         </div>
       </div>
@@ -57,13 +70,9 @@ import { IOpportunityListItem } from '../../models';
 })
 export class OpportunityCardComponent {
   @Input({ required: true }) opportunity!: IOpportunityListItem;
+  @Input() statusColor = '#6366f1';
   @Output() cardClick = new EventEmitter<IOpportunityListItem>();
 
-  /**
-   * Calculates the number of days since the last status change.
-   * Uses createdAt as the reference date for when the opportunity
-   * entered its current status (best available approximation from list item data).
-   */
   get daysSinceLastChange(): number {
     const changeDate = new Date(this.opportunity.createdAt);
     const now = new Date();

@@ -11,8 +11,16 @@ import { Routes } from '@angular/router';
 export const appRoutes: Routes = [
   {
     path: '',
-    redirectTo: 'land-acquisition',
+    redirectTo: 'home',
     pathMatch: 'full'
+  },
+  {
+    path: 'home',
+    loadComponent: () =>
+      import('./features/home/home.component').then(
+        m => m.HomeComponent
+      ),
+    data: { breadcrumb: 'Home', icon: 'home' }
   },
   {
     path: 'profile',
@@ -112,6 +120,6 @@ export const appRoutes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'land-acquisition'
+    redirectTo: 'home'
   }
 ];

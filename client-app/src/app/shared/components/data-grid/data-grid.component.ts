@@ -66,6 +66,14 @@ export interface ISortEvent {
   imports: [CommonModule, FormsModule, CurrencyPipe, DatePipe, DecimalPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
+    :host {
+      display: block;
+      animation: fade-in 0.3s ease-out;
+    }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
@@ -82,9 +90,9 @@ export interface ISortEvent {
     }
   `],
   template: `
-    <div class="card bg-base-100 shadow-sm border border-base-300">
+    <div class="card bg-base-100 shadow-sm border border-base-200/80 overflow-hidden">
       <!-- Toolbar -->
-      <div class="p-4 border-b border-base-200 flex flex-wrap items-center justify-between gap-4">
+      <div class="px-4 py-3 border-b border-base-200/80 bg-base-100 flex flex-wrap items-center justify-between gap-3">
         <h2 class="text-lg font-semibold text-base-content" *ngIf="title">{{ title }}</h2>
         <div class="flex items-center gap-3 flex-1 justify-end flex-wrap">
           <!-- Search input -->
@@ -258,7 +266,7 @@ export interface ISortEvent {
       </div>
 
       <!-- Pagination footer -->
-      <div class="flex flex-wrap items-center justify-between p-4 border-t border-base-200 gap-2" *ngIf="!loading && filteredData.length > 0">
+      <div class="flex flex-wrap items-center justify-between px-4 py-3 border-t border-base-200/80 bg-base-100/50 gap-2" *ngIf="!loading && filteredData.length > 0">
         <span class="text-sm text-base-content/60">
           Showing {{ startRecord }}–{{ endRecord }} of {{ filteredData.length }} records
         </span>

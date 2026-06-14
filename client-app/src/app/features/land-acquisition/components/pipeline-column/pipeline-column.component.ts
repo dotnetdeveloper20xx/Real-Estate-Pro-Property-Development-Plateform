@@ -5,45 +5,46 @@ import { OpportunityCardComponent } from '../opportunity-card/opportunity-card.c
 
 /**
  * Presentational component that renders a single pipeline column
- * in the Kanban-style board view.
- *
- * Displays: column header with status name and count badge,
- * followed by a scrollable list of opportunity cards.
+ * in the Kanban-style board view with status-colored header.
  */
 @Component({
   selector: 'app-pipeline-column',
   standalone: true,
   imports: [CommonModule, OpportunityCardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [`
+    :host { display: block; }
+    .column-enter { animation: fade-in 0.3s ease-out backwards; }
+  `],
   template: `
-    <div class="flex flex-col h-full min-w-[280px] max-w-[320px] bg-base-200/50 rounded-xl">
-      <!-- Column Header -->
-      <div class="flex items-center justify-between px-4 py-3 border-b border-base-300">
-        <h2 class="text-sm font-semibold text-base-content">{{ status }}</h2>
-        <span class="badge badge-neutral badge-sm" [attr.aria-label]="count + ' opportunities'">
+    <div class="flex flex-col h-full min-w-[270px] max-w-[300px] rounded-xl border border-base-200/80 bg-base-100/50 column-enter"
+         [style.animation-delay.ms]="columnIndex * 60">
+      <!-- Column Header with status color -->
+      <div class="flex items-center gap-2 px-4 py-3 rounded-t-xl"
+           [style.border-bottom]="'3px solid ' + statusColor">
+        <div class="w-2.5 h-2.5 rounded-full" [style.background-color]="statusColor"></div>
+        <h2 class="text-sm font-semibold text-base-content flex-1">{{ status }}</h2>
+        <span class="min-w-[24px] h-6 flex items-center justify-center rounded-full text-xs font-bold text-white px-1.5"
+              [style.background-color]="statusColor">
           {{ count }}
         </span>
       </div>
 
       <!-- Cards List -->
-      <div
-        class="flex flex-col gap-3 p-3 overflow-y-auto flex-1"
-        role="list"
-        [attr.aria-label]="status + ' opportunities'"
-      >
+      <div class="flex flex-col gap-2.5 p-3 overflow-y-auto flex-1 custom-scroll"
+           role="list"
+           [attr.aria-label]="status + ' opportunities'">
         @if (opportunities.length === 0) {
-          <div class="flex flex-col items-center justify-center py-8 text-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-base-content/30 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-            <p class="text-xs text-base-content/50">No opportunities</p>
+          <div class="flex flex-col items-center justify-center py-10 text-center">
+            <span class="material-symbols-outlined text-3xl text-base-content/20 mb-2">inbox</span>
+            <p class="text-xs text-base-content/40">No opportunities</p>
           </div>
         } @else {
-          @for (opportunity of opportunities; track opportunity.id) {
-            <div role="listitem">
+          @for (opportunity of opportunities; track opportunity.id; let i = $index) {
+            <div role="listitem" class="card-animate" [style.animation-delay.ms]="i * 50">
               <app-opportunity-card
                 [opportunity]="opportunity"
+                [statusColor]="statusColor"
                 (cardClick)="onCardClick($event)"
               />
             </div>
@@ -57,6 +58,8 @@ export class PipelineColumnComponent {
   @Input({ required: true }) status!: string;
   @Input({ required: true }) count!: number;
   @Input({ required: true }) opportunities!: IOpportunityListItem[];
+  @Input() statusColor = '#6366f1';
+  @Input() columnIndex = 0;
   @Output() cardClick = new EventEmitter<IOpportunityListItem>();
 
   onCardClick(opportunity: IOpportunityListItem): void {

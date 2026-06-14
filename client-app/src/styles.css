@@ -1,7 +1,42 @@
 @import "tailwindcss";
 
 @plugin "daisyui" {
-  themes: light --default, dark;
+  themes: light --default;
+}
+
+@theme {
+  /* Custom animation utilities */
+  --animate-fade-in: fade-in 0.4s ease-out;
+  --animate-slide-up: slide-up 0.4s ease-out;
+  --animate-scale-in: scale-in 0.3s ease-out;
+}
+
+/* Custom DaisyUI theme overrides for a premium light look */
+@layer base {
+  [data-theme="light"] {
+    --p: 250 87% 55%;         /* Rich indigo primary */
+    --pf: 250 87% 48%;
+    --pc: 0 0% 100%;
+    --s: 220 70% 50%;         /* Deep blue secondary */
+    --sf: 220 70% 43%;
+    --sc: 0 0% 100%;
+    --a: 160 60% 45%;         /* Emerald accent */
+    --af: 160 60% 38%;
+    --ac: 0 0% 100%;
+    --n: 230 25% 18%;         /* Dark navy neutral (sidebar) */
+    --nf: 230 25% 14%;
+    --nc: 220 20% 90%;
+    --b1: 220 20% 98%;        /* Soft off-white base */
+    --b2: 220 16% 95%;        /* Subtle blue-gray cards */
+    --b3: 220 14% 90%;        /* Borders */
+    --bc: 230 25% 18%;        /* Base content - dark */
+    --su: 160 60% 45%;        /* Success green */
+    --wa: 38 92% 50%;         /* Warm amber warning */
+    --er: 0 72% 51%;          /* Rich red error */
+    --in: 210 76% 52%;        /* Info blue */
+    --rounded-btn: 0.5rem;
+    --rounded-box: 0.75rem;
+  }
 }
 
 /* BuildEstate Pro - Global Styles */
@@ -43,4 +78,121 @@ html, body {
   direction: ltr;
   -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
+}
+
+/* Global animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Enhanced card styles */
+.card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card:hover {
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* Smooth button transitions */
+.btn {
+  transition: all 0.2s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(99, 54, 255, 0.35);
+}
+
+/* Enhanced inputs */
+.input, .select, .textarea {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.input:focus, .select:focus, .textarea:focus {
+  box-shadow: 0 0 0 3px rgba(99, 54, 255, 0.1);
+}
+
+/* Table row hover */
+.table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+/* Badge polish */
+.badge {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Toast animation */
+.toast {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Form card with subtle left accent */
+form.card {
+  border-left: 3px solid oklch(var(--p));
+}
+
+/* Form section headers */
+.form-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: oklch(var(--bc) / 0.5);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid oklch(var(--b3));
+}
+
+/* Pipeline card stagger animation */
+.card-animate {
+  animation: slide-up 0.3s ease-out backwards;
+}
+
+/* Custom scrollbar for pipeline columns */
+.custom-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
 }

@@ -15,6 +15,27 @@ interface IPropertyUnit {
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [`
+    :host {
+      display: block;
+      animation: fade-in 0.3s ease-out;
+    }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .kpi-card {
+      animation: slide-up 0.4s ease-out backwards;
+    }
+    .kpi-card:nth-child(1) { animation-delay: 0ms; }
+    .kpi-card:nth-child(2) { animation-delay: 80ms; }
+    .kpi-card:nth-child(3) { animation-delay: 160ms; }
+    .kpi-card:nth-child(4) { animation-delay: 240ms; }
+  `],
   template: `
     <div class="p-6 space-y-6">
       <!-- Under Development Banner -->
@@ -37,7 +58,7 @@ interface IPropertyUnit {
 
       <!-- KPI Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="card bg-base-100 shadow-sm border border-base-300">
+        <div class="kpi-card card bg-base-100 shadow-sm border border-base-200/80">
           <div class="card-body p-4">
             <div class="flex items-center justify-between">
               <div>
@@ -51,7 +72,7 @@ interface IPropertyUnit {
           </div>
         </div>
 
-        <div class="card bg-base-100 shadow-sm border border-base-300">
+        <div class="kpi-card card bg-base-100 shadow-sm border border-base-200/80">
           <div class="card-body p-4">
             <div class="flex items-center justify-between">
               <div>
@@ -65,7 +86,7 @@ interface IPropertyUnit {
           </div>
         </div>
 
-        <div class="card bg-base-100 shadow-sm border border-base-300">
+        <div class="kpi-card card bg-base-100 shadow-sm border border-base-200/80">
           <div class="card-body p-4">
             <div class="flex items-center justify-between">
               <div>
@@ -79,7 +100,7 @@ interface IPropertyUnit {
           </div>
         </div>
 
-        <div class="card bg-base-100 shadow-sm border border-base-300">
+        <div class="kpi-card card bg-base-100 shadow-sm border border-base-200/80">
           <div class="card-body p-4">
             <div class="flex items-center justify-between">
               <div>

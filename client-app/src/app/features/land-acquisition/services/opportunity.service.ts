@@ -76,7 +76,7 @@ export class OpportunityService {
 
   /** Update an existing opportunity. */
   update(id: string, dto: IUpdateOpportunity): Observable<IApiResponse<IOpportunity>> {
-    return this.http.put<IApiResponse<IOpportunity>>(`${this.baseUrl}/${id}`, dto);
+    return this.http.put<IApiResponse<IOpportunity>>(`${this.baseUrl}/${id}`, { id, ...dto });
   }
 
   /** Soft-delete an opportunity. */
@@ -86,6 +86,6 @@ export class OpportunityService {
 
   /** Transition an opportunity to a new status. */
   transitionStatus(id: string, dto: ITransitionOpportunityStatus): Observable<IApiResponse<IOpportunity>> {
-    return this.http.patch<IApiResponse<IOpportunity>>(`${this.baseUrl}/${id}/status`, dto);
+    return this.http.patch<IApiResponse<IOpportunity>>(`${this.baseUrl}/${id}/status`, { opportunityId: id, ...dto });
   }
 }

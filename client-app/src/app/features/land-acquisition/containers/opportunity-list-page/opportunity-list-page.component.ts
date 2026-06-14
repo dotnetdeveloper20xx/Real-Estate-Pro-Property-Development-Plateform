@@ -1,8 +1,9 @@
-import { Component, ChangeDetectionStrategy, OnInit, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 import { DataGridComponent, IGridColumn, IFilterOption } from '../../../../shared/components';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 import { OpportunityService, IOpportunityQueryParams } from '../../services/opportunity.service';
 import { OpportunityStatus } from '../../models';
 
@@ -65,6 +66,7 @@ import { OpportunityStatus } from '../../models';
 export class OpportunityListPageComponent implements OnInit {
   private readonly opportunityService = inject(OpportunityService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   opportunities: Record<string, unknown>[] = [];
   loading = true;
@@ -125,13 +127,25 @@ export class OpportunityListPageComponent implements OnInit {
     this.router.navigate(['/land-acquisition/opportunities', row['id'], 'edit']);
   }
 
+  private readonly confirmDialog = inject(ConfirmDialogService);
+
   onDeleteClick(row: Record<string, unknown>): void {
-    if (confirm(`Are you sure you want to delete "${row['name']}"? This action cannot be undone.`)) {
-      this.opportunityService.delete(row['id'] as string).subscribe({
-        next: () => this.loadData(),
-        error: () => alert('Failed to delete opportunity. Please try again.')
-      });
-    }
+    this.confirmDialog.confirm({
+      title: 'Delete Opportunity',
+      message: `Are you sure you want to delete "${row['name']}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      confirmClass: 'btn-error',
+      icon: 'delete_forever',
+      iconClass: 'text-error'
+    }).then(confirmed => {
+      if (confirmed) {
+        this.opportunityService.delete(row['id'] as string).subscribe({
+          next: () => this.loadData(),
+          error: () => {} // Error handled by interceptor toast
+        });
+      }
+    });
   }
 
   onPageChange(page: number): void {
@@ -189,11 +203,13 @@ export class OpportunityListPageComponent implements OnInit {
           this.totalCount = 0;
         }
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: () => {
         this.opportunities = [];
         this.totalCount = 0;
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
   }
