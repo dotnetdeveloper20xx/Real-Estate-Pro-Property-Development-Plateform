@@ -5,12 +5,30 @@ import { Routes } from '@angular/router';
  *
  * Each feature module is lazy-loaded via loadChildren to reduce initial bundle size.
  * The router will only download the feature code when the user navigates to that path.
+ *
+ * Profile and Settings are top-level utility pages accessible from the user dropdown menu.
  */
 export const appRoutes: Routes = [
   {
     path: '',
     redirectTo: 'land-acquisition',
     pathMatch: 'full'
+  },
+  {
+    path: 'profile',
+    loadComponent: () =>
+      import('./features/profile/profile.component').then(
+        m => m.ProfileComponent
+      ),
+    data: { breadcrumb: 'Profile', icon: 'person' }
+  },
+  {
+    path: 'settings',
+    loadComponent: () =>
+      import('./features/settings/settings.component').then(
+        m => m.SettingsComponent
+      ),
+    data: { breadcrumb: 'Settings', icon: 'settings' }
   },
   {
     path: 'land-acquisition',
@@ -35,6 +53,62 @@ export const appRoutes: Routes = [
         m => m.legalComplianceRoutes
       ),
     data: { breadcrumb: 'Legal & Compliance', icon: 'gavel' }
+  },
+  {
+    path: 'project-management',
+    loadChildren: () =>
+      import('./features/project-management/project-management.routes').then(
+        m => m.projectManagementRoutes
+      ),
+    data: { breadcrumb: 'Project Management', icon: 'engineering' }
+  },
+  {
+    path: 'construction',
+    loadChildren: () =>
+      import('./features/construction/construction.routes').then(
+        m => m.constructionRoutes
+      ),
+    data: { breadcrumb: 'Construction', icon: 'construction' }
+  },
+  {
+    path: 'finance',
+    loadChildren: () =>
+      import('./features/finance/finance.routes').then(
+        m => m.financeRoutes
+      ),
+    data: { breadcrumb: 'Finance & Budget', icon: 'account_balance' }
+  },
+  {
+    path: 'property-units',
+    loadChildren: () =>
+      import('./features/property-units/property-units.routes').then(
+        m => m.propertyUnitsRoutes
+      ),
+    data: { breadcrumb: 'Property Units', icon: 'apartment' }
+  },
+  {
+    path: 'sales',
+    loadChildren: () =>
+      import('./features/sales/sales.routes').then(
+        m => m.salesRoutes
+      ),
+    data: { breadcrumb: 'Sales & Marketing', icon: 'storefront' }
+  },
+  {
+    path: 'documents',
+    loadChildren: () =>
+      import('./features/documents/documents.routes').then(
+        m => m.documentsRoutes
+      ),
+    data: { breadcrumb: 'Documents', icon: 'folder_open' }
+  },
+  {
+    path: 'reports',
+    loadChildren: () =>
+      import('./features/reports/reports.routes').then(
+        m => m.reportsRoutes
+      ),
+    data: { breadcrumb: 'Reports', icon: 'analytics' }
   },
   {
     path: '**',

@@ -1,20 +1,17 @@
 import { Routes } from '@angular/router';
+import { provideState } from '@ngrx/store';
+import { provideEffects } from '@ngrx/effects';
 import { roleGuard } from './guards/role.guard';
 import { unsavedChangesGuard } from './guards/unsaved-changes.guard';
 
+import { opportunityReducer } from './store/opportunity';
+import { dashboardReducer } from './store/dashboard';
+import { OpportunityEffects } from './store/opportunity';
+import { DashboardEffects } from './store/dashboard';
+
 /**
- * Land Acquisition feature routes with lazy-loaded standalone components.
- *
- * Route structure:
- *   /land-acquisition                → redirects to dashboard
- *   /land-acquisition/dashboard      → Dashboard overview (KPIs, pipeline summary, activity)
- *   /land-acquisition/pipeline       → Pipeline board (opportunities grouped by status)
- *   /land-acquisition/opportunities/new       → Create opportunity (guarded)
- *   /land-acquisition/opportunities/:id       → Opportunity detail view
- *   /land-acquisition/opportunities/:id/edit  → Edit opportunity (guarded)
- *
- * Write routes (create, edit) are protected by the roleGuard which
- * enforces AcquisitionManager or AdminSupport access.
+ * Land Acquisition feature routes.
+ * NgRx state is registered at each route that needs it.
  */
 export const landAcquisitionRoutes: Routes = [
   {
@@ -28,6 +25,11 @@ export const landAcquisitionRoutes: Routes = [
       import('./containers/dashboard-page/dashboard-page.component').then(
         m => m.DashboardPageComponent
       ),
+    providers: [
+      provideState('opportunities', opportunityReducer),
+      provideState('dashboard', dashboardReducer),
+      provideEffects([OpportunityEffects, DashboardEffects])
+    ],
     data: { breadcrumb: 'Dashboard' }
   },
   {
@@ -36,7 +38,23 @@ export const landAcquisitionRoutes: Routes = [
       import('./containers/pipeline-page/pipeline-page.component').then(
         m => m.PipelinePageComponent
       ),
+    providers: [
+      provideState('opportunities', opportunityReducer),
+      provideEffects([OpportunityEffects])
+    ],
     data: { breadcrumb: 'Pipeline' }
+  },
+  {
+    path: 'opportunities',
+    loadComponent: () =>
+      import('./containers/opportunity-list-page/opportunity-list-page.component').then(
+        m => m.OpportunityListPageComponent
+      ),
+    providers: [
+      provideState('opportunities', opportunityReducer),
+      provideEffects([OpportunityEffects])
+    ],
+    data: { breadcrumb: 'Opportunities' }
   },
   {
     path: 'opportunities/new',
@@ -44,6 +62,10 @@ export const landAcquisitionRoutes: Routes = [
       import('./containers/opportunity-create-page/opportunity-create-page.component').then(
         m => m.OpportunityCreatePageComponent
       ),
+    providers: [
+      provideState('opportunities', opportunityReducer),
+      provideEffects([OpportunityEffects])
+    ],
     canActivate: [roleGuard],
     canDeactivate: [unsavedChangesGuard],
     data: { breadcrumb: 'Create Opportunity' }
@@ -54,6 +76,10 @@ export const landAcquisitionRoutes: Routes = [
       import('./containers/opportunity-detail-page/opportunity-detail-page.component').then(
         m => m.OpportunityDetailPageComponent
       ),
+    providers: [
+      provideState('opportunities', opportunityReducer),
+      provideEffects([OpportunityEffects])
+    ],
     data: { breadcrumb: 'Opportunity Detail' }
   },
   {
@@ -62,6 +88,10 @@ export const landAcquisitionRoutes: Routes = [
       import('./containers/opportunity-edit-page/opportunity-edit-page.component').then(
         m => m.OpportunityEditPageComponent
       ),
+    providers: [
+      provideState('opportunities', opportunityReducer),
+      provideEffects([OpportunityEffects])
+    ],
     canActivate: [roleGuard],
     canDeactivate: [unsavedChangesGuard],
     data: { breadcrumb: 'Edit Opportunity' }

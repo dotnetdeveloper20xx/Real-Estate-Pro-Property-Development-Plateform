@@ -935,7 +935,7 @@ namespace BuildEstate.Infrastructure.Migrations
                     b.HasIndex("OpportunityId")
                         .IsUnique()
                         .HasDatabaseName("IX_PlanningApplications_OpportunityId_ActiveUnique")
-                        .HasFilter("[Status] NOT IN (9, 7) AND [IsDeleted] = 0");
+                        .HasFilter("[Status] <> 9 AND [Status] <> 7 AND [IsDeleted] = 0");
 
                     b.HasIndex("Status", "CreatedAt");
 

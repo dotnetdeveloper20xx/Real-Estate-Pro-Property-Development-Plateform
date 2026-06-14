@@ -7,6 +7,7 @@ using BuildEstate.Application;
 using BuildEstate.Application.Interfaces;
 using BuildEstate.Infrastructure;
 using BuildEstate.Infrastructure.Identity;
+using BuildEstate.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -62,6 +63,20 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
+// ──────────────────────────────────────────────────────────────────
+// Development Auth Bypass — override DefaultPolicy to allow anonymous
+// ──────────────────────────────────────────────────────────────────
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddAuthorization(options =>
+    {
+        options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+            .RequireAssertion(_ => true)
+            .Build();
+        options.FallbackPolicy = null;
+    });
+}
 
 // ──────────────────────────────────────────────────────────────────
 // CORS — "AllowFrontend" Policy
@@ -199,6 +214,12 @@ app.UseCors("AllowFrontend");
 // 6. Authentication
 app.UseAuthentication();
 
+// 6.5. Development Auth Middleware — inject default user claims when no JWT present
+if (app.Environment.IsDevelopment())
+{
+    app.UseMiddleware<DevAuthMiddleware>();
+}
+
 // 7. Authorization
 app.UseAuthorization();
 
@@ -218,6 +239,7 @@ if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     await IdentitySeeder.SeedAsync(scope.ServiceProvider);
+    await DemoDataSeeder.SeedAsync(scope.ServiceProvider);
 }
 
 app.Run();

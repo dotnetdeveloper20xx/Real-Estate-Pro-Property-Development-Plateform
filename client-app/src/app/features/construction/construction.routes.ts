@@ -1,0 +1,11 @@
+import { Routes } from '@angular/router';
+
+export const constructionRoutes: Routes = [
+  {
+    path: '',
+    loadComponent: () =>
+      import('./pages/dashboard/dashboard.component').then(
+        m => m.ConstructionDashboardComponent
+      )
+  }
+];

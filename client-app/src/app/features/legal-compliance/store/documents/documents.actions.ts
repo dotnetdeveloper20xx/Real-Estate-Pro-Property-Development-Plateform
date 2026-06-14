@@ -1,7 +1,6 @@
 import { createActionGroup, props } from '@ngrx/store';
 import {
   ILegalDocumentListItem,
-  ILegalDocument,
   LegalDocumentType,
   ConfidentialityLevel
 } from '../../models';

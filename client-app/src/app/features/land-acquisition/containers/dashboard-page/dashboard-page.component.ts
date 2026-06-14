@@ -26,6 +26,44 @@ import { OpportunityStatus } from '../../models/opportunity.model';
   standalone: true,
   imports: [CommonModule, KpiCardComponent, ActivityTimelineComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [`
+    :host {
+      --stagger: 0;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .kpi-animate {
+      opacity: 0;
+      animation: slideUp 0.5s ease-out forwards;
+      animation-delay: calc(var(--stagger) * 100ms);
+    }
+    .pipeline-animate {
+      opacity: 0;
+      animation: slideInLeft 0.6s ease-out 0.4s forwards;
+    }
+    .alerts-animate {
+      opacity: 0;
+      animation: fadeIn 0.6s ease-out 0.5s forwards;
+    }
+    .activity-animate {
+      opacity: 0;
+      animation: fadeInUp 0.6s ease-out 0.6s forwards;
+    }
+  `],
   template: `
     <!-- Page Header -->
     <div class="p-6 space-y-6">
@@ -40,26 +78,34 @@ import { OpportunityStatus } from '../../models/opportunity.model';
       <section aria-label="Key Performance Indicators">
         <ng-container *ngIf="!(loading$ | async); else kpiSkeleton">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" *ngIf="metrics$ | async as metrics">
-            <app-kpi-card
-              label="Avg. Acquisition Cycle"
-              [value]="formatCycleDays(metrics.averageAcquisitionCycleDays)"
-              icon="schedule">
-            </app-kpi-card>
-            <app-kpi-card
-              label="Total Evaluated"
-              [value]="metrics.totalEvaluated.toString()"
-              icon="assignment_turned_in">
-            </app-kpi-card>
-            <app-kpi-card
-              label="Conversion Rate"
-              [value]="formatPercent(metrics.conversionRatePercent)"
-              icon="trending_up">
-            </app-kpi-card>
-            <app-kpi-card
-              label="DD Pass Rate"
-              [value]="formatPercent(metrics.dueDiligencePassRatePercent)"
-              icon="verified">
-            </app-kpi-card>
+            <div class="kpi-animate" [style.--stagger]="0">
+              <app-kpi-card
+                label="Avg. Acquisition Cycle"
+                [value]="formatCycleDays(metrics.averageAcquisitionCycleDays)"
+                icon="schedule">
+              </app-kpi-card>
+            </div>
+            <div class="kpi-animate" [style.--stagger]="1">
+              <app-kpi-card
+                label="Total Evaluated"
+                [value]="metrics.totalEvaluated.toString()"
+                icon="assignment_turned_in">
+              </app-kpi-card>
+            </div>
+            <div class="kpi-animate" [style.--stagger]="2">
+              <app-kpi-card
+                label="Conversion Rate"
+                [value]="formatPercent(metrics.conversionRatePercent)"
+                icon="trending_up">
+              </app-kpi-card>
+            </div>
+            <div class="kpi-animate" [style.--stagger]="3">
+              <app-kpi-card
+                label="DD Pass Rate"
+                [value]="formatPercent(metrics.dueDiligencePassRatePercent)"
+                icon="verified">
+              </app-kpi-card>
+            </div>
           </div>
         </ng-container>
 
@@ -85,7 +131,7 @@ import { OpportunityStatus } from '../../models/opportunity.model';
         <!-- Pipeline Summary -->
         <section class="lg:col-span-2" aria-label="Pipeline Summary">
           <ng-container *ngIf="!(loading$ | async); else pipelineSkeleton">
-            <div class="card bg-base-100 shadow-sm border border-base-200" *ngIf="metrics$ | async as metrics">
+            <div class="card bg-base-100 shadow-sm border border-base-200 pipeline-animate" *ngIf="metrics$ | async as metrics">
               <div class="card-body p-5">
                 <h2 class="text-lg font-semibold text-base-content mb-4">Pipeline Summary</h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -122,7 +168,7 @@ import { OpportunityStatus } from '../../models/opportunity.model';
         <!-- Alerts Section -->
         <section aria-label="Alerts and Notifications">
           <ng-container *ngIf="!(loading$ | async); else alertsSkeleton">
-            <div class="card bg-base-100 shadow-sm border border-base-200 h-full">
+            <div class="card bg-base-100 shadow-sm border border-base-200 h-full alerts-animate">
               <div class="card-body p-5">
                 <h2 class="text-lg font-semibold text-base-content mb-4">
                   <span class="material-symbols-outlined text-warning align-middle mr-1">notifications_active</span>
@@ -166,7 +212,7 @@ import { OpportunityStatus } from '../../models/opportunity.model';
       <!-- Recent Activity Section -->
       <section aria-label="Recent Activity">
         <ng-container *ngIf="!(loading$ | async); else activitySkeleton">
-          <div class="card bg-base-100 shadow-sm border border-base-200">
+          <div class="card bg-base-100 shadow-sm border border-base-200 activity-animate">
             <div class="card-body p-5">
               <h2 class="text-lg font-semibold text-base-content mb-4">Recent Activity</h2>
               <app-activity-timeline [activities]="(activity$ | async) ?? []"></app-activity-timeline>

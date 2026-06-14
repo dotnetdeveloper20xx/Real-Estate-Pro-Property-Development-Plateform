@@ -44,7 +44,7 @@ public class LegalCaseConfiguration : IEntityTypeConfiguration<LegalCase>
         builder.HasMany(x => x.Contracts)
             .WithOne(x => x.LegalCase)
             .HasForeignKey(x => x.LegalCaseId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.Documents)
             .WithOne(x => x.LegalCase)

@@ -3,7 +3,6 @@ import { LegalCasesState } from './legal-cases.state';
 import { legalCasesAdapter } from './legal-cases.reducer';
 import {
   ILegalCaseListItem,
-  ILegalCasePipeline,
   LegalCaseStatus,
   LegalCaseType,
   LegalCasePriority

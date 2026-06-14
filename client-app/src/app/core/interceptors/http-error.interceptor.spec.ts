@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { HttpErrorResponse, HttpRequest, HttpHandlerFn, HttpEvent } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';

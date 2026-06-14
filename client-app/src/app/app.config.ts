@@ -6,6 +6,8 @@ import { provideEffects } from '@ngrx/effects';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 
 import { appRoutes } from './app.routes';
+import { httpErrorInterceptor } from './core/interceptors';
+import { responseWrapperInterceptor } from './core/interceptors/response-wrapper.interceptor';
 import { applicationReducer, ApplicationEffects } from './features/planning-approvals/store/application';
 import { dashboardReducer, DashboardEffects } from './features/planning-approvals/store/dashboard';
 
@@ -24,7 +26,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(appRoutes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([])),
+    provideHttpClient(withInterceptors([responseWrapperInterceptor, httpErrorInterceptor])),
     provideStore({
       planningApplications: applicationReducer,
       planningDashboard: dashboardReducer

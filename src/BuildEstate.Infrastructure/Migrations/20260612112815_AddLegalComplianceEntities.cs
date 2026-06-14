@@ -183,7 +183,7 @@ namespace BuildEstate.Infrastructure.Migrations
                         column: x => x.LegalCaseId,
                         principalTable: "LegalCases",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(

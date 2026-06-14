@@ -252,7 +252,7 @@ namespace BuildEstate.Infrastructure.Migrations
                 table: "PlanningApplications",
                 column: "OpportunityId",
                 unique: true,
-                filter: "[Status] NOT IN (9, 7) AND [IsDeleted] = 0");
+                filter: "[Status] <> 9 AND [Status] <> 7 AND [IsDeleted] = 0");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PlanningApplications_Status_CreatedAt",

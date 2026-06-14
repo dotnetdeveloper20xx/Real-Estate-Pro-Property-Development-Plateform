@@ -47,6 +47,15 @@ export const planningApprovalsRoutes: Routes = [
     data: { breadcrumb: 'Pipeline' }
   },
   {
+    path: 'applications',
+    loadComponent: () =>
+      import('./containers/application-list/application-list.component').then(
+        m => m.ApplicationListComponent
+      ),
+    canActivate: [planningRoleGuard],
+    data: { breadcrumb: 'Applications' }
+  },
+  {
     path: 'applications/create',
     loadComponent: () =>
       import('./containers/application-create/application-create.container').then(

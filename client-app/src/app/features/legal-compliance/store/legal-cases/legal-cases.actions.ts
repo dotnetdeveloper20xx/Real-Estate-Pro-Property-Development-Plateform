@@ -4,10 +4,7 @@ import {
   ILegalCasePipeline,
   ICreateLegalCase,
   IUpdateLegalCase,
-  ITransitionLegalCaseStatus,
-  LegalCaseStatus,
-  LegalCaseType,
-  LegalCasePriority
+  ITransitionLegalCaseStatus
 } from '../../models';
 import { ILegalCaseQueryParams } from '../../services/legal-case.service';
 

@@ -39,6 +39,9 @@ import {
 } from '../../components/status-transition-dialog/status-transition-dialog.component';
 import { HasUnsavedChanges } from '../../guards/unsaved-changes.guard';
 
+/** Utility type to remove readonly from all properties. */
+type Mutable<T> = { -readonly [P in keyof T]: T[P] };
+
 /**
  * Typed form interface for the Audit Record create form.
  * Maps to the fields required by Requirement 9.1.
@@ -637,7 +640,7 @@ export class AuditRecordCreateComponent implements OnInit, HasUnsavedChanges {
     }
 
     const formValue = this.transitionForm.getRawValue();
-    const additionalFields: Partial<ITransitionAuditRecordStatus> = {};
+    const additionalFields: Partial<Mutable<ITransitionAuditRecordStatus>> = {};
 
     if (this.requiresFindings) {
       additionalFields.findings = formValue.findings.trim();
@@ -649,7 +652,7 @@ export class AuditRecordCreateComponent implements OnInit, HasUnsavedChanges {
       additionalFields.actionDueDate = formValue.actionDueDate;
     }
 
-    this.dispatchTransition(this.pendingTransitionStatus, additionalFields);
+    this.dispatchTransition(this.pendingTransitionStatus, additionalFields as Partial<ITransitionAuditRecordStatus>);
   }
 
   /**

@@ -23,7 +23,7 @@ export class DashboardEffects {
       ofType(DashboardActions.loadMetrics),
       switchMap(() =>
         this.dashboardService.getMetrics().pipe(
-          map((metrics) => DashboardActions.loadMetricsSuccess({ metrics })),
+          map((response) => DashboardActions.loadMetricsSuccess({ metrics: response.data! })),
           catchError((error: { message: string }) =>
             of(DashboardActions.loadMetricsFailure({ error: error.message }))
           )
@@ -40,8 +40,8 @@ export class DashboardEffects {
     this.actions$.pipe(
       ofType(DashboardActions.loadActivity),
       switchMap(() =>
-        this.dashboardService.getRecentActivity().pipe(
-          map((activity) => DashboardActions.loadActivitySuccess({ activity })),
+        this.dashboardService.getActivity().pipe(
+          map((response) => DashboardActions.loadActivitySuccess({ activity: response.data! })),
           catchError((error: { message: string }) =>
             of(DashboardActions.loadActivityFailure({ error: error.message }))
           )

@@ -662,7 +662,6 @@ export class OpportunityDetailPageComponent implements OnInit {
         next: (response) => {
           if (response.success && response.data) {
             this.opportunity.set(response.data);
-            // Also select in the store for cross-component access
             this.store.dispatch(OpportunityActions.selectOpportunity({ id }));
           } else {
             this.error.set(response.errors?.[0] ?? 'Failed to load opportunity details.');

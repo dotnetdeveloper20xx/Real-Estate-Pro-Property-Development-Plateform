@@ -28,7 +28,7 @@ public class PlanningApplicationConfiguration : IEntityTypeConfiguration<Plannin
         // Status NOT IN (Withdrawn = 9, Refused = 7) and IsDeleted = 0
         builder.HasIndex(x => x.OpportunityId)
             .IsUnique()
-            .HasFilter("[Status] NOT IN (9, 7) AND [IsDeleted] = 0")
+            .HasFilter("[Status] <> 9 AND [Status] <> 7 AND [IsDeleted] = 0")
             .HasDatabaseName("IX_PlanningApplications_OpportunityId_ActiveUnique");
 
         // Soft delete filter
