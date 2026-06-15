@@ -46,7 +46,7 @@ interface IActionButton {
  *
  * Displays full opportunity information organized into a header section
  * (Name, Location, LandSize, Status, Source) and tabbed content:
- * Overview, Due Diligence, Offers, Documents, Financials, Activity.
+ * Overview, Due Diligence, Offers, Documents, Financials, Activity, Approvals.
  *
  * Includes a status progress indicator showing lifecycle position,
  * and contextual action buttons based on current status and user role.
@@ -103,7 +103,7 @@ interface IActionButton {
       <div class="card bg-base-100 shadow-sm border border-base-200">
         <div class="card-body p-6">
           <div class="flex gap-4 border-b border-base-200 pb-2 mb-4">
-            <div *ngFor="let i of [1,2,3,4,5,6]" class="h-8 w-24 bg-base-300 rounded"></div>
+            <div *ngFor="let i of [1,2,3,4,5,6,7]" class="h-8 w-24 bg-base-300 rounded"></div>
           </div>
           <div class="space-y-4">
             <div class="h-5 w-48 bg-base-300 rounded"></div>
@@ -182,7 +182,7 @@ interface IActionButton {
               </div>
 
               <!-- Right: Action Buttons -->
-              <div class="flex flex-wrap gap-2" *ngIf="actionButtons().length > 0 || showApprovalButton()">
+              <div class="flex flex-wrap gap-2" *ngIf="actionButtons().length > 0">
                 <button
                   *ngFor="let btn of actionButtons()"
                   class="btn btn-sm"
@@ -190,14 +190,6 @@ interface IActionButton {
                   (click)="btn.action()">
                   <span class="material-symbols-outlined text-sm">{{ btn.icon }}</span>
                   {{ btn.label }}
-                </button>
-                <!-- Request Approval Button -->
-                <button
-                  *ngIf="showApprovalButton()"
-                  class="btn btn-sm btn-secondary"
-                  (click)="showApprovalForm.set(true)">
-                  <span class="material-symbols-outlined text-sm">approval</span>
-                  Request Approval
                 </button>
               </div>
             </div>
@@ -209,28 +201,6 @@ interface IActionButton {
           </div>
         </div>
       </section>
-
-      <!-- Approval Request Inline Form -->
-      <div *ngIf="showApprovalForm()" class="card bg-base-100 shadow-sm border border-secondary/30" style="animation: scale-in 0.2s ease-out">
-        <div class="card-body p-5 space-y-4">
-          <h3 class="text-base font-semibold text-base-content flex items-center gap-2">
-            <span class="material-symbols-outlined text-secondary">approval</span>
-            Request Approval
-          </h3>
-          <p class="text-sm text-base-content/60">Submit this opportunity for management approval. Enter the requested investment amount.</p>
-          <div class="form-control w-full max-w-sm">
-            <label class="label"><span class="label-text font-medium">Requested Amount (£)</span></label>
-            <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="approvalForm.requestedAmount" min="1" placeholder="e.g. 1500000" />
-          </div>
-          <div class="flex justify-end gap-2 pt-2">
-            <button class="btn btn-ghost btn-sm" (click)="showApprovalForm.set(false)">Cancel</button>
-            <button class="btn btn-secondary btn-sm" (click)="submitApprovalRequest()" [disabled]="approvalForm.requestedAmount <= 0">
-              <span class="material-symbols-outlined text-sm">send</span>
-              Submit Request
-            </button>
-          </div>
-        </div>
-      </div>
 
       <!-- Tabbed Content -->
       <section aria-label="Opportunity Details" style="animation: slide-up 0.4s ease-out 0.2s backwards">
@@ -367,17 +337,21 @@ interface IActionButton {
                 <button class="btn btn-primary btn-sm gap-1" (click)="showDdForm.set(true)" *ngIf="!showDdForm()">
                   <span class="material-symbols-outlined text-sm">add</span>
                   Add Check
+                  <span class="badge badge-ghost badge-xs ml-2">Legal Officer</span>
                 </button>
               </div>
 
               <!-- Inline Due Diligence Form -->
               <div *ngIf="showDdForm()" class="card bg-base-200/30 border border-base-200 mb-4" style="animation: scale-in 0.2s ease-out">
                 <div class="card-body p-4 space-y-3">
-                  <h4 class="text-sm font-semibold text-base-content">New Due Diligence Check</h4>
+                  <h4 class="text-sm font-semibold text-base-content">
+                    {{ editingDdId() ? 'Update Due Diligence Check' : 'New Due Diligence Check' }}
+                    <span class="badge badge-ghost badge-xs ml-2">Legal Officer</span>
+                  </h4>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Type</span></label>
-                      <select class="select select-bordered select-sm w-full" [(ngModel)]="ddForm.type">
+                      <select class="select select-bordered select-sm w-full" [(ngModel)]="ddForm.type" [disabled]="!!editingDdId()">
                         <option value="Legal">Legal</option>
                         <option value="Environmental">Environmental</option>
                         <option value="Planning">Planning</option>
@@ -407,7 +381,7 @@ interface IActionButton {
                     <button class="btn btn-ghost btn-sm" (click)="cancelDdForm()">Cancel</button>
                     <button class="btn btn-primary btn-sm" (click)="saveDueDiligence()">
                       <span class="material-symbols-outlined text-sm">save</span>
-                      Save Check
+                      {{ editingDdId() ? 'Update Check' : 'Save Check' }}
                     </button>
                   </div>
                 </div>
@@ -423,6 +397,7 @@ interface IActionButton {
                         <th>Findings</th>
                         <th>Report Date</th>
                         <th>Created</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -438,6 +413,11 @@ interface IActionButton {
                         <td class="max-w-xs truncate">{{ dd.findings ?? '—' }}</td>
                         <td>{{ dd.reportDate ? (dd.reportDate | date:'dd MMM yyyy') : '—' }}</td>
                         <td>{{ dd.createdAt | date:'dd MMM yyyy' }}</td>
+                        <td>
+                          <button class="btn btn-ghost btn-xs" (click)="editDdCheck(dd)" title="Update Status">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                          </button>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -463,13 +443,17 @@ interface IActionButton {
                 <button class="btn btn-primary btn-sm gap-1" (click)="showOfferForm.set(true)" *ngIf="!showOfferForm()">
                   <span class="material-symbols-outlined text-sm">add</span>
                   Submit Offer
+                  <span class="badge badge-ghost badge-xs ml-2">Acquisition Manager</span>
                 </button>
               </div>
 
               <!-- Inline Offer Form -->
               <div *ngIf="showOfferForm()" class="card bg-base-200/30 border border-base-200 mb-4" style="animation: scale-in 0.2s ease-out">
                 <div class="card-body p-4 space-y-3">
-                  <h4 class="text-sm font-semibold text-base-content">Submit New Offer</h4>
+                  <h4 class="text-sm font-semibold text-base-content">
+                    Submit New Offer
+                    <span class="badge badge-ghost badge-xs ml-2">Acquisition Manager</span>
+                  </h4>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Amount (£)</span></label>
@@ -521,15 +505,27 @@ interface IActionButton {
                         <td>{{ offer.validUntil | date:'dd MMM yyyy' }}</td>
                         <td>{{ offer.counterOfferAmount != null ? (offer.counterOfferAmount | number:'1.2-2') : '—' }}</td>
                         <td>
-                          <div *ngIf="offer.status === 'UnderReview'" class="flex gap-1">
-                            <button class="btn btn-success btn-xs gap-0.5" (click)="acceptOffer(offer.id)" title="Accept this offer">
-                              <span class="material-symbols-outlined text-xs">check</span>
-                              Accept
-                            </button>
-                            <button class="btn btn-error btn-xs btn-outline gap-0.5" (click)="rejectOffer(offer.id)" title="Reject this offer">
-                              <span class="material-symbols-outlined text-xs">close</span>
-                              Reject
-                            </button>
+                          <div *ngIf="offer.status === 'UnderReview'" class="flex flex-col gap-1">
+                            <div class="flex gap-1">
+                              <button class="btn btn-success btn-xs gap-0.5" (click)="acceptOffer(offer.id)" title="Accept this offer">
+                                <span class="material-symbols-outlined text-xs">check</span>
+                                Accept
+                              </button>
+                              <button class="btn btn-error btn-xs btn-outline gap-0.5" (click)="rejectOffer(offer.id)" title="Reject this offer">
+                                <span class="material-symbols-outlined text-xs">close</span>
+                                Reject
+                              </button>
+                              <button class="btn btn-warning btn-xs gap-0.5" (click)="counteringOfferId.set(offer.id)" title="Counter Offer">
+                                <span class="material-symbols-outlined text-xs">swap_horiz</span>
+                                Counter
+                              </button>
+                            </div>
+                            <!-- Inline Counter Offer Form (Gap 4) -->
+                            <div *ngIf="counteringOfferId() === offer.id" class="flex items-center gap-1 mt-1">
+                              <input type="number" class="input input-bordered input-xs w-28" [(ngModel)]="counterAmount" placeholder="Amount (£)" />
+                              <button class="btn btn-warning btn-xs" (click)="submitCounterOffer(offer.id)">Send</button>
+                              <button class="btn btn-ghost btn-xs" (click)="counteringOfferId.set(null)">✕</button>
+                            </div>
                           </div>
                           <span *ngIf="offer.status !== 'UnderReview'" class="text-xs text-base-content/40">—</span>
                         </td>
@@ -603,6 +599,7 @@ interface IActionButton {
                         <th>Type</th>
                         <th>Size</th>
                         <th>Uploaded</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -618,6 +615,19 @@ interface IActionButton {
                         </td>
                         <td class="text-xs text-base-content/60">{{ formatFileSize(doc.fileSizeBytes) }}</td>
                         <td>{{ doc.uploadedAt | date:'dd MMM yyyy' }}</td>
+                        <td>
+                          <div class="flex gap-1">
+                            <a class="btn btn-ghost btn-xs btn-square"
+                               [href]="'/api/v1/opportunities/' + opportunity()!.id + '/documents/' + doc.id + '/download'"
+                               target="_blank"
+                               title="Download">
+                              <span class="material-symbols-outlined text-sm">download</span>
+                            </a>
+                            <button class="btn btn-ghost btn-xs btn-square text-error" (click)="deleteDocument(doc.id)" title="Delete">
+                              <span class="material-symbols-outlined text-sm">delete</span>
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -638,13 +648,27 @@ interface IActionButton {
               id="panel-financials"
               role="tabpanel"
               aria-labelledby="tab-financials">
-              <div *ngIf="opportunity()!.feasibilityAssessment as assessment; else noFinancials">
-                <div class="space-y-6">
-                  <!-- Scenario Badge -->
-                  <div class="flex items-center gap-2">
+
+              <!-- Show existing assessment when it exists AND form is NOT open -->
+              <div *ngIf="opportunity()!.feasibilityAssessment as assessment">
+                <div *ngIf="!showFeasibilityForm()" class="space-y-6">
+                  <!-- Scenario Badge + Actions -->
+                  <div class="flex items-center gap-2 flex-wrap">
                     <span class="text-sm font-medium text-base-content/70">Scenario:</span>
                     <span class="badge badge-sm badge-primary">{{ assessment.scenario }}</span>
                     <span *ngIf="assessment.isReadyForReview" class="badge badge-sm badge-success">Ready for Review</span>
+                    <!-- Gap 5: Edit Assessment Button -->
+                    <button class="btn btn-ghost btn-xs gap-1" (click)="editFeasibility()">
+                      <span class="material-symbols-outlined text-sm">edit</span>
+                      Edit
+                      <span class="badge badge-ghost badge-xs ml-1">Finance Director</span>
+                    </button>
+                    <!-- Gap 6: Mark Ready for Review -->
+                    <button *ngIf="!assessment.isReadyForReview" class="btn btn-success btn-xs gap-1" (click)="markReadyForReview()">
+                      <span class="material-symbols-outlined text-sm">check_circle</span>
+                      Mark Ready for Review
+                      <span class="badge badge-ghost badge-xs ml-1">Finance Director</span>
+                    </button>
                   </div>
 
                   <!-- Financial Summary Grid -->
@@ -689,82 +713,85 @@ interface IActionButton {
                   </div>
                 </div>
               </div>
-              <ng-template #noFinancials>
-                <!-- Create Feasibility Assessment Button -->
-                <div *ngIf="!showFeasibilityForm()" class="flex flex-col items-center justify-center py-8 text-base-content/50">
-                  <span class="material-symbols-outlined text-4xl mb-2">analytics</span>
-                  <p class="text-sm font-medium">No feasibility assessment available</p>
-                  <p class="text-xs mt-1 mb-4">Create a feasibility assessment to evaluate this opportunity's financial viability.</p>
-                  <button class="btn btn-primary btn-sm gap-1" (click)="showFeasibilityForm.set(true)">
-                    <span class="material-symbols-outlined text-sm">add</span>
-                    Create Feasibility Assessment
-                  </button>
-                </div>
 
-                <!-- Inline Feasibility Form -->
-                <div *ngIf="showFeasibilityForm()" class="card bg-base-200/30 border border-base-200" style="animation: scale-in 0.2s ease-out">
-                  <div class="card-body p-4 space-y-4">
-                    <h4 class="text-sm font-semibold text-base-content">New Feasibility Assessment</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      <div class="form-control w-full">
-                        <label class="label"><span class="label-text text-xs font-medium">Estimated Land Cost (£)</span></label>
-                        <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.landCost" min="0" placeholder="e.g. 500000" />
-                      </div>
-                      <div class="form-control w-full">
-                        <label class="label"><span class="label-text text-xs font-medium">Estimated Build Cost (£)</span></label>
-                        <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.buildCost" min="0" placeholder="e.g. 2000000" />
-                      </div>
-                      <div class="form-control w-full">
-                        <label class="label"><span class="label-text text-xs font-medium">Professional Fees (£)</span></label>
-                        <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.fees" min="0" placeholder="e.g. 150000" />
-                      </div>
-                      <div class="form-control w-full">
-                        <label class="label"><span class="label-text text-xs font-medium">Finance Costs (£)</span></label>
-                        <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.financeCosts" min="0" placeholder="e.g. 100000" />
-                      </div>
-                      <div class="form-control w-full">
-                        <label class="label"><span class="label-text text-xs font-medium">Expected Sales Revenue (£)</span></label>
-                        <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.revenue" min="0" placeholder="e.g. 4000000" />
-                      </div>
-                      <div class="form-control w-full">
-                        <label class="label"><span class="label-text text-xs font-medium">Scenario</span></label>
-                        <select class="select select-bordered select-sm w-full" [(ngModel)]="feasibilityForm.scenario">
-                          <option value="BestCase">Best Case</option>
-                          <option value="Expected">Expected</option>
-                          <option value="WorstCase">Worst Case</option>
-                        </select>
-                      </div>
+              <!-- No-assessment empty state (show only when NO assessment and form NOT open) -->
+              <div *ngIf="!opportunity()!.feasibilityAssessment && !showFeasibilityForm()" class="flex flex-col items-center justify-center py-8 text-base-content/50">
+                <span class="material-symbols-outlined text-4xl mb-2">analytics</span>
+                <p class="text-sm font-medium">No feasibility assessment available</p>
+                <p class="text-xs mt-1 mb-4">Create a feasibility assessment to evaluate this opportunity's financial viability.</p>
+                <button class="btn btn-primary btn-sm gap-1" (click)="showFeasibilityForm.set(true)">
+                  <span class="material-symbols-outlined text-sm">add</span>
+                  Create Feasibility Assessment
+                  <span class="badge badge-ghost badge-xs ml-1">Finance Director</span>
+                </button>
+              </div>
+
+              <!-- Inline Feasibility Form (shown for both create and edit) -->
+              <div *ngIf="showFeasibilityForm()" class="card bg-base-200/30 border border-base-200" style="animation: scale-in 0.2s ease-out">
+                <div class="card-body p-4 space-y-4">
+                  <h4 class="text-sm font-semibold text-base-content">
+                    {{ editingFeasibility() ? 'Edit Feasibility Assessment' : 'New Feasibility Assessment' }}
+                    <span class="badge badge-ghost badge-xs ml-2">Finance Director</span>
+                  </h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div class="form-control w-full">
+                      <label class="label"><span class="label-text text-xs font-medium">Estimated Land Cost (£)</span></label>
+                      <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.landCost" min="0" placeholder="e.g. 500000" />
                     </div>
-
-                    <!-- Auto-calculated Summary -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-base-200">
-                      <div class="p-3 rounded-lg bg-base-200/50">
-                        <p class="text-[11px] text-base-content/50 uppercase font-medium">Total Costs</p>
-                        <p class="text-sm font-bold text-base-content">£{{ feasibilityTotalCosts() | number:'1.0-0' }}</p>
-                      </div>
-                      <div class="p-3 rounded-lg bg-base-200/50">
-                        <p class="text-[11px] text-base-content/50 uppercase font-medium">Estimated Profit</p>
-                        <p class="text-sm font-bold" [ngClass]="feasibilityProfit() >= 0 ? 'text-success' : 'text-error'">£{{ feasibilityProfit() | number:'1.0-0' }}</p>
-                      </div>
-                      <div class="p-3 rounded-lg bg-base-200/50">
-                        <p class="text-[11px] text-base-content/50 uppercase font-medium">ROI</p>
-                        <p class="text-sm font-bold" [ngClass]="feasibilityRoi() >= 0 ? 'text-success' : 'text-error'">{{ feasibilityRoi() | number:'1.1-1' }}%</p>
-                      </div>
+                    <div class="form-control w-full">
+                      <label class="label"><span class="label-text text-xs font-medium">Estimated Build Cost (£)</span></label>
+                      <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.buildCost" min="0" placeholder="e.g. 2000000" />
                     </div>
-
-                    <div class="flex justify-end gap-2 pt-2">
-                      <button class="btn btn-ghost btn-sm" (click)="cancelFeasibilityForm()">Cancel</button>
-                      <button class="btn btn-primary btn-sm" (click)="saveFeasibility()">
-                        <span class="material-symbols-outlined text-sm">save</span>
-                        Save Assessment
-                      </button>
+                    <div class="form-control w-full">
+                      <label class="label"><span class="label-text text-xs font-medium">Professional Fees (£)</span></label>
+                      <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.fees" min="0" placeholder="e.g. 150000" />
+                    </div>
+                    <div class="form-control w-full">
+                      <label class="label"><span class="label-text text-xs font-medium">Finance Costs (£)</span></label>
+                      <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.financeCosts" min="0" placeholder="e.g. 100000" />
+                    </div>
+                    <div class="form-control w-full">
+                      <label class="label"><span class="label-text text-xs font-medium">Expected Sales Revenue (£)</span></label>
+                      <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.revenue" min="0" placeholder="e.g. 4000000" />
+                    </div>
+                    <div class="form-control w-full">
+                      <label class="label"><span class="label-text text-xs font-medium">Scenario</span></label>
+                      <select class="select select-bordered select-sm w-full" [(ngModel)]="feasibilityForm.scenario">
+                        <option value="BestCase">Best Case</option>
+                        <option value="Expected">Expected</option>
+                        <option value="WorstCase">Worst Case</option>
+                      </select>
                     </div>
                   </div>
+
+                  <!-- Auto-calculated Summary -->
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-base-200">
+                    <div class="p-3 rounded-lg bg-base-200/50">
+                      <p class="text-[11px] text-base-content/50 uppercase font-medium">Total Costs</p>
+                      <p class="text-sm font-bold text-base-content">£{{ feasibilityTotalCosts() | number:'1.0-0' }}</p>
+                    </div>
+                    <div class="p-3 rounded-lg bg-base-200/50">
+                      <p class="text-[11px] text-base-content/50 uppercase font-medium">Estimated Profit</p>
+                      <p class="text-sm font-bold" [ngClass]="feasibilityProfit() >= 0 ? 'text-success' : 'text-error'">£{{ feasibilityProfit() | number:'1.0-0' }}</p>
+                    </div>
+                    <div class="p-3 rounded-lg bg-base-200/50">
+                      <p class="text-[11px] text-base-content/50 uppercase font-medium">ROI</p>
+                      <p class="text-sm font-bold" [ngClass]="feasibilityRoi() >= 0 ? 'text-success' : 'text-error'">{{ feasibilityRoi() | number:'1.1-1' }}%</p>
+                    </div>
+                  </div>
+
+                  <div class="flex justify-end gap-2 pt-2">
+                    <button class="btn btn-ghost btn-sm" (click)="cancelFeasibilityForm()">Cancel</button>
+                    <button class="btn btn-primary btn-sm" (click)="saveFeasibility()">
+                      <span class="material-symbols-outlined text-sm">save</span>
+                      {{ editingFeasibility() ? 'Update Assessment' : 'Save Assessment' }}
+                    </button>
+                  </div>
                 </div>
-              </ng-template>
+              </div>
             </div>
 
-            <!-- Activity Tab -->
+            <!-- Activity Tab (Gap 8: Real Audit Trail from existing data) -->
             <div
               *ngIf="activeTab() === 'activity'"
               id="panel-activity"
@@ -772,25 +799,62 @@ interface IActionButton {
               aria-labelledby="tab-activity">
               <app-activity-timeline [activities]="activityData()"></app-activity-timeline>
             </div>
-          </div>
-        </div>
-      </section>
 
-      <!-- Approval Requests Section (shown when requests exist) -->
-      <section *ngIf="opportunity()!.approvalRequests && opportunity()!.approvalRequests.length > 0"
-        aria-label="Approval Requests"
-        style="animation: slide-up 0.4s ease-out 0.3s backwards">
-        <div class="space-y-4">
-          <h2 class="text-base font-semibold text-base-content flex items-center gap-2">
-            <span class="material-symbols-outlined text-secondary">approval</span>
-            Approval Requests
-          </h2>
-          <app-approval-panel
-            *ngFor="let req of opportunity()!.approvalRequests"
-            [approval]="req"
-            (approved)="handleApprovalDecision($event)"
-            (rejected)="handleRejectionDecision($event)">
-          </app-approval-panel>
+            <!-- Approvals Tab (Gap 7) -->
+            <div
+              *ngIf="activeTab() === 'approvals'"
+              id="panel-approvals"
+              role="tabpanel"
+              aria-labelledby="tab-approvals"
+              style="animation: fade-in 0.3s ease-out">
+              <!-- Request Approval button -->
+              <div class="flex justify-end mb-4" *ngIf="showApprovalButton()">
+                <button class="btn btn-secondary btn-sm gap-1" (click)="showApprovalForm.set(true)">
+                  <span class="material-symbols-outlined text-sm">add</span>
+                  Request Approval
+                </button>
+              </div>
+
+              <!-- Approval form -->
+              <div *ngIf="showApprovalForm()" class="card bg-base-200/30 border border-secondary/30 mb-4" style="animation: scale-in 0.2s ease-out">
+                <div class="card-body p-5 space-y-4">
+                  <h3 class="text-base font-semibold text-base-content flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary">approval</span>
+                    Request Approval
+                  </h3>
+                  <p class="text-sm text-base-content/60">Submit this opportunity for management approval. Enter the requested investment amount.</p>
+                  <div class="form-control w-full max-w-sm">
+                    <label class="label"><span class="label-text font-medium">Requested Amount (£)</span></label>
+                    <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="approvalForm.requestedAmount" min="1" placeholder="e.g. 1500000" />
+                  </div>
+                  <div class="flex justify-end gap-2 pt-2">
+                    <button class="btn btn-ghost btn-sm" (click)="showApprovalForm.set(false)">Cancel</button>
+                    <button class="btn btn-secondary btn-sm" (click)="submitApprovalRequest()" [disabled]="approvalForm.requestedAmount <= 0">
+                      <span class="material-symbols-outlined text-sm">send</span>
+                      Submit Request
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Approval Requests List -->
+              <div *ngIf="opportunity()!.approvalRequests && opportunity()!.approvalRequests.length > 0; else noApprovals">
+                <app-approval-panel
+                  *ngFor="let req of opportunity()!.approvalRequests"
+                  [approval]="req"
+                  (approved)="handleApprovalDecision($event)"
+                  (rejected)="handleRejectionDecision($event)">
+                </app-approval-panel>
+              </div>
+              <ng-template #noApprovals>
+                <div class="flex flex-col items-center justify-center py-8 text-base-content/50">
+                  <span class="material-symbols-outlined text-4xl mb-2">approval</span>
+                  <p class="text-sm font-medium">No approval requests</p>
+                  <p class="text-xs mt-1">Request approval when the opportunity is ready for investment committee review.</p>
+                </div>
+              </ng-template>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -817,6 +881,16 @@ export class OpportunityDetailPageComponent implements OnInit {
   readonly showDocForm = signal(false);
   readonly showFeasibilityForm = signal(false);
   readonly showApprovalForm = signal(false);
+
+  /** Gap 3: Track which DD check is being edited */
+  readonly editingDdId = signal<string | null>(null);
+
+  /** Gap 4: Track which offer is being counter-offered */
+  readonly counteringOfferId = signal<string | null>(null);
+  counterAmount = 0;
+
+  /** Gap 5: Track feasibility edit mode */
+  readonly editingFeasibility = signal(false);
 
   /** Form models (simple objects for template-driven forms) */
   ddForm = { type: 'Legal', status: 'Pending', findings: '', reportDate: '' };
@@ -849,14 +923,15 @@ export class OpportunityDetailPageComponent implements OnInit {
     return (this.feasibilityProfit() / costs) * 100;
   });
 
-  /** Tab configuration */
+  /** Tab configuration — Gap 7: Added Approvals tab */
   readonly tabs: readonly { id: string; label: string; icon: string }[] = [
     { id: 'overview', label: 'Overview', icon: 'info' },
     { id: 'due-diligence', label: 'Due Diligence', icon: 'fact_check' },
     { id: 'offers', label: 'Offers', icon: 'request_quote' },
     { id: 'documents', label: 'Documents', icon: 'folder' },
     { id: 'financials', label: 'Financials', icon: 'analytics' },
-    { id: 'activity', label: 'Activity', icon: 'history' }
+    { id: 'activity', label: 'Activity', icon: 'history' },
+    { id: 'approvals', label: 'Approvals', icon: 'approval' }
   ];
 
   /**
@@ -940,28 +1015,75 @@ export class OpportunityDetailPageComponent implements OnInit {
   });
 
   /**
-   * Computed activity data for the Activity tab.
-   * In a full implementation this would come from an audit API;
-   * here we construct from available data.
+   * Gap 8: Real activity data computed from existing sub-entities.
+   * Builds a timeline from DD checks, offers, documents, and approval requests.
    */
   readonly activityData = computed<readonly IRecentActivity[]>(() => {
     const opp = this.opportunity();
     if (!opp) return [];
 
-    // Build a synthetic activity entry from the opportunity creation
-    const activities: IRecentActivity[] = [
-      {
-        id: opp.id + '-creation',
+    const activities: IRecentActivity[] = [];
+
+    // From opportunity creation
+    activities.push({
+      id: opp.id + '-creation',
+      opportunityId: opp.id,
+      opportunityName: opp.name,
+      previousStatus: '',
+      newStatus: `Created — ${opp.status}`,
+      changedBy: opp.createdBy ?? 'System',
+      changedAt: opp.createdAt
+    });
+
+    // From DD checks
+    opp.dueDiligences.forEach(dd => activities.push({
+      id: dd.id,
+      opportunityId: opp.id,
+      opportunityName: opp.name,
+      previousStatus: '',
+      newStatus: `DD: ${dd.type} — ${dd.status}`,
+      changedBy: 'Legal Team',
+      changedAt: dd.createdAt
+    }));
+
+    // From Offers
+    opp.offers.forEach(o => activities.push({
+      id: o.id,
+      opportunityId: opp.id,
+      opportunityName: opp.name,
+      previousStatus: '',
+      newStatus: `Offer: £${o.amount.toLocaleString()} — ${o.status}`,
+      changedBy: 'Acquisition Manager',
+      changedAt: o.createdAt ?? o.offerDate
+    }));
+
+    // From Documents
+    opp.documents.forEach(d => activities.push({
+      id: d.id,
+      opportunityId: opp.id,
+      opportunityName: opp.name,
+      previousStatus: '',
+      newStatus: `Document: ${d.fileName}`,
+      changedBy: 'System',
+      changedAt: d.uploadedAt
+    }));
+
+    // From Approval Requests
+    if (opp.approvalRequests) {
+      opp.approvalRequests.forEach(ar => activities.push({
+        id: ar.id,
         opportunityId: opp.id,
         opportunityName: opp.name,
         previousStatus: '',
-        newStatus: opp.status,
-        changedBy: opp.createdBy,
-        changedAt: opp.createdAt
-      }
-    ];
+        newStatus: `Approval Request: £${ar.requestedAmount?.toLocaleString() ?? '0'} — ${ar.status}`,
+        changedBy: ar.createdBy ?? 'System',
+        changedAt: ar.createdAt
+      }));
+    }
 
-    return activities;
+    // Sort by date descending
+    activities.sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime());
+    return activities.slice(0, 20);
   });
 
   ngOnInit(): void {
@@ -1115,7 +1237,21 @@ export class OpportunityDetailPageComponent implements OnInit {
     return map[scenario] ?? 1;
   }
 
-  /** Save a new due diligence check */
+  // ─── Gap 3: Edit Due Diligence Check ──────────────────────────────────
+
+  /** Populate the DD form with existing check values for editing */
+  editDdCheck(dd: any): void {
+    this.editingDdId.set(dd.id);
+    this.ddForm = {
+      type: dd.type,
+      status: dd.status,
+      findings: dd.findings ?? '',
+      reportDate: dd.reportDate?.split('T')[0] ?? ''
+    };
+    this.showDdForm.set(true);
+  }
+
+  /** Save a new or update an existing due diligence check */
   saveDueDiligence(): void {
     const opp = this.opportunity();
     if (!opp) return;
@@ -1126,31 +1262,155 @@ export class OpportunityDetailPageComponent implements OnInit {
       return;
     }
 
-    const body = {
-      opportunityId: opp.id,
-      type: this.getDdTypeInt(this.ddForm.type),
-      status: this.getDdStatusInt(this.ddForm.status),
-      findings: this.ddForm.findings.trim() || null,
-      reportDate: this.ddForm.reportDate || null
-    };
+    const ddId = this.editingDdId();
 
-    this.http.post(`/api/v1/opportunities/${opp.id}/due-diligence`, body)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.toast.showSuccess('Due diligence check added successfully.');
-          this.cancelDdForm();
-          this.loadOpportunity();
-        },
-        error: () => {
-          this.toast.showError('Failed to add due diligence check. Please try again.');
-        }
-      });
+    if (ddId) {
+      // Gap 3: PATCH existing DD check (status transition)
+      const body = {
+        newStatus: this.getDdStatusInt(this.ddForm.status),
+        findings: this.ddForm.findings.trim() || null
+      };
+
+      this.http.patch(`/api/v1/opportunities/${opp.id}/due-diligence/${ddId}/status`, body)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.toast.showSuccess('Due diligence check updated successfully.');
+            this.cancelDdForm();
+            this.loadOpportunity();
+          },
+          error: () => {
+            this.toast.showError('Failed to update due diligence check. Please try again.');
+          }
+        });
+    } else {
+      // POST new DD check
+      const body = {
+        opportunityId: opp.id,
+        type: this.getDdTypeInt(this.ddForm.type),
+        status: this.getDdStatusInt(this.ddForm.status),
+        findings: this.ddForm.findings.trim() || null,
+        reportDate: this.ddForm.reportDate || null
+      };
+
+      this.http.post(`/api/v1/opportunities/${opp.id}/due-diligence`, body)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.toast.showSuccess('Due diligence check added successfully.');
+            this.cancelDdForm();
+            this.loadOpportunity();
+          },
+          error: () => {
+            this.toast.showError('Failed to add due diligence check. Please try again.');
+          }
+        });
+    }
   }
 
   cancelDdForm(): void {
     this.showDdForm.set(false);
+    this.editingDdId.set(null);
     this.ddForm = { type: 'Legal', status: 'Pending', findings: '', reportDate: '' };
+  }
+
+  // ─── Gap 4: Counter Offer ─────────────────────────────────────────────
+
+  /** Submit a counter-offer for a given offer */
+  submitCounterOffer(offerId: string): void {
+    if (!this.counterAmount || isNaN(this.counterAmount) || this.counterAmount <= 0) {
+      this.toast.showWarning('Please enter a valid counter-offer amount.');
+      return;
+    }
+    const opp = this.opportunity();
+    if (!opp) return;
+
+    this.http.patch(`/api/v1/opportunities/${opp.id}/offers/${offerId}/status`, {
+      newStatus: 3,
+      counterOfferAmount: this.counterAmount
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.showSuccess('Counter-offer submitted successfully.');
+          this.counteringOfferId.set(null);
+          this.counterAmount = 0;
+          this.loadOpportunity();
+        },
+        error: () => {
+          this.toast.showError('Failed to submit counter-offer. Please try again.');
+        }
+      });
+  }
+
+  // ─── Gap 5: Edit Feasibility Assessment ───────────────────────────────
+
+  /** Pre-populate feasibility form with existing assessment values */
+  editFeasibility(): void {
+    const a = this.opportunity()?.feasibilityAssessment;
+    if (!a) return;
+    this.feasibilityForm = {
+      landCost: a.estimatedLandCost,
+      buildCost: a.estimatedBuildCost,
+      fees: a.professionalFees,
+      financeCosts: a.financeCosts,
+      revenue: a.expectedSalesRevenue,
+      scenario: a.scenario
+    };
+    this.editingFeasibility.set(true);
+    this.showFeasibilityForm.set(true);
+  }
+
+  // ─── Gap 6: Mark Ready for Review ─────────────────────────────────────
+
+  /** Mark the feasibility assessment as ready for investment committee review */
+  markReadyForReview(): void {
+    const opp = this.opportunity();
+    if (!opp || !opp.feasibilityAssessment) return;
+    const a = opp.feasibilityAssessment;
+
+    const body = {
+      opportunityId: opp.id,
+      estimatedLandCost: a.estimatedLandCost,
+      estimatedBuildCost: a.estimatedBuildCost,
+      professionalFees: a.professionalFees,
+      financeCosts: a.financeCosts,
+      expectedSalesRevenue: a.expectedSalesRevenue,
+      scenario: this.getScenarioInt(a.scenario),
+      isReadyForReview: true
+    };
+
+    this.http.post(`/api/v1/opportunities/${opp.id}/feasibility`, body)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.showSuccess('Marked as ready for review.');
+          this.loadOpportunity();
+        },
+        error: () => {
+          this.toast.showError('Failed to update assessment. Please try again.');
+        }
+      });
+  }
+
+  // ─── Gap 2: Delete Document ───────────────────────────────────────────
+
+  /** Delete a document from this opportunity */
+  deleteDocument(docId: string): void {
+    const opp = this.opportunity();
+    if (!opp) return;
+
+    this.http.delete(`/api/v1/opportunities/${opp.id}/documents/${docId}`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.showSuccess('Document deleted.');
+          this.loadOpportunity();
+        },
+        error: () => {
+          this.toast.showError('Failed to delete document.');
+        }
+      });
   }
 
   /** Save a new offer */
@@ -1235,7 +1495,7 @@ export class OpportunityDetailPageComponent implements OnInit {
     this.docForm = { docType: 'TitleDeed', fileName: '' };
   }
 
-  /** Save a new feasibility assessment */
+  /** Save a new feasibility assessment (or update existing in edit mode) */
   saveFeasibility(): void {
     const opp = this.opportunity();
     if (!opp) return;
@@ -1266,18 +1526,19 @@ export class OpportunityDetailPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.toast.showSuccess('Feasibility assessment created successfully.');
+          this.toast.showSuccess(this.editingFeasibility() ? 'Feasibility assessment updated successfully.' : 'Feasibility assessment created successfully.');
           this.cancelFeasibilityForm();
           this.loadOpportunity();
         },
         error: () => {
-          this.toast.showError('Failed to create feasibility assessment. Please try again.');
+          this.toast.showError('Failed to save feasibility assessment. Please try again.');
         }
       });
   }
 
   cancelFeasibilityForm(): void {
     this.showFeasibilityForm.set(false);
+    this.editingFeasibility.set(false);
     this.feasibilityForm = { landCost: 0, buildCost: 0, fees: 0, financeCosts: 0, revenue: 0, scenario: 'Expected' };
   }
 
