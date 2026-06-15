@@ -908,8 +908,8 @@ export class OpportunityDetailPageComponent implements OnInit {
   readonly showApprovalButton = computed(() => {
     const opp = this.opportunity();
     if (!opp) return false;
-    const validStatuses = [OpportunityStatus.DueDiligence, OpportunityStatus.OfferMade, OpportunityStatus.UnderContract];
-    return validStatuses.includes(opp.status) && !this.showApprovalForm();
+    // Show for all non-terminal statuses
+    return opp.status !== OpportunityStatus.Acquired && opp.status !== OpportunityStatus.Withdrawn && !this.showApprovalForm();
   });
 
   /** Computed: feasibility total costs */
@@ -1309,7 +1309,7 @@ export class OpportunityDetailPageComponent implements OnInit {
     if (!opp) return;
 
     this.http.patch(`/api/v1/opportunities/${opp.id}/offers/${offerId}/status`, {
-      newStatus: 'CounterOffered',
+      targetStatus: 'CounterOffered',
       counterOfferAmount: this.counterAmount
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -1568,7 +1568,7 @@ export class OpportunityDetailPageComponent implements OnInit {
     const opp = this.opportunity();
     if (!opp) return;
 
-    this.http.put(`/api/v1/opportunities/${opp.id}/offers/${offerId}/status`, { status: 'Accepted' })
+    this.http.patch(`/api/v1/opportunities/${opp.id}/offers/${offerId}/status`, { targetStatus: 'Accepted' })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1586,7 +1586,7 @@ export class OpportunityDetailPageComponent implements OnInit {
     const opp = this.opportunity();
     if (!opp) return;
 
-    this.http.put(`/api/v1/opportunities/${opp.id}/offers/${offerId}/status`, { status: 'Rejected' })
+    this.http.patch(`/api/v1/opportunities/${opp.id}/offers/${offerId}/status`, { targetStatus: 'Rejected' })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
