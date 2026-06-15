@@ -1,6 +1,15 @@
+using BuildEstate.Domain.Enums;
+
 namespace BuildEstate.Application.Features.LandAcquisition.Opportunities.DTOs;
 
-/// <summary>
-/// Placeholder DTO for Offer. Will be fully implemented in a later task.
-/// </summary>
-public sealed record OfferDto(Guid Id);
+public sealed record OfferDto(
+    Guid Id,
+    Guid OpportunityId,
+    decimal Amount,
+    string Currency,
+    DateTime OfferDate,
+    DateTime ValidUntil,
+    OfferStatus Status,
+    decimal? CounterOfferAmount,
+    DateTime CreatedAt
+);

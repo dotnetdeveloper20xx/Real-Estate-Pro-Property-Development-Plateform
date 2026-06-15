@@ -1546,7 +1546,7 @@ export class OpportunityDetailPageComponent implements OnInit {
       requestedAmount: this.approvalForm.requestedAmount
     };
 
-    this.http.post('/api/v1/approval-requests', body)
+    this.http.post('/api/v1/approvals', body)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1603,7 +1603,7 @@ export class OpportunityDetailPageComponent implements OnInit {
 
   /** Handle approval decision from the ApprovalPanelComponent */
   handleApprovalDecision(decision: IApprovalDecision): void {
-    this.http.put(`/api/v1/approval-requests/${decision.approvalId}/approve`, { approvalNotes: decision.notes })
+    this.http.put(`/api/v1/approvals/${decision.approvalId}/approve`, { approvalNotes: decision.notes })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1618,7 +1618,7 @@ export class OpportunityDetailPageComponent implements OnInit {
 
   /** Handle rejection decision from the ApprovalPanelComponent */
   handleRejectionDecision(decision: IRejectionDecision): void {
-    this.http.put(`/api/v1/approval-requests/${decision.approvalId}/reject`, { rejectionReason: decision.reason })
+    this.http.put(`/api/v1/approvals/${decision.approvalId}/reject`, { rejectionReason: decision.reason })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {

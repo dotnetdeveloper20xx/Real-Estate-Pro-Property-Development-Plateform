@@ -232,7 +232,7 @@ interface INavItem {
                   </div>
                 </div>
                 <div class="p-2 border-t border-base-200">
-                  <button class="btn btn-ghost btn-sm btn-block text-xs">View All Notifications</button>
+                  <button class="btn btn-ghost btn-sm btn-block text-xs" (click)="viewAllNotifications()">View All Notifications</button>
                 </div>
               </div>
             </div>
@@ -464,6 +464,11 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private readonly confirmDialog = inject(ConfirmDialogService);
+
+  viewAllNotifications(): void {
+    this.router.navigate(['/home']);
+    // TODO: Navigate to dedicated notifications page when implemented
+  }
 
   handleLogout(): void {
     this.confirmDialog.confirm({

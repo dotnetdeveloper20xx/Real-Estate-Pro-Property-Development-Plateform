@@ -21,5 +21,6 @@ public sealed record OpportunityDetailDto
     public List<DocumentDto> Documents { get; init; } = new();
     public ContractDto? Contract { get; init; }
     public FeasibilityDto? FeasibilityAssessment { get; init; }
+    public List<ApprovalRequestDto> ApprovalRequests { get; init; } = new();
     public byte[] RowVersion { get; init; } = Array.Empty<byte>();
 }

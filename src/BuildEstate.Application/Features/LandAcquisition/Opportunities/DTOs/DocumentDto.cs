@@ -1,6 +1,15 @@
+using BuildEstate.Domain.Enums;
+
 namespace BuildEstate.Application.Features.LandAcquisition.Opportunities.DTOs;
 
-/// <summary>
-/// Placeholder DTO for Document. Will be fully implemented in a later task.
-/// </summary>
-public sealed record DocumentDto(Guid Id);
+public sealed record DocumentDto(
+    Guid Id,
+    Guid OpportunityId,
+    DocumentType DocType,
+    string FileName,
+    string FilePath,
+    string ContentType,
+    long FileSizeBytes,
+    DateTime UploadedAt,
+    DateTime CreatedAt
+);

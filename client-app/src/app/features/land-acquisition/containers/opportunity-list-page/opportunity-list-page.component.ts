@@ -150,7 +150,9 @@ export class OpportunityListPageComponent implements OnInit {
 
   onPageChange(page: number): void {
     this.currentPage = page;
-    this.loadData();
+    // Client-side pagination — DataGrid handles slicing internally
+    // Do NOT re-fetch from API on page change
+    this.cdr.markForCheck();
   }
 
   onSearchChange(term: string): void {
@@ -174,7 +176,8 @@ export class OpportunityListPageComponent implements OnInit {
   onPageSizeChange(size: number): void {
     this.pageSize = size;
     this.currentPage = 1;
-    this.loadData();
+    // Client-side page size change — DataGrid handles internally
+    this.cdr.markForCheck();
   }
 
   navigateToCreate(): void {
@@ -185,8 +188,8 @@ export class OpportunityListPageComponent implements OnInit {
     this.loading = true;
 
     const params: IOpportunityQueryParams = {
-      pageNumber: this.currentPage,
-      pageSize: this.pageSize,
+      pageNumber: 1,
+      pageSize: 200, // Fetch all for client-side pagination
       search: this.searchTerm || undefined,
       status: this.statusFilter,
       sortBy: this.sortBy,

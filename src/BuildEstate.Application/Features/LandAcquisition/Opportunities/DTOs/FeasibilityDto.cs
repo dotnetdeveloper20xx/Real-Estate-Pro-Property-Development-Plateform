@@ -1,6 +1,19 @@
+using BuildEstate.Domain.Enums;
+
 namespace BuildEstate.Application.Features.LandAcquisition.Opportunities.DTOs;
 
-/// <summary>
-/// Placeholder DTO for FeasibilityAssessment. Will be fully implemented in a later task.
-/// </summary>
-public sealed record FeasibilityDto(Guid Id);
+public sealed record FeasibilityDto(
+    Guid Id,
+    Guid OpportunityId,
+    decimal EstimatedLandCost,
+    decimal EstimatedBuildCost,
+    decimal ProfessionalFees,
+    decimal FinanceCosts,
+    decimal ExpectedSalesRevenue,
+    decimal TotalCosts,
+    decimal EstimatedProfit,
+    decimal RoiPercentage,
+    FeasibilityScenario Scenario,
+    bool IsReadyForReview,
+    DateTime CreatedAt
+);
