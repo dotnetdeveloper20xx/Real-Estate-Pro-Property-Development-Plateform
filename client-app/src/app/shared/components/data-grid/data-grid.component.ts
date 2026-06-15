@@ -268,7 +268,7 @@ export interface ISortEvent {
       <!-- Pagination footer -->
       <div class="flex flex-wrap items-center justify-between px-4 py-3 border-t border-base-200/80 bg-base-100/50 gap-2" *ngIf="!loading && filteredData.length > 0">
         <span class="text-sm text-base-content/60">
-          Showing {{ startRecord }}–{{ endRecord }} of {{ filteredData.length }} records
+          Showing {{ startRecord }}–{{ endRecord }} of {{ displayTotalCount }} records
         </span>
         <div class="join">
           <button
@@ -343,7 +343,8 @@ export class DataGridComponent implements OnChanges {
 
   // ── Computed properties ─────────────────────────────────────────────────────
   get totalPages(): number {
-    return Math.max(1, Math.ceil(this.filteredData.length / this.pageSize));
+    const count = this.totalCount > 0 ? this.totalCount : this.filteredData.length;
+    return Math.max(1, Math.ceil(count / this.pageSize));
   }
 
   get startRecord(): number {
@@ -351,7 +352,12 @@ export class DataGridComponent implements OnChanges {
   }
 
   get endRecord(): number {
-    return Math.min(this.currentPage * this.pageSize, this.filteredData.length);
+    const total = this.totalCount > 0 ? this.totalCount : this.filteredData.length;
+    return Math.min(this.currentPage * this.pageSize, total);
+  }
+
+  get displayTotalCount(): number {
+    return this.totalCount > 0 ? this.totalCount : this.filteredData.length;
   }
 
   get paginatedData(): Record<string, unknown>[] {

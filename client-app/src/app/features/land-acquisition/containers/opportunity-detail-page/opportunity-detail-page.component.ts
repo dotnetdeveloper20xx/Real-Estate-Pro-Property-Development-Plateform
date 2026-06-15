@@ -20,6 +20,7 @@ import { StatusProgressComponent } from '../../components/status-progress/status
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ActivityTimelineComponent } from '../../components/activity-timeline/activity-timeline.component';
 import { ApprovalPanelComponent, IApprovalDecision, IRejectionDecision } from '../../components/approval-panel/approval-panel.component';
+import { CurrencyInputComponent } from '../../../../shared/components/currency-input/currency-input.component';
 import { OpportunityActions } from '../../store/opportunity/opportunity.actions';
 import {
   IOpportunityDetail,
@@ -67,7 +68,8 @@ interface IActionButton {
     StatusProgressComponent,
     StatusBadgeComponent,
     ActivityTimelineComponent,
-    ApprovalPanelComponent
+    ApprovalPanelComponent,
+    CurrencyInputComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -457,7 +459,7 @@ interface IActionButton {
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Amount (£)</span></label>
-                      <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="offerForm.amount" min="1" placeholder="e.g. 1200000" />
+                      <app-currency-input [(ngModel)]="offerForm.amount" placeholder="e.g. 1,200,000" ariaLabel="Offer amount"></app-currency-input>
                     </div>
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Currency</span></label>
@@ -576,15 +578,15 @@ interface IActionButton {
                       </select>
                     </div>
                     <div class="form-control w-full">
-                      <label class="label"><span class="label-text text-xs font-medium">File Name</span></label>
-                      <input type="text" class="input input-bordered input-sm w-full" [(ngModel)]="docForm.fileName" placeholder="e.g. title-deed-plot-42.pdf" />
+                      <label class="label"><span class="label-text text-xs font-medium">Choose File</span></label>
+                      <input type="file" class="file-input file-input-bordered file-input-sm w-full" (change)="onFileSelected($event)" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png" />
                     </div>
                   </div>
                   <div class="flex justify-end gap-2 pt-2">
                     <button class="btn btn-ghost btn-sm" (click)="cancelDocForm()">Cancel</button>
                     <button class="btn btn-primary btn-sm" (click)="saveDocument()">
-                      <span class="material-symbols-outlined text-sm">save</span>
-                      Save Document
+                      <span class="material-symbols-outlined text-sm">upload_file</span>
+                      Upload Document
                     </button>
                   </div>
                 </div>
@@ -736,23 +738,23 @@ interface IActionButton {
                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Estimated Land Cost (£)</span></label>
-                      <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.landCost" min="0" placeholder="e.g. 500000" />
+                      <app-currency-input [(ngModel)]="feasibilityForm.landCost" placeholder="e.g. 500,000" ariaLabel="Estimated land cost"></app-currency-input>
                     </div>
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Estimated Build Cost (£)</span></label>
-                      <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.buildCost" min="0" placeholder="e.g. 2000000" />
+                      <app-currency-input [(ngModel)]="feasibilityForm.buildCost" placeholder="e.g. 2,000,000" ariaLabel="Estimated build cost"></app-currency-input>
                     </div>
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Professional Fees (£)</span></label>
-                      <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.fees" min="0" placeholder="e.g. 150000" />
+                      <app-currency-input [(ngModel)]="feasibilityForm.fees" placeholder="e.g. 150,000" ariaLabel="Professional fees"></app-currency-input>
                     </div>
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Finance Costs (£)</span></label>
-                      <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.financeCosts" min="0" placeholder="e.g. 100000" />
+                      <app-currency-input [(ngModel)]="feasibilityForm.financeCosts" placeholder="e.g. 100,000" ariaLabel="Finance costs"></app-currency-input>
                     </div>
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Expected Sales Revenue (£)</span></label>
-                      <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="feasibilityForm.revenue" min="0" placeholder="e.g. 4000000" />
+                      <app-currency-input [(ngModel)]="feasibilityForm.revenue" placeholder="e.g. 4,000,000" ariaLabel="Expected sales revenue"></app-currency-input>
                     </div>
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Scenario</span></label>
@@ -825,7 +827,7 @@ interface IActionButton {
                   <p class="text-sm text-base-content/60">Submit this opportunity for management approval. Enter the requested investment amount.</p>
                   <div class="form-control w-full max-w-sm">
                     <label class="label"><span class="label-text font-medium">Requested Amount (£)</span></label>
-                    <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="approvalForm.requestedAmount" min="1" placeholder="e.g. 1500000" />
+                    <app-currency-input [(ngModel)]="approvalForm.requestedAmount" placeholder="e.g. 1,500,000" ariaLabel="Requested approval amount"></app-currency-input>
                   </div>
                   <div class="flex justify-end gap-2 pt-2">
                     <button class="btn btn-ghost btn-sm" (click)="showApprovalForm.set(false)">Cancel</button>
@@ -899,11 +901,15 @@ export class OpportunityDetailPageComponent implements OnInit {
   feasibilityForm = { landCost: 0, buildCost: 0, fees: 0, financeCosts: 0, revenue: 0, scenario: 'Expected' };
   approvalForm = { requestedAmount: 0 };
 
-  /** Computed: show approval button when status is OfferMade or UnderContract */
+  /** Selected file for document upload */
+  selectedFile: File | null = null;
+
+  /** Computed: show approval button when status is DueDiligence, OfferMade, or UnderContract */
   readonly showApprovalButton = computed(() => {
     const opp = this.opportunity();
     if (!opp) return false;
-    return (opp.status === OpportunityStatus.OfferMade || opp.status === OpportunityStatus.UnderContract) && !this.showApprovalForm();
+    const validStatuses = [OpportunityStatus.DueDiligence, OpportunityStatus.OfferMade, OpportunityStatus.UnderContract];
+    return validStatuses.includes(opp.status) && !this.showApprovalForm();
   });
 
   /** Computed: feasibility total costs */
@@ -1216,27 +1222,6 @@ export class OpportunityDetailPageComponent implements OnInit {
 
   // ─── CRUD Form Methods ───────────────────────────────────────────────
 
-  /** Map enum string values to integer values for the API */
-  private getDdTypeInt(type: string): number {
-    const map: Record<string, number> = { Legal: 0, Environmental: 1, Planning: 2, Utilities: 3, Valuation: 4 };
-    return map[type] ?? 0;
-  }
-
-  private getDdStatusInt(status: string): number {
-    const map: Record<string, number> = { Pending: 0, InProgress: 1, Completed: 2, Failed: 3 };
-    return map[status] ?? 0;
-  }
-
-  private getDocTypeInt(docType: string): number {
-    const map: Record<string, number> = { TitleDeed: 0, SearchReport: 1, LegalDocument: 2, EnvironmentalReport: 3, PlanningDocument: 4, Contract: 5, Valuation: 6, Correspondence: 7 };
-    return map[docType] ?? 0;
-  }
-
-  private getScenarioInt(scenario: string): number {
-    const map: Record<string, number> = { BestCase: 0, Expected: 1, WorstCase: 2 };
-    return map[scenario] ?? 1;
-  }
-
   // ─── Gap 3: Edit Due Diligence Check ──────────────────────────────────
 
   /** Populate the DD form with existing check values for editing */
@@ -1267,7 +1252,7 @@ export class OpportunityDetailPageComponent implements OnInit {
     if (ddId) {
       // Gap 3: PATCH existing DD check (status transition)
       const body = {
-        newStatus: this.getDdStatusInt(this.ddForm.status),
+        targetStatus: this.ddForm.status,
         findings: this.ddForm.findings.trim() || null
       };
 
@@ -1284,13 +1269,11 @@ export class OpportunityDetailPageComponent implements OnInit {
           }
         });
     } else {
-      // POST new DD check
+      // POST new DD check — send string enum names (JsonStringEnumConverter is active)
       const body = {
         opportunityId: opp.id,
-        type: this.getDdTypeInt(this.ddForm.type),
-        status: this.getDdStatusInt(this.ddForm.status),
-        findings: this.ddForm.findings.trim() || null,
-        reportDate: this.ddForm.reportDate || null
+        type: this.ddForm.type,
+        findings: this.ddForm.findings.trim() || null
       };
 
       this.http.post(`/api/v1/opportunities/${opp.id}/due-diligence`, body)
@@ -1326,7 +1309,7 @@ export class OpportunityDetailPageComponent implements OnInit {
     if (!opp) return;
 
     this.http.patch(`/api/v1/opportunities/${opp.id}/offers/${offerId}/status`, {
-      newStatus: 3,
+      newStatus: 'CounterOffered',
       counterOfferAmount: this.counterAmount
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -1376,7 +1359,7 @@ export class OpportunityDetailPageComponent implements OnInit {
       professionalFees: a.professionalFees,
       financeCosts: a.financeCosts,
       expectedSalesRevenue: a.expectedSalesRevenue,
-      scenario: this.getScenarioInt(a.scenario),
+      scenario: a.scenario,
       isReadyForReview: true
     };
 
@@ -1457,26 +1440,21 @@ export class OpportunityDetailPageComponent implements OnInit {
     this.offerForm = { amount: 0, validUntil: '' };
   }
 
-  /** Save a new document */
+  /** Save a new document using multipart form data */
   saveDocument(): void {
     const opp = this.opportunity();
     if (!opp) return;
 
-    if (!this.docForm.fileName.trim()) {
-      this.toast.showWarning('Please enter a file name.');
+    if (!this.selectedFile) {
+      this.toast.showWarning('Please select a file to upload.');
       return;
     }
 
-    const body = {
-      opportunityId: opp.id,
-      docType: this.getDocTypeInt(this.docForm.docType),
-      fileName: this.docForm.fileName.trim(),
-      filePath: '/documents/demo/' + this.docForm.fileName.trim(),
-      contentType: 'application/pdf',
-      fileSizeBytes: Math.floor(Math.random() * 4500000) + 500000
-    };
+    const formData = new FormData();
+    formData.append('file', this.selectedFile);
+    formData.append('docType', this.docForm.docType);
 
-    this.http.post(`/api/v1/opportunities/${opp.id}/documents`, body)
+    this.http.post(`/api/v1/opportunities/${opp.id}/documents`, formData)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1493,6 +1471,16 @@ export class OpportunityDetailPageComponent implements OnInit {
   cancelDocForm(): void {
     this.showDocForm.set(false);
     this.docForm = { docType: 'TitleDeed', fileName: '' };
+    this.selectedFile = null;
+  }
+
+  /** Handle file selection from input */
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedFile = input.files?.[0] ?? null;
+    if (this.selectedFile) {
+      this.docForm.fileName = this.selectedFile.name;
+    }
   }
 
   /** Save a new feasibility assessment (or update existing in edit mode) */
@@ -1519,7 +1507,8 @@ export class OpportunityDetailPageComponent implements OnInit {
       totalCosts,
       estimatedProfit: profit,
       roiPercentage: roi,
-      scenario: this.getScenarioInt(this.feasibilityForm.scenario)
+      scenario: this.feasibilityForm.scenario,
+      isReadyForReview: false
     };
 
     this.http.post(`/api/v1/opportunities/${opp.id}/feasibility`, body)

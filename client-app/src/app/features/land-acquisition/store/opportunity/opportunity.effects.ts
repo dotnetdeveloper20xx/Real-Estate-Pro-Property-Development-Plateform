@@ -126,7 +126,7 @@ export class OpportunityEffects {
       ofType(OpportunityActions.transitionStatus),
       exhaustMap(({ id, targetStatus, reason }) =>
         this.opportunityService
-          .transitionStatus(id, { newStatus: targetStatus, withdrawalReason: reason })
+          .transitionStatus(id, { targetStatus, withdrawalReason: reason })
           .pipe(
             map((response) => {
               const transitioned = response.data!;

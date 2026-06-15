@@ -23,7 +23,8 @@
     "baseUrl": "./",
     "paths": {
       "@features/*": ["src/app/features/*"],
-      "@core/*": ["src/app/core/*"]
+      "@core/*": ["src/app/core/*"],
+      "@shared/*": ["src/app/shared/*"]
     }
   },
   "include": ["src/**/*.ts"],

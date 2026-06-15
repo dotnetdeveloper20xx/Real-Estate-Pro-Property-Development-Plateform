@@ -24,7 +24,7 @@ export interface IOpportunityQueryParams {
 
 /** Payload for transitioning an opportunity to a new status. */
 export interface ITransitionOpportunityStatus {
-  readonly newStatus: OpportunityStatus;
+  readonly targetStatus: OpportunityStatus;
   readonly withdrawalReason?: string | null;
 }
 

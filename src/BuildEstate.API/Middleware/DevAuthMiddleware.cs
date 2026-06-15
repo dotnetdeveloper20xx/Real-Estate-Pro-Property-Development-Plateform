@@ -23,10 +23,13 @@ public class DevAuthMiddleware
                 new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "john.mitchell@buildestate.co.uk"),
                 new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Email, "john.mitchell@buildestate.co.uk"),
                 new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "AcquisitionManager"),
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "LegalComplianceOfficer"),
                 new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "PlanningManager"),
-                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "LegalOfficer"),
                 new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "FinanceDirector"),
-                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "SuperAdmin")
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "SuperAdmin"),
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "AdminSupport"),
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "ValuationAnalyst"),
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "ProjectManager")
             };
             var identity = new System.Security.Claims.ClaimsIdentity(claims, "DevAuth");
             context.User = new System.Security.Claims.ClaimsPrincipal(identity);

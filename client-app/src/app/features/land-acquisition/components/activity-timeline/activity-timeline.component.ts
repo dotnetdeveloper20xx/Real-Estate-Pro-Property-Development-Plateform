@@ -48,9 +48,14 @@ import { IRecentActivity } from '../../models/dashboard.model';
               </span>
               <span class="text-xs text-base-content/70">
                 <span class="font-medium">{{ activity.changedBy }}</span>
-                changed status from
-                <span class="badge badge-xs badge-ghost">{{ formatStatus(activity.previousStatus) }}</span>
-                to
+                <ng-container *ngIf="activity.previousStatus">
+                  changed status from
+                  <span class="badge badge-xs badge-ghost">{{ formatStatus(activity.previousStatus) }}</span>
+                  to
+                </ng-container>
+                <ng-container *ngIf="!activity.previousStatus">
+                  &mdash;
+                </ng-container>
                 <span class="badge badge-xs badge-primary">{{ formatStatus(activity.newStatus) }}</span>
               </span>
             </div>

@@ -204,11 +204,38 @@ interface INavItem {
           </div>
 
           <div class="flex items-center gap-2">
-            <!-- Notifications with badge -->
-            <button class="btn btn-ghost btn-circle btn-sm relative" aria-label="Notifications">
-              <span class="material-symbols-outlined text-xl">notifications</span>
-              <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
-            </button>
+            <!-- Notifications Dropdown -->
+            <div class="dropdown dropdown-end">
+              <button tabindex="0" class="btn btn-ghost btn-circle btn-sm relative" aria-label="Notifications">
+                <span class="material-symbols-outlined text-xl">notifications</span>
+                <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
+              </button>
+              <div tabindex="0" class="dropdown-content bg-base-100 rounded-xl z-50 w-80 shadow-xl border border-base-200 mt-2">
+                <div class="p-3 border-b border-base-200">
+                  <h3 class="text-sm font-semibold">Notifications</h3>
+                </div>
+                <div class="max-h-64 overflow-y-auto">
+                  <div class="p-3 hover:bg-base-200/50 border-b border-base-200/50 cursor-pointer">
+                    <p class="text-sm font-medium">New offer received</p>
+                    <p class="text-xs text-base-content/50">Greenwich Site — £4.8M offer submitted</p>
+                    <p class="text-xs text-base-content/40 mt-1">2 hours ago</p>
+                  </div>
+                  <div class="p-3 hover:bg-base-200/50 border-b border-base-200/50 cursor-pointer">
+                    <p class="text-sm font-medium">DD check completed</p>
+                    <p class="text-xs text-base-content/50">Environmental report ready for Battersea site</p>
+                    <p class="text-xs text-base-content/40 mt-1">5 hours ago</p>
+                  </div>
+                  <div class="p-3 hover:bg-base-200/50 cursor-pointer">
+                    <p class="text-sm font-medium">Approval required</p>
+                    <p class="text-xs text-base-content/50">Investment committee review pending for £2.1M acquisition</p>
+                    <p class="text-xs text-base-content/40 mt-1">1 day ago</p>
+                  </div>
+                </div>
+                <div class="p-2 border-t border-base-200">
+                  <button class="btn btn-ghost btn-sm btn-block text-xs">View All Notifications</button>
+                </div>
+              </div>
+            </div>
 
             <!-- User Menu -->
             <div class="dropdown dropdown-end">
