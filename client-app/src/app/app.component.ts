@@ -5,6 +5,8 @@ import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { ConfirmDialogService } from './shared/services/confirm-dialog.service';
 import { ToastContainerComponent } from './shared/components/toast-container/toast-container.component';
+import { AuthService } from './core/services/auth.service';
+import { HasRoleDirective } from './shared/directives/has-role.directive';
 
 /**
  * Navigation item with optional children for hierarchical sidebar.
@@ -39,7 +41,7 @@ interface INavItem {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent, HasRoleDirective],
   template: `
     <div class="flex h-screen bg-base-200">
       <!-- Sidebar -->
@@ -178,6 +180,50 @@ interface INavItem {
               </li>
             </ng-container>
           </ul>
+
+          <!-- Administration Section (SuperAdmin only) -->
+          <ng-container *appHasRole="'SuperAdmin'">
+            <div class="border-t border-neutral-focus/20 my-2 mx-3"></div>
+            <div
+              class="text-[10px] uppercase tracking-widest text-neutral-content/40 px-4 py-1 mb-1"
+              [class.hidden]="sidebarCollapsed">
+              Administration
+            </div>
+            <ul class="menu gap-0.5 px-2">
+              <li>
+                <a
+                  routerLink="/admin/users"
+                  routerLinkActive="bg-primary text-primary-content"
+                  class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium
+                         hover:bg-neutral-focus/50 transition-colors"
+                  [attr.title]="sidebarCollapsed ? 'Users' : null">
+                  <span class="material-symbols-outlined text-xl">people</span>
+                  <span
+                    class="whitespace-nowrap overflow-hidden transition-opacity duration-200"
+                    [class.opacity-0]="sidebarCollapsed"
+                    [class.hidden]="sidebarCollapsed">
+                    Users
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a
+                  routerLink="/admin/roles"
+                  routerLinkActive="bg-primary text-primary-content"
+                  class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium
+                         hover:bg-neutral-focus/50 transition-colors"
+                  [attr.title]="sidebarCollapsed ? 'Roles' : null">
+                  <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
+                  <span
+                    class="whitespace-nowrap overflow-hidden transition-opacity duration-200"
+                    [class.opacity-0]="sidebarCollapsed"
+                    [class.hidden]="sidebarCollapsed">
+                    Roles
+                  </span>
+                </a>
+              </li>
+            </ul>
+          </ng-container>
         </nav>
 
         <!-- Collapse Toggle -->
@@ -242,10 +288,10 @@ interface INavItem {
               <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-2 pl-2 pr-3">
                 <div class="avatar placeholder">
                   <div class="bg-primary text-primary-content rounded-full w-8 ring-2 ring-primary/20 ring-offset-2 ring-offset-base-100">
-                    <span class="text-xs font-bold">JM</span>
+                    <span class="text-xs font-bold">{{ userInitials }}</span>
                   </div>
                 </div>
-                <span class="text-sm font-medium text-base-content hidden sm:inline">John Mitchell</span>
+                <span class="text-sm font-medium text-base-content hidden sm:inline">{{ userName }}</span>
                 <span class="material-symbols-outlined text-xs text-base-content/50">expand_more</span>
               </div>
               <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-xl z-50 w-56 p-2 shadow-xl border border-base-200 mt-2">
@@ -433,8 +479,11 @@ export class AppComponent implements OnInit, OnDestroy {
       }
       return item.label;
     }
+    if (this.currentUrl.startsWith('/admin/users')) return 'User Management';
+    if (this.currentUrl.startsWith('/admin/roles')) return 'Role Management';
     if (this.currentUrl.startsWith('/profile')) return 'Profile';
     if (this.currentUrl.startsWith('/settings')) return 'Settings';
+    if (this.currentUrl.startsWith('/login')) return 'Sign In';
     return 'Dashboard';
   }
 
@@ -464,10 +513,29 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly authService = inject(AuthService);
 
   viewAllNotifications(): void {
     this.router.navigate(['/home']);
     // TODO: Navigate to dedicated notifications page when implemented
+  }
+
+  /** Get displayed user initials from auth service or fallback. */
+  get userInitials(): string {
+    const user = this.authService.getCurrentUser();
+    if (user) {
+      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    }
+    return 'JM';
+  }
+
+  /** Get displayed user name from auth service or fallback. */
+  get userName(): string {
+    const user = this.authService.getCurrentUser();
+    if (user) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return 'John Mitchell';
   }
 
   handleLogout(): void {
@@ -481,7 +549,7 @@ export class AppComponent implements OnInit, OnDestroy {
       iconClass: 'text-error'
     }).then(confirmed => {
       if (confirmed) {
-        this.router.navigate(['/']);
+        this.authService.logout();
       }
     });
   }

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
 
 /**
  * Root application routes.
@@ -7,12 +8,21 @@ import { Routes } from '@angular/router';
  * The router will only download the feature code when the user navigates to that path.
  *
  * Profile and Settings are top-level utility pages accessible from the user dropdown menu.
+ * Admin routes are protected by authGuard with SuperAdmin role requirement.
  */
 export const appRoutes: Routes = [
   {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full'
+  },
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/auth/login.component').then(
+        m => m.LoginComponent
+      ),
+    data: { breadcrumb: 'Login', icon: 'login' }
   },
   {
     path: 'home',
@@ -117,6 +127,15 @@ export const appRoutes: Routes = [
         m => m.reportsRoutes
       ),
     data: { breadcrumb: 'Reports', icon: 'analytics' }
+  },
+  {
+    path: 'admin',
+    loadChildren: () =>
+      import('./features/admin/admin.routes').then(
+        m => m.adminRoutes
+      ),
+    canActivate: [authGuard],
+    data: { breadcrumb: 'Administration', icon: 'admin_panel_settings', roles: ['SuperAdmin'] }
   },
   {
     path: '**',

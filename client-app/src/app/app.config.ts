@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, APP_INITIALIZER, inject } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideStore } from '@ngrx/store';
@@ -8,8 +8,19 @@ import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { appRoutes } from './app.routes';
 import { httpErrorInterceptor } from './core/interceptors';
 import { responseWrapperInterceptor } from './core/interceptors/response-wrapper.interceptor';
+import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { AuthService } from './core/services/auth.service';
 import { applicationReducer, ApplicationEffects } from './features/planning-approvals/store/application';
 import { dashboardReducer, DashboardEffects } from './features/planning-approvals/store/dashboard';
+
+/**
+ * App initializer that loads the current user profile on startup.
+ * If a token exists in localStorage, fetches user from /auth/me to restore session.
+ */
+function initializeAuth(): () => void {
+  const authService = inject(AuthService);
+  return () => authService.loadUserProfile();
+}
 
 /**
  * Root application configuration for the BuildEstate Pro SPA.
@@ -17,7 +28,8 @@ import { dashboardReducer, DashboardEffects } from './features/planning-approval
  * Registers:
  * - Zone-based change detection (event coalescing for performance)
  * - Router with component input binding for route params
- * - HTTP client with error interceptor
+ * - HTTP client with auth, response wrapper, and error interceptors
+ * - App initializer for auth session restoration
  * - NgRx root store with feature state slices
  * - NgRx effects for side-effect management
  * - NgRx DevTools (development only)
@@ -26,7 +38,12 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(appRoutes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([responseWrapperInterceptor, httpErrorInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, responseWrapperInterceptor, httpErrorInterceptor])),
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeAuth,
+      multi: true
+    },
     provideStore({
       planningApplications: applicationReducer,
       planningDashboard: dashboardReducer
