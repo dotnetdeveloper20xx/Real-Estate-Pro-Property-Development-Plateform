@@ -14,7 +14,7 @@ The platform is structured around **14 interconnected modules** that cover every
 
 | # | Module | Purpose |
 |---|--------|---------|
-| 1 | Land Acquisition | Find, evaluate, and secure land opportunities |
+| 1 | [**Land Acquisition**](developer-notes/land-acquisition-module/land-module.md) | Find, evaluate, and secure land opportunities |
 | 2 | Planning & Approvals | Manage planning applications and council approvals |
 | 3 | Legal & Compliance | Contracts, land registry, title deeds, audit trail |
 | 4 | Project Management | Planning, milestones, timelines, tasks, risks |
@@ -317,7 +317,7 @@ ng serve
 
 The platform is being built incrementally, starting with Module 1 (Land Acquisition) as the foundation:
 
-1. ✅ **Land Acquisition** — Foundation module (current)
+1. ✅ [**Land Acquisition**](developer-notes/land-acquisition-module/land-module.md) — Foundation module (current)
 2. ⬜ Planning & Approvals
 3. ⬜ Legal & Compliance
 4. ⬜ Project Management
