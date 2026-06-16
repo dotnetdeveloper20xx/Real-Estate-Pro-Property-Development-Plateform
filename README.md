@@ -29,6 +29,12 @@ The platform is structured around **14 interconnected modules** that cover every
 | 13 | Documents & Knowledge | Document repository, version control, templates |
 | 14 | Reports & Dashboards | Executive dashboards, financial/sales/construction reports |
 
+### Platform Foundation Module
+
+| Module | Purpose |
+|--------|---------|
+| [**User Management**](developer-notes/user-management-feature/README.md) | Authentication, authorization, RBAC (13 roles), session management, audit logging, dark theme |
+
 The platform provides a centralized dashboard showing portfolio-level metrics: total projects (12), total units (1,248), project value (£520.6M), with real-time visibility into project progress, budget vs actual, construction progress, sales status, and upcoming milestones.
 
 **Platform Foundation** includes role-based access control, workflow & approvals engine, document management, notifications, audit logs, integrations (email, APIs), and security & data protection.
@@ -56,7 +62,7 @@ Each of the 14 modules provides comprehensive capabilities:
 - **Documents & Knowledge** — Centralized repository (2,500 documents) with version control, approval workflows, and search
 - **Reports & Dashboards** — Real-time dashboards, custom report builder with £520.6M total value and £68.4M profit tracking
 
-**Cross-Cutting Capabilities:** Role-based access control, audit logs & activity tracking, notifications & alerts, workflow & approvals, data security & backups, multi-currency & multi-language, mobile & cloud ready.
+**Cross-Cutting Capabilities:** [Role-based access control (13 roles, full RBAC with permission matrix)](developer-notes/user-management-feature/README.md), audit logs & activity tracking, notifications & alerts, workflow & approvals, data security & backups, multi-currency & multi-language, mobile & cloud ready.
 
 **Built for International Standards:** ISO 9001, ISO 27001, GDPR, IFRS, AML, RICS, CSCS, Local Government Compliance.
 
@@ -331,6 +337,14 @@ The platform is being built incrementally, starting with Module 1 (Land Acquisit
 12. ⬜ Rental Management
 13. ⬜ Documents & Knowledge
 14. ⬜ Reports & Dashboards
+
+### Platform Foundation (Cross-Cutting)
+
+| Module | Status | Details |
+|--------|--------|---------|
+| ✅ [**User Management**](developer-notes/user-management-feature/README.md) | Complete | JWT auth, 13 RBAC roles, session management, audit logging, dark theme, 891 backend tests |
+
+![User Management Feature](developer-notes/user-management-feature/user-management-design-pages.png)
 
 ---
 
