@@ -1,51 +1,52 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { map, take } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
-import { ToastService } from '../services/toast.service';
+import { selectIsAuthenticated } from '../store/auth';
 
 /**
  * Route guard that protects authenticated-only routes.
  *
  * Behavior:
  * - In dev mode (no explicit login): allows all access (DevAuthMiddleware handles it)
- * - In authenticated mode: checks for valid token
- * - Supports role-based restrictions via route data: { roles: ['SuperAdmin'] }
- * - Shows "Access denied" toast and redirects to home if role check fails
+ * - In authenticated mode: checks NgRx store for valid authentication state
+ * - Falls back to checking for token in localStorage for initial page load
+ * - Redirects to /login if not authenticated
  *
  * Usage:
  * ```typescript
  * {
- *   path: 'admin/users',
+ *   path: 'home',
  *   canActivate: [authGuard],
- *   data: { roles: ['SuperAdmin'] }
+ *   component: HomeComponent
  * }
  * ```
  */
-export const authGuard: CanActivateFn = (route) => {
+export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  const toast = inject(ToastService);
+  const store = inject(Store);
 
   // In dev mode, allow all access (DevAuthMiddleware handles auth on backend)
   if (authService.isDevMode) {
     return true;
   }
 
-  // Check authentication
-  if (!authService.isAuthenticated()) {
-    router.navigate(['/login']);
-    return false;
+  // Check if a token exists in storage (covers app init before store is hydrated)
+  if (authService.getAccessToken()) {
+    return true;
   }
 
-  // Check role-based access if specified in route data
-  const requiredRoles = route.data?.['roles'] as string[] | undefined;
-  if (requiredRoles && requiredRoles.length > 0) {
-    if (!authService.hasAnyRole(requiredRoles)) {
-      toast.showError('Access denied. You do not have the required permissions.');
-      router.navigate(['/home']);
+  // Check NgRx store authentication state
+  return store.select(selectIsAuthenticated).pipe(
+    take(1),
+    map((isAuthenticated) => {
+      if (isAuthenticated) {
+        return true;
+      }
+      router.navigate(['/login']);
       return false;
-    }
-  }
-
-  return true;
+    })
+  );
 };

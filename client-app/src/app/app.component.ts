@@ -1,27 +1,25 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
+import { Store } from '@ngrx/store';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { ConfirmDialogService } from './shared/services/confirm-dialog.service';
 import { ToastContainerComponent } from './shared/components/toast-container/toast-container.component';
 import { AuthService } from './core/services/auth.service';
 import { HasRoleDirective } from './shared/directives/has-role.directive';
+import { selectUserRoles } from './core/store/auth/auth.selectors';
+import { NAV_ITEMS, ADMIN_NAV_ITEMS, getVisibleNavItems, INavItem as INavItemConfig } from './core/navigation/nav-items';
 
 /**
  * Navigation item with optional children for hierarchical sidebar.
+ * (Local interface kept for template type-checking — compatible with nav-items.ts INavItem)
  */
-interface INavChild {
-  readonly label: string;
-  readonly routerLink: string;
-  readonly icon?: string;
-}
-
 interface INavItem {
   readonly label: string;
   readonly routerLink: string;
   readonly icon: string;
-  readonly children?: INavChild[];
+  readonly children?: { readonly label: string; readonly routerLink: string; readonly icon?: string }[];
   readonly section?: 'implemented' | 'placeholder';
 }
 
@@ -190,35 +188,19 @@ interface INavItem {
               Administration
             </div>
             <ul class="menu gap-0.5 px-2">
-              <li>
+              <li *ngFor="let item of adminNavItems">
                 <a
-                  routerLink="/admin/users"
+                  [routerLink]="item.routerLink"
                   routerLinkActive="bg-primary text-primary-content"
                   class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium
                          hover:bg-neutral-focus/50 transition-colors"
-                  [attr.title]="sidebarCollapsed ? 'Users' : null">
-                  <span class="material-symbols-outlined text-xl">people</span>
+                  [attr.title]="sidebarCollapsed ? item.label : null">
+                  <span class="material-symbols-outlined text-xl">{{ item.icon }}</span>
                   <span
                     class="whitespace-nowrap overflow-hidden transition-opacity duration-200"
                     [class.opacity-0]="sidebarCollapsed"
                     [class.hidden]="sidebarCollapsed">
-                    Users
-                  </span>
-                </a>
-              </li>
-              <li>
-                <a
-                  routerLink="/admin/roles"
-                  routerLinkActive="bg-primary text-primary-content"
-                  class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium
-                         hover:bg-neutral-focus/50 transition-colors"
-                  [attr.title]="sidebarCollapsed ? 'Roles' : null">
-                  <span class="material-symbols-outlined text-xl">admin_panel_settings</span>
-                  <span
-                    class="whitespace-nowrap overflow-hidden transition-opacity duration-200"
-                    [class.opacity-0]="sidebarCollapsed"
-                    [class.hidden]="sidebarCollapsed">
-                    Roles
+                    {{ item.label }}
                   </span>
                 </a>
               </li>
@@ -336,124 +318,30 @@ export class AppComponent implements OnInit, OnDestroy {
   expandedModules: Set<string> = new Set();
 
   private routerSub: Subscription | null = null;
+  private rolesSub: Subscription | null = null;
   private currentUrl = '';
+  private readonly store = inject(Store);
 
-  /** Implemented modules with full sub-navigation */
-  readonly implementedModules: INavItem[] = [
-    {
-      label: 'Land Acquisition',
-      routerLink: '/land-acquisition',
-      icon: 'terrain',
-      section: 'implemented',
-      children: [
-        { label: 'Dashboard', routerLink: '/land-acquisition/dashboard', icon: 'dashboard' },
-        { label: 'Pipeline', routerLink: '/land-acquisition/pipeline', icon: 'view_kanban' },
-        { label: 'Opportunities', routerLink: '/land-acquisition/opportunities', icon: 'list' },
-        { label: 'New Opportunity', routerLink: '/land-acquisition/opportunities/new', icon: 'add_circle' }
-      ]
-    },
-    {
-      label: 'Planning & Approvals',
-      routerLink: '/planning-approvals',
-      icon: 'assignment',
-      section: 'implemented',
-      children: [
-        { label: 'Dashboard', routerLink: '/planning-approvals/dashboard', icon: 'dashboard' },
-        { label: 'Applications', routerLink: '/planning-approvals/applications', icon: 'list' },
-        { label: 'Pipeline', routerLink: '/planning-approvals/pipeline', icon: 'view_kanban' },
-        { label: 'New Application', routerLink: '/planning-approvals/applications/create', icon: 'add_circle' }
-      ]
-    },
-    {
-      label: 'Legal & Compliance',
-      routerLink: '/legal-compliance',
-      icon: 'gavel',
-      section: 'implemented',
-      children: [
-        { label: 'Dashboard', routerLink: '/legal-compliance/dashboard', icon: 'dashboard' },
-        { label: 'Cases', routerLink: '/legal-compliance/cases', icon: 'work' },
-        { label: 'New Case', routerLink: '/legal-compliance/cases/create', icon: 'add_circle' },
-        { label: 'Contracts', routerLink: '/legal-compliance/contracts', icon: 'description' },
-        { label: 'Compliance', routerLink: '/legal-compliance/compliance/checklist', icon: 'verified' },
-        { label: 'Insurance', routerLink: '/legal-compliance/insurance', icon: 'shield' },
-        { label: 'Audit Records', routerLink: '/legal-compliance/audit-records', icon: 'history' }
-      ]
-    }
-  ];
+  /** Visible implemented modules filtered by role (dynamically updated) */
+  implementedModules: INavItem[] = [];
 
-  /** Placeholder modules — routes exist but no deep sub-pages yet */
-  readonly placeholderModules: INavItem[] = [
-    {
-      label: 'Project Management',
-      routerLink: '/project-management',
-      icon: 'engineering',
-      section: 'placeholder',
-      children: [
-        { label: 'Dashboard', routerLink: '/project-management', icon: 'dashboard' }
-      ]
-    },
-    {
-      label: 'Construction',
-      routerLink: '/construction',
-      icon: 'construction',
-      section: 'placeholder',
-      children: [
-        { label: 'Dashboard', routerLink: '/construction', icon: 'dashboard' }
-      ]
-    },
-    {
-      label: 'Finance & Budget',
-      routerLink: '/finance',
-      icon: 'account_balance',
-      section: 'placeholder',
-      children: [
-        { label: 'Dashboard', routerLink: '/finance', icon: 'dashboard' }
-      ]
-    },
-    {
-      label: 'Property Units',
-      routerLink: '/property-units',
-      icon: 'apartment',
-      section: 'placeholder',
-      children: [
-        { label: 'Dashboard', routerLink: '/property-units', icon: 'dashboard' }
-      ]
-    },
-    {
-      label: 'Sales & Marketing',
-      routerLink: '/sales',
-      icon: 'storefront',
-      section: 'placeholder',
-      children: [
-        { label: 'Dashboard', routerLink: '/sales', icon: 'dashboard' }
-      ]
-    },
-    {
-      label: 'Documents',
-      routerLink: '/documents',
-      icon: 'folder_open',
-      section: 'placeholder',
-      children: [
-        { label: 'Dashboard', routerLink: '/documents', icon: 'dashboard' }
-      ]
-    },
-    {
-      label: 'Reports',
-      routerLink: '/reports',
-      icon: 'analytics',
-      section: 'placeholder',
-      children: [
-        { label: 'Dashboard', routerLink: '/reports', icon: 'dashboard' }
-      ]
-    }
-  ];
+  /** Visible placeholder modules filtered by role (dynamically updated) */
+  placeholderModules: INavItem[] = [];
+
+  /** Administration nav items (SuperAdmin only, rendered via *appHasRole) */
+  adminNavItems: INavItemConfig[] = [];
 
   constructor(private readonly router: Router) {}
 
   ngOnInit(): void {
     // Set initial URL and expand active module
     this.currentUrl = this.router.url;
-    this.expandActiveModule();
+
+    // Subscribe to role changes from NgRx store for dynamic navigation filtering
+    this.rolesSub = this.store.select(selectUserRoles).subscribe((roles) => {
+      this.updateNavigationForRoles(roles);
+      this.expandActiveModule();
+    });
 
     // Listen for route changes to auto-expand active module
     this.routerSub = this.router.events
@@ -466,6 +354,39 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routerSub?.unsubscribe();
+    this.rolesSub?.unsubscribe();
+  }
+
+  /**
+   * Filters navigation items based on user roles.
+   * In dev mode, shows all items (SuperAdmin equivalent).
+   * Updates within 2 seconds on role change without full reload.
+   */
+  private updateNavigationForRoles(roles: readonly string[]): void {
+    const effectiveRoles = this.authService.isDevMode ? ['SuperAdmin'] : roles;
+    const visibleItems = getVisibleNavItems(NAV_ITEMS, effectiveRoles);
+
+    this.implementedModules = visibleItems
+      .filter(item => item.section === 'implemented')
+      .map(item => ({
+        label: item.label,
+        routerLink: item.routerLink,
+        icon: item.icon,
+        children: item.children ? [...item.children] : undefined,
+        section: item.section
+      }));
+
+    this.placeholderModules = visibleItems
+      .filter(item => item.section === 'placeholder')
+      .map(item => ({
+        label: item.label,
+        routerLink: item.routerLink,
+        icon: item.icon,
+        children: item.children ? [...item.children] : undefined,
+        section: item.section
+      }));
+
+    this.adminNavItems = getVisibleNavItems(ADMIN_NAV_ITEMS, effectiveRoles) as INavItemConfig[];
   }
 
   get currentPageTitle(): string {
@@ -481,6 +402,10 @@ export class AppComponent implements OnInit, OnDestroy {
     }
     if (this.currentUrl.startsWith('/admin/users')) return 'User Management';
     if (this.currentUrl.startsWith('/admin/roles')) return 'Role Management';
+    if (this.currentUrl.startsWith('/admin/permissions')) return 'Permission Matrix';
+    if (this.currentUrl.startsWith('/admin/sessions')) return 'Session Management';
+    if (this.currentUrl.startsWith('/admin/audit-logs')) return 'Audit Logs';
+    if (this.currentUrl.startsWith('/admin/settings')) return 'System Settings';
     if (this.currentUrl.startsWith('/profile')) return 'Profile';
     if (this.currentUrl.startsWith('/settings')) return 'Settings';
     if (this.currentUrl.startsWith('/login')) return 'Sign In';

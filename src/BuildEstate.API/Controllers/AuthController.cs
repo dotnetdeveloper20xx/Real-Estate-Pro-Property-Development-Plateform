@@ -18,13 +18,13 @@ public class AuthController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly ITokenService _tokenService;
+    private readonly IInfrastructureTokenService _tokenService;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        ITokenService tokenService,
+        IInfrastructureTokenService tokenService,
         ILogger<AuthController> logger)
     {
         _userManager = userManager;
@@ -69,7 +69,10 @@ public class AuthController : ControllerBase
         }
 
         var roles = await _userManager.GetRolesAsync(user);
-        var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(user, roles);
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var deviceInfo = Request.Headers.UserAgent.ToString();
+        var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(
+            user, roles, request.RememberMe, deviceInfo, ipAddress);
 
         _logger.LogInformation("User {UserId} logged in successfully", user.Id);
 
@@ -99,7 +102,11 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var (accessToken, refreshToken) = await _tokenService.RefreshTokenAsync(request.RefreshToken);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var deviceInfo = Request.Headers.UserAgent.ToString();
+
+            var (accessToken, refreshToken) = await _tokenService.RefreshTokenAsync(
+                request.RefreshToken, ipAddress, deviceInfo);
 
             return Ok(new { accessToken, refreshToken });
         }
@@ -203,6 +210,7 @@ public sealed record LoginRequest
 {
     public string Email { get; init; } = string.Empty;
     public string Password { get; init; } = string.Empty;
+    public bool RememberMe { get; init; } = false;
 }
 
 public sealed record RefreshRequest

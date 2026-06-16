@@ -10,8 +10,13 @@ import { httpErrorInterceptor } from './core/interceptors';
 import { responseWrapperInterceptor } from './core/interceptors/response-wrapper.interceptor';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { AuthService } from './core/services/auth.service';
+import { authReducer, AuthEffects } from './core/store/auth';
 import { applicationReducer, ApplicationEffects } from './features/planning-approvals/store/application';
 import { dashboardReducer, DashboardEffects } from './features/planning-approvals/store/dashboard';
+import { usersReducer, UsersEffects } from './features/admin/store/users';
+import { rolesReducer, RolesEffects } from './features/admin/store/roles';
+import { sessionsReducer, SessionsEffects } from './features/admin/store/sessions';
+import { auditLogsReducer, AuditLogsEffects } from './features/admin/store/audit-logs';
 
 /**
  * App initializer that loads the current user profile on startup.
@@ -45,10 +50,15 @@ export const appConfig: ApplicationConfig = {
       multi: true
     },
     provideStore({
+      auth: authReducer,
       planningApplications: applicationReducer,
-      planningDashboard: dashboardReducer
+      planningDashboard: dashboardReducer,
+      adminUsers: usersReducer,
+      adminRoles: rolesReducer,
+      adminSessions: sessionsReducer,
+      adminAuditLogs: auditLogsReducer
     }),
-    provideEffects([ApplicationEffects, DashboardEffects]),
+    provideEffects([AuthEffects, ApplicationEffects, DashboardEffects, UsersEffects, RolesEffects, SessionsEffects, AuditLogsEffects]),
     provideStoreDevtools({ maxAge: 25, logOnly: false })
   ]
 };

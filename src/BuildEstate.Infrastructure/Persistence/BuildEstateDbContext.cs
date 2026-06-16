@@ -2,7 +2,9 @@ using System.Reflection;
 using BuildEstate.Domain.Entities.LandAcquisition;
 using BuildEstate.Domain.Entities.LegalCompliance;
 using BuildEstate.Domain.Entities.PlanningApprovals;
+using BuildEstate.Domain.Entities.UserManagement;
 using BuildEstate.Infrastructure.Identity;
+using BuildEstate.Infrastructure.Persistence.Configurations.UserManagement;
 using BuildEstate.Infrastructure.Persistence.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +23,13 @@ public class BuildEstateDbContext : IdentityDbContext<ApplicationUser, Applicati
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+    // User Management entities
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
+    public DbSet<PasswordHistory> PasswordHistories => Set<PasswordHistory>();
+    public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
 
     // Land Acquisition entities
     public DbSet<LandOpportunity> LandOpportunities => Set<LandOpportunity>();
@@ -57,17 +66,22 @@ public class BuildEstateDbContext : IdentityDbContext<ApplicationUser, Applicati
         base.OnModelCreating(builder);
 
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // Seed built-in roles, permissions, and role-permission mappings
+        UserManagementSeedData.ApplySeedData(builder);
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         EnforceAuditLogAppendOnly();
+        EnforceAuditLogEntryAppendOnly();
         return base.SaveChanges(acceptAllChangesOnSuccess);
     }
 
     public override int SaveChanges()
     {
         EnforceAuditLogAppendOnly();
+        EnforceAuditLogEntryAppendOnly();
         return base.SaveChanges();
     }
 
@@ -76,6 +90,7 @@ public class BuildEstateDbContext : IdentityDbContext<ApplicationUser, Applicati
         CancellationToken cancellationToken = default)
     {
         EnforceAuditLogAppendOnly();
+        EnforceAuditLogEntryAppendOnly();
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }
 
@@ -83,6 +98,7 @@ public class BuildEstateDbContext : IdentityDbContext<ApplicationUser, Applicati
         CancellationToken cancellationToken = default)
     {
         EnforceAuditLogAppendOnly();
+        EnforceAuditLogEntryAppendOnly();
         return base.SaveChangesAsync(cancellationToken);
     }
 
@@ -99,6 +115,22 @@ public class BuildEstateDbContext : IdentityDbContext<ApplicationUser, Applicati
         {
             throw new InvalidOperationException(
                 "AuditLog records are append-only. Modification or deletion of audit log entries is not permitted.");
+        }
+    }
+
+    /// <summary>
+    /// Enforces append-only semantics for AuditLogEntry entities (Requirement 12.4).
+    /// Any attempt to modify or delete an AuditLogEntry record is rejected.
+    /// </summary>
+    private void EnforceAuditLogEntryAppendOnly()
+    {
+        var auditLogEntries = ChangeTracker.Entries<AuditLogEntry>()
+            .Where(e => e.State == EntityState.Modified || e.State == EntityState.Deleted);
+
+        if (auditLogEntries.Any())
+        {
+            throw new InvalidOperationException(
+                "AuditLogEntry records are immutable. Modification or deletion of audit log entries is not permitted.");
         }
     }
 }

@@ -1,6 +1,9 @@
 using System.Security.Claims;
+using BuildEstate.Application.Features.UserManagement.Users.Commands.BulkImport;
+using BuildEstate.Application.Interfaces;
 using BuildEstate.Infrastructure.Identity;
 using BuildEstate.Infrastructure.Services;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -326,6 +329,51 @@ public class UsersController : BaseApiController
             User.FindFirstValue(ClaimTypes.NameIdentifier));
 
         return Ok(new { message = "User activated successfully." });
+    }
+
+    /// <summary>
+    /// Bulk imports users from a CSV file.
+    /// CSV format: FirstName,LastName,Email,Password,Roles
+    /// Valid rows are imported; invalid rows are reported with error details.
+    /// </summary>
+    [HttpPost("bulk-import")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> BulkImport(IFormFile file, [FromServices] ISender mediator)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { errors = new[] { "No file provided or file is empty." } });
+
+        if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { errors = new[] { "Only CSV files are accepted." } });
+
+        using var reader = new StreamReader(file.OpenReadStream());
+        var csvContent = await reader.ReadToEndAsync();
+
+        var adminUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var correlationId = HttpContext.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString();
+
+        var command = new BulkImportUsersCommand
+        {
+            CsvContent = csvContent,
+            AdminUserId = adminUserId,
+            IpAddress = ipAddress,
+            CorrelationId = correlationId
+        };
+
+        var result = await mediator.Send(command);
+
+        if (result.Errors.Count > 0 && result.SuccessCount == 0)
+            return BadRequest(new { result.Errors, result.RowErrors });
+
+        return Ok(new
+        {
+            result.SuccessCount,
+            result.FailedCount,
+            result.RowErrors,
+            result.Errors
+        });
     }
 
     /// <summary>

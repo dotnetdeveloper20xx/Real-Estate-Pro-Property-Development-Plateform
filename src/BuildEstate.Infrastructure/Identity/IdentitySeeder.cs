@@ -1,58 +1,26 @@
+using BuildEstate.Infrastructure.Persistence.Configurations.UserManagement;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BuildEstate.Infrastructure.Identity;
 
 /// <summary>
-/// Seeds default roles and admin user for the Development environment.
+/// Seeds a default admin user for the Development environment.
+/// Built-in roles and permissions are seeded via EF Core migration (HasData).
+/// This seeder only creates the admin user account at runtime if it doesn't exist.
 /// All operations are idempotent — safe to run multiple times without creating duplicates.
 /// </summary>
 public static class IdentitySeeder
 {
-    private static readonly string[] DefaultRoles =
-    [
-        "SuperAdmin",
-        "AcquisitionManager",
-        "LegalOfficer",
-        "PlanningManager",
-        "ProjectManager",
-        "SiteManager",
-        "SalesManager",
-        "CompletionManager",
-        "PropertyManager",
-        "FinanceDirector",
-        "ValuationAnalyst",
-        "Surveyor",
-        "Admin"
-    ];
-
     /// <summary>
-    /// Seeds roles and a default admin user. Should only be called in Development environment.
+    /// Seeds a default admin user. Should only be called in Development environment.
+    /// Roles are seeded via EF Core migration seed data in UserManagementSeedData.
     /// </summary>
     public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
-        var roleManager = serviceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
         var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        await SeedRolesAsync(roleManager);
         await SeedAdminUserAsync(userManager);
-    }
-
-    private static async Task SeedRolesAsync(RoleManager<ApplicationRole> roleManager)
-    {
-        foreach (var roleName in DefaultRoles)
-        {
-            if (!await roleManager.RoleExistsAsync(roleName))
-            {
-                var role = new ApplicationRole
-                {
-                    Name = roleName,
-                    Description = $"{roleName} role for BuildEstate Pro platform"
-                };
-
-                await roleManager.CreateAsync(role);
-            }
-        }
     }
 
     private static async Task SeedAdminUserAsync(UserManager<ApplicationUser> userManager)
@@ -71,7 +39,8 @@ public static class IdentitySeeder
                 FirstName = "Admin",
                 LastName = "User",
                 IsActive = true,
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                CreatedAt = DateTime.UtcNow
             };
 
             var result = await userManager.CreateAsync(adminUser, adminPassword);

@@ -196,6 +196,30 @@ export class AuthService {
     });
   }
 
+  /**
+   * Fetch the current user profile from the API.
+   * Used by NgRx effects for session restoration on app init.
+   */
+  getCurrentUserFromApi(): Observable<ICurrentUser> {
+    this._isDevMode = false;
+    return this.http.get<ICurrentUser>('/api/v1/auth/me').pipe(
+      tap((user) => {
+        this.storeUser(user);
+        this.currentUserSubject.next(user);
+      })
+    );
+  }
+
+  /**
+   * Clear session state without API call or navigation.
+   * Used by NgRx effects to clear local storage and reset BehaviorSubject.
+   */
+  clearSession(): void {
+    this.clearStorage();
+    this.currentUserSubject.next(null);
+    this._isDevMode = true;
+  }
+
   // ── Private helpers ─────────────────────────────────────────────────────────
 
   private storeTokens(accessToken: string, refreshToken: string): void {

@@ -97,8 +97,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(origins)
               .AllowAnyMethod()
-              .WithHeaders("Authorization", "Content-Type", "X-Correlation-ID")
-              .WithExposedHeaders("X-Correlation-ID")
+              .WithHeaders("Authorization", "Content-Type", "X-Correlation-ID", "X-CSRF-TOKEN")
+              .WithExposedHeaders("X-Correlation-ID", "X-CSRF-TOKEN")
               .AllowCredentials();
     });
 });
@@ -222,6 +222,12 @@ if (app.Environment.IsDevelopment())
 
 // 7. Authorization
 app.UseAuthorization();
+
+// 7.5 Session Validation — check user still active and sessions not revoked
+app.UseSessionValidation();
+
+// 7.6 CSRF Validation — validate X-CSRF-TOKEN on state-changing requests
+app.UseCsrfValidation();
 
 // 8. Rate Limiting
 app.UseRateLimiter();

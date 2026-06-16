@@ -76,6 +76,7 @@ public static class InfrastructureDependencyInjection
             // Lockout policy
             options.Lockout.MaxFailedAccessAttempts = 5;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            options.Lockout.AllowedForNewUsers = true;
         })
         .AddEntityFrameworkStores<BuildEstateDbContext>()
         .AddDefaultTokenProviders();
@@ -87,7 +88,31 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // 7. Register ITokenService → TokenService with scoped lifetime
-        services.AddScoped<ITokenService, TokenService>();
+        // Register for both Application-layer (ITokenService) and Infrastructure-layer (IInfrastructureTokenService) interfaces
+        services.AddScoped<TokenService>();
+        services.AddScoped<Application.Interfaces.ITokenService>(sp => sp.GetRequiredService<TokenService>());
+        services.AddScoped<IInfrastructureTokenService>(sp => sp.GetRequiredService<TokenService>());
+
+        // 7a. Register IAccountLockoutService → AccountLockoutService with scoped lifetime
+        services.AddScoped<IAccountLockoutService, AccountLockoutService>();
+
+        // 7a. Register IPasswordHistoryService → PasswordHistoryService with scoped lifetime
+        services.AddScoped<IPasswordHistoryService, PasswordHistoryService>();
+
+        // 7b. Register ISessionService → SessionService with scoped lifetime
+        services.AddScoped<ISessionService, SessionService>();
+
+        // 7c. Register IIdentityService → IdentityService with scoped lifetime
+        services.AddScoped<IIdentityService, IdentityService>();
+
+        // 7d. Register IUserIdentityService → UserIdentityService with scoped lifetime
+        services.AddScoped<IUserIdentityService, UserIdentityService>();
+
+        // 7e. Register IUserQueryService → UserQueryService with scoped lifetime
+        services.AddScoped<IUserQueryService, UserQueryService>();
+
+        // 7f. Register IRoleQueryService → RoleQueryService with scoped lifetime
+        services.AddScoped<IRoleQueryService, RoleQueryService>();
 
         // 8. Register Land Acquisition state machines (stateless — Singleton)
         services.AddSingleton<IOpportunityStateMachine, OpportunityStateMachine>();
@@ -109,6 +134,9 @@ public static class InfrastructureDependencyInjection
 
         // 12. Register audit log query service (Scoped — uses DbContext)
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
+
+        // 12b. Register audit log service for immutable audit entry creation and querying (Scoped — uses DbContext)
+        services.AddScoped<IAuditLogService, AuditLogService>();
 
         // 12a. Register audit trail query service for Legal & Compliance (Scoped — uses DbContext)
         services.AddScoped<IAuditTrailQueryService, AuditTrailQueryService>();

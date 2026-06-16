@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BuildEstate.Domain\BuildEstate.Domain.csproj" />
+    <ProjectReference Include="..\BuildEstate.Shared\BuildEstate.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

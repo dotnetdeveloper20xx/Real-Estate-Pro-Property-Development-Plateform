@@ -1881,6 +1881,1317 @@ namespace BuildEstate.Infrastructure.Migrations
                     b.ToTable("PlanningMilestones", (string)null);
                 });
 
+            modelBuilder.Entity("BuildEstate.Domain.Entities.UserManagement.AuditLogEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("AffectedFields")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("CorrelationId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<string>("NewValues")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("OldValues")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("PerformedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PerformedByUserName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("TargetEntityId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("TargetEntityType")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("TargetUserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Action");
+
+                    b.HasIndex("CorrelationId");
+
+                    b.HasIndex("PerformedByUserId");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("Timestamp", "Action");
+
+                    b.ToTable("AuditLogEntries", (string)null);
+                });
+
+            modelBuilder.Entity("BuildEstate.Domain.Entities.UserManagement.PasswordHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("PasswordHistories", (string)null);
+                });
+
+            modelBuilder.Entity("BuildEstate.Domain.Entities.UserManagement.Permission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("DomainArea")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DomainArea");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Permissions", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("78d03a92-b3c1-1c32-a3c6-3d65733374a8"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Create new land opportunities in the pipeline",
+                            DisplayName = "Create Opportunities",
+                            DomainArea = "Opportunities",
+                            Name = "opportunities.create"
+                        },
+                        new
+                        {
+                            Id = new Guid("6243f5b3-7ec5-f63d-bf6d-74892dcbe7b8"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "View land opportunities and pipeline data",
+                            DisplayName = "View Opportunities",
+                            DomainArea = "Opportunities",
+                            Name = "opportunities.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("1282fab2-e057-243c-a259-6cbd6c091503"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Edit existing land opportunity details",
+                            DisplayName = "Update Opportunities",
+                            DomainArea = "Opportunities",
+                            Name = "opportunities.update"
+                        },
+                        new
+                        {
+                            Id = new Guid("e2cc17e9-bd33-c238-93fc-47b2f68ed471"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Remove land opportunities from the system",
+                            DisplayName = "Delete Opportunities",
+                            DomainArea = "Opportunities",
+                            Name = "opportunities.delete"
+                        },
+                        new
+                        {
+                            Id = new Guid("e6648710-d659-6c3d-ab8d-db84fa90bf8c"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Approve land opportunities for acquisition",
+                            DisplayName = "Approve Opportunities",
+                            DomainArea = "Opportunities",
+                            Name = "opportunities.approve"
+                        },
+                        new
+                        {
+                            Id = new Guid("a2c749f8-b601-933c-a26c-3e88d21e2755"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Create new development projects",
+                            DisplayName = "Create Projects",
+                            DomainArea = "Projects",
+                            Name = "projects.create"
+                        },
+                        new
+                        {
+                            Id = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "View project details and progress",
+                            DisplayName = "View Projects",
+                            DomainArea = "Projects",
+                            Name = "projects.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("522221ae-7107-f23a-bccc-2e8e4a46bcc2"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Edit project information and milestones",
+                            DisplayName = "Update Projects",
+                            DomainArea = "Projects",
+                            Name = "projects.update"
+                        },
+                        new
+                        {
+                            Id = new Guid("c964c017-0aa6-c339-bbb3-d73a35fb8b0f"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Remove projects from the system",
+                            DisplayName = "Delete Projects",
+                            DomainArea = "Projects",
+                            Name = "projects.delete"
+                        },
+                        new
+                        {
+                            Id = new Guid("a279049f-7876-d231-a2a8-5d5c15e1672f"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Approve project stages and milestones",
+                            DisplayName = "Approve Projects",
+                            DomainArea = "Projects",
+                            Name = "projects.approve"
+                        },
+                        new
+                        {
+                            Id = new Guid("5b990f59-7f40-df39-a7cf-17903b570de9"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Create budgets, invoices, and financial entries",
+                            DisplayName = "Create Financial Records",
+                            DomainArea = "Finance",
+                            Name = "finance.create"
+                        },
+                        new
+                        {
+                            Id = new Guid("ebb49a61-e7f7-7831-a074-05d3319ed3bd"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "View budgets, costs, and financial reports",
+                            DisplayName = "View Financial Data",
+                            DomainArea = "Finance",
+                            Name = "finance.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("fc471112-c100-3d3d-ba01-feab0a1c58be"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Edit financial data and budget allocations",
+                            DisplayName = "Update Financial Records",
+                            DomainArea = "Finance",
+                            Name = "finance.update"
+                        },
+                        new
+                        {
+                            Id = new Guid("48dc2e8e-565f-e43d-b9fa-dfe3d760d495"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Remove financial entries from the system",
+                            DisplayName = "Delete Financial Records",
+                            DomainArea = "Finance",
+                            Name = "finance.delete"
+                        },
+                        new
+                        {
+                            Id = new Guid("15a10da3-c268-4231-8f18-979ec6416402"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Approve payments, budgets, and financial decisions",
+                            DisplayName = "Approve Financial Items",
+                            DomainArea = "Finance",
+                            Name = "finance.approve"
+                        },
+                        new
+                        {
+                            Id = new Guid("a68c4e40-7195-e33e-9ff9-c9d994fc9dcc"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Create construction stages and inspections",
+                            DisplayName = "Create Construction Records",
+                            DomainArea = "Construction",
+                            Name = "construction.create"
+                        },
+                        new
+                        {
+                            Id = new Guid("189fb6db-765d-8139-b14f-24c7d3eb097a"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "View construction progress and reports",
+                            DisplayName = "View Construction Data",
+                            DomainArea = "Construction",
+                            Name = "construction.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("1aa71bcb-ea52-b836-8207-c24037ce0339"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Update construction progress and stage status",
+                            DisplayName = "Update Construction Records",
+                            DomainArea = "Construction",
+                            Name = "construction.update"
+                        },
+                        new
+                        {
+                            Id = new Guid("fe4a36d4-c9ec-a230-8064-1a7122ccafb8"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Remove construction records from the system",
+                            DisplayName = "Delete Construction Records",
+                            DomainArea = "Construction",
+                            Name = "construction.delete"
+                        },
+                        new
+                        {
+                            Id = new Guid("8887ef85-43d3-713f-b044-ba2e3c035363"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Approve construction stage completions",
+                            DisplayName = "Approve Construction Stages",
+                            DomainArea = "Construction",
+                            Name = "construction.approve"
+                        },
+                        new
+                        {
+                            Id = new Guid("209bd5fa-9c7a-b83e-9657-b9e8c92b3b6a"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Create leads, reservations, and sales entries",
+                            DisplayName = "Create Sales Records",
+                            DomainArea = "Sales",
+                            Name = "sales.create"
+                        },
+                        new
+                        {
+                            Id = new Guid("6ab89998-b47c-fb35-a5ec-1269c45cf988"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "View sales pipeline, leads, and reservations",
+                            DisplayName = "View Sales Data",
+                            DomainArea = "Sales",
+                            Name = "sales.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("cd8ab91f-0284-4635-ad94-c8abb0a7441d"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Edit sales entries and update pipeline stages",
+                            DisplayName = "Update Sales Records",
+                            DomainArea = "Sales",
+                            Name = "sales.update"
+                        },
+                        new
+                        {
+                            Id = new Guid("d7acb01c-27a6-9d38-b777-0068349ed309"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Remove sales entries from the system",
+                            DisplayName = "Delete Sales Records",
+                            DomainArea = "Sales",
+                            Name = "sales.delete"
+                        },
+                        new
+                        {
+                            Id = new Guid("6f313074-752a-4d34-890a-b42d5ac2f175"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Approve reservations and sales completions",
+                            DisplayName = "Approve Sales Transactions",
+                            DomainArea = "Sales",
+                            Name = "sales.approve"
+                        },
+                        new
+                        {
+                            Id = new Guid("0c98f122-191e-403c-b870-476c8a70137e"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Create legal cases, contracts, and compliance items",
+                            DisplayName = "Create Legal Records",
+                            DomainArea = "Legal",
+                            Name = "legal.create"
+                        },
+                        new
+                        {
+                            Id = new Guid("8623c0e1-c163-fb3d-bbf0-19eeee934d78"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "View legal cases, contracts, and compliance status",
+                            DisplayName = "View Legal Data",
+                            DomainArea = "Legal",
+                            Name = "legal.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("75d25f70-d5a7-ac3a-a4ed-1e4edf2e1c68"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Edit legal documents and compliance requirements",
+                            DisplayName = "Update Legal Records",
+                            DomainArea = "Legal",
+                            Name = "legal.update"
+                        },
+                        new
+                        {
+                            Id = new Guid("6924d6f0-a512-b53b-b494-6a3df737cdfd"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Remove legal entries from the system",
+                            DisplayName = "Delete Legal Records",
+                            DomainArea = "Legal",
+                            Name = "legal.delete"
+                        },
+                        new
+                        {
+                            Id = new Guid("7e3c7735-74ce-b93e-b996-3e943fdccc39"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Approve contracts and compliance checks",
+                            DisplayName = "Approve Legal Items",
+                            DomainArea = "Legal",
+                            Name = "legal.approve"
+                        },
+                        new
+                        {
+                            Id = new Guid("12f68deb-d61c-0c32-b727-190bec4a425e"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Create planning submissions and applications",
+                            DisplayName = "Create Planning Applications",
+                            DomainArea = "Planning",
+                            Name = "planning.create"
+                        },
+                        new
+                        {
+                            Id = new Guid("d9aeef87-343d-4f38-b5c0-bd790f6907f7"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "View planning applications and approval status",
+                            DisplayName = "View Planning Data",
+                            DomainArea = "Planning",
+                            Name = "planning.read"
+                        },
+                        new
+                        {
+                            Id = new Guid("b47b0ebd-02e5-f734-babb-c1e33e23df74"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Edit planning applications and conditions",
+                            DisplayName = "Update Planning Applications",
+                            DomainArea = "Planning",
+                            Name = "planning.update"
+                        },
+                        new
+                        {
+                            Id = new Guid("d9a72cd4-1717-9933-a706-f77ccf172ec9"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Remove planning entries from the system",
+                            DisplayName = "Delete Planning Applications",
+                            DomainArea = "Planning",
+                            Name = "planning.delete"
+                        },
+                        new
+                        {
+                            Id = new Guid("5e0fd6d5-3425-d838-b478-58d75c804eed"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Approve planning application submissions",
+                            DisplayName = "Approve Planning Items",
+                            DomainArea = "Planning",
+                            Name = "planning.approve"
+                        },
+                        new
+                        {
+                            Id = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Access standard and custom reports",
+                            DisplayName = "View Reports",
+                            DomainArea = "Reports",
+                            Name = "reports.view"
+                        },
+                        new
+                        {
+                            Id = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Export report data to CSV/PDF formats",
+                            DisplayName = "Export Reports",
+                            DomainArea = "Reports",
+                            Name = "reports.export"
+                        },
+                        new
+                        {
+                            Id = new Guid("5fe44f44-30ee-4239-9e47-ad8e511abc23"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Create and configure custom reports",
+                            DisplayName = "Create Custom Reports",
+                            DomainArea = "Reports",
+                            Name = "reports.create"
+                        },
+                        new
+                        {
+                            Id = new Guid("8099fcfd-8a9d-9c33-8868-a31af58fb9e1"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Create, edit, deactivate, and manage user accounts",
+                            DisplayName = "Manage Users",
+                            DomainArea = "Administration",
+                            Name = "administration.users"
+                        },
+                        new
+                        {
+                            Id = new Guid("6b9222ec-ed1e-bb3b-8589-08c02fcd08a6"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Create, edit, and delete roles and permissions",
+                            DisplayName = "Manage Roles",
+                            DomainArea = "Administration",
+                            Name = "administration.roles"
+                        },
+                        new
+                        {
+                            Id = new Guid("17f4940e-47ce-cc31-bec2-fe2975810db2"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Access and filter the system audit trail",
+                            DisplayName = "View Audit Logs",
+                            DomainArea = "Administration",
+                            Name = "administration.audit"
+                        },
+                        new
+                        {
+                            Id = new Guid("028c0e60-0a42-683f-943d-990a61df2212"),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Configure system-wide settings and preferences",
+                            DisplayName = "Manage System Settings",
+                            DomainArea = "Administration",
+                            Name = "administration.settings"
+                        });
+                });
+
+            modelBuilder.Entity("BuildEstate.Domain.Entities.UserManagement.RolePermission", b =>
+                {
+                    b.Property<string>("RoleId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("RoleId", "PermissionId");
+
+                    b.HasIndex("PermissionId");
+
+                    b.ToTable("RolePermissions", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("78d03a92-b3c1-1c32-a3c6-3d65733374a8")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("6243f5b3-7ec5-f63d-bf6d-74892dcbe7b8")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("1282fab2-e057-243c-a259-6cbd6c091503")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("e2cc17e9-bd33-c238-93fc-47b2f68ed471")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("e6648710-d659-6c3d-ab8d-db84fa90bf8c")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("a2c749f8-b601-933c-a26c-3e88d21e2755")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("522221ae-7107-f23a-bccc-2e8e4a46bcc2")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("c964c017-0aa6-c339-bbb3-d73a35fb8b0f")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("a279049f-7876-d231-a2a8-5d5c15e1672f")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("5b990f59-7f40-df39-a7cf-17903b570de9")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("ebb49a61-e7f7-7831-a074-05d3319ed3bd")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("fc471112-c100-3d3d-ba01-feab0a1c58be")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("48dc2e8e-565f-e43d-b9fa-dfe3d760d495")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("15a10da3-c268-4231-8f18-979ec6416402")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("a68c4e40-7195-e33e-9ff9-c9d994fc9dcc")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("189fb6db-765d-8139-b14f-24c7d3eb097a")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("1aa71bcb-ea52-b836-8207-c24037ce0339")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("fe4a36d4-c9ec-a230-8064-1a7122ccafb8")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("8887ef85-43d3-713f-b044-ba2e3c035363")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("209bd5fa-9c7a-b83e-9657-b9e8c92b3b6a")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("6ab89998-b47c-fb35-a5ec-1269c45cf988")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("cd8ab91f-0284-4635-ad94-c8abb0a7441d")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("d7acb01c-27a6-9d38-b777-0068349ed309")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("6f313074-752a-4d34-890a-b42d5ac2f175")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("0c98f122-191e-403c-b870-476c8a70137e")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("8623c0e1-c163-fb3d-bbf0-19eeee934d78")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("75d25f70-d5a7-ac3a-a4ed-1e4edf2e1c68")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("6924d6f0-a512-b53b-b494-6a3df737cdfd")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("7e3c7735-74ce-b93e-b996-3e943fdccc39")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("12f68deb-d61c-0c32-b727-190bec4a425e")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("d9aeef87-343d-4f38-b5c0-bd790f6907f7")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("b47b0ebd-02e5-f734-babb-c1e33e23df74")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("d9a72cd4-1717-9933-a706-f77ccf172ec9")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("5e0fd6d5-3425-d838-b478-58d75c804eed")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("5fe44f44-30ee-4239-9e47-ad8e511abc23")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("8099fcfd-8a9d-9c33-8868-a31af58fb9e1")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("6b9222ec-ed1e-bb3b-8589-08c02fcd08a6")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("17f4940e-47ce-cc31-bec2-fe2975810db2")
+                        },
+                        new
+                        {
+                            RoleId = "role-superadmin-00000000-0001",
+                            PermissionId = new Guid("028c0e60-0a42-683f-943d-990a61df2212")
+                        },
+                        new
+                        {
+                            RoleId = "role-acquisitionmgr-0000-0002",
+                            PermissionId = new Guid("78d03a92-b3c1-1c32-a3c6-3d65733374a8")
+                        },
+                        new
+                        {
+                            RoleId = "role-acquisitionmgr-0000-0002",
+                            PermissionId = new Guid("6243f5b3-7ec5-f63d-bf6d-74892dcbe7b8")
+                        },
+                        new
+                        {
+                            RoleId = "role-acquisitionmgr-0000-0002",
+                            PermissionId = new Guid("1282fab2-e057-243c-a259-6cbd6c091503")
+                        },
+                        new
+                        {
+                            RoleId = "role-acquisitionmgr-0000-0002",
+                            PermissionId = new Guid("e2cc17e9-bd33-c238-93fc-47b2f68ed471")
+                        },
+                        new
+                        {
+                            RoleId = "role-acquisitionmgr-0000-0002",
+                            PermissionId = new Guid("e6648710-d659-6c3d-ab8d-db84fa90bf8c")
+                        },
+                        new
+                        {
+                            RoleId = "role-acquisitionmgr-0000-0002",
+                            PermissionId = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018")
+                        },
+                        new
+                        {
+                            RoleId = "role-acquisitionmgr-0000-0002",
+                            PermissionId = new Guid("ebb49a61-e7f7-7831-a074-05d3319ed3bd")
+                        },
+                        new
+                        {
+                            RoleId = "role-acquisitionmgr-0000-0002",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        },
+                        new
+                        {
+                            RoleId = "role-acquisitionmgr-0000-0002",
+                            PermissionId = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9")
+                        },
+                        new
+                        {
+                            RoleId = "role-legalofficer-00000-0003",
+                            PermissionId = new Guid("0c98f122-191e-403c-b870-476c8a70137e")
+                        },
+                        new
+                        {
+                            RoleId = "role-legalofficer-00000-0003",
+                            PermissionId = new Guid("8623c0e1-c163-fb3d-bbf0-19eeee934d78")
+                        },
+                        new
+                        {
+                            RoleId = "role-legalofficer-00000-0003",
+                            PermissionId = new Guid("75d25f70-d5a7-ac3a-a4ed-1e4edf2e1c68")
+                        },
+                        new
+                        {
+                            RoleId = "role-legalofficer-00000-0003",
+                            PermissionId = new Guid("6924d6f0-a512-b53b-b494-6a3df737cdfd")
+                        },
+                        new
+                        {
+                            RoleId = "role-legalofficer-00000-0003",
+                            PermissionId = new Guid("7e3c7735-74ce-b93e-b996-3e943fdccc39")
+                        },
+                        new
+                        {
+                            RoleId = "role-legalofficer-00000-0003",
+                            PermissionId = new Guid("6243f5b3-7ec5-f63d-bf6d-74892dcbe7b8")
+                        },
+                        new
+                        {
+                            RoleId = "role-legalofficer-00000-0003",
+                            PermissionId = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018")
+                        },
+                        new
+                        {
+                            RoleId = "role-legalofficer-00000-0003",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        },
+                        new
+                        {
+                            RoleId = "role-legalofficer-00000-0003",
+                            PermissionId = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9")
+                        },
+                        new
+                        {
+                            RoleId = "role-planningmgr-000000-0004",
+                            PermissionId = new Guid("12f68deb-d61c-0c32-b727-190bec4a425e")
+                        },
+                        new
+                        {
+                            RoleId = "role-planningmgr-000000-0004",
+                            PermissionId = new Guid("d9aeef87-343d-4f38-b5c0-bd790f6907f7")
+                        },
+                        new
+                        {
+                            RoleId = "role-planningmgr-000000-0004",
+                            PermissionId = new Guid("b47b0ebd-02e5-f734-babb-c1e33e23df74")
+                        },
+                        new
+                        {
+                            RoleId = "role-planningmgr-000000-0004",
+                            PermissionId = new Guid("d9a72cd4-1717-9933-a706-f77ccf172ec9")
+                        },
+                        new
+                        {
+                            RoleId = "role-planningmgr-000000-0004",
+                            PermissionId = new Guid("5e0fd6d5-3425-d838-b478-58d75c804eed")
+                        },
+                        new
+                        {
+                            RoleId = "role-planningmgr-000000-0004",
+                            PermissionId = new Guid("6243f5b3-7ec5-f63d-bf6d-74892dcbe7b8")
+                        },
+                        new
+                        {
+                            RoleId = "role-planningmgr-000000-0004",
+                            PermissionId = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018")
+                        },
+                        new
+                        {
+                            RoleId = "role-planningmgr-000000-0004",
+                            PermissionId = new Guid("8623c0e1-c163-fb3d-bbf0-19eeee934d78")
+                        },
+                        new
+                        {
+                            RoleId = "role-planningmgr-000000-0004",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        },
+                        new
+                        {
+                            RoleId = "role-planningmgr-000000-0004",
+                            PermissionId = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9")
+                        },
+                        new
+                        {
+                            RoleId = "role-projectmgr-0000000-0005",
+                            PermissionId = new Guid("a2c749f8-b601-933c-a26c-3e88d21e2755")
+                        },
+                        new
+                        {
+                            RoleId = "role-projectmgr-0000000-0005",
+                            PermissionId = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018")
+                        },
+                        new
+                        {
+                            RoleId = "role-projectmgr-0000000-0005",
+                            PermissionId = new Guid("522221ae-7107-f23a-bccc-2e8e4a46bcc2")
+                        },
+                        new
+                        {
+                            RoleId = "role-projectmgr-0000000-0005",
+                            PermissionId = new Guid("c964c017-0aa6-c339-bbb3-d73a35fb8b0f")
+                        },
+                        new
+                        {
+                            RoleId = "role-projectmgr-0000000-0005",
+                            PermissionId = new Guid("a279049f-7876-d231-a2a8-5d5c15e1672f")
+                        },
+                        new
+                        {
+                            RoleId = "role-projectmgr-0000000-0005",
+                            PermissionId = new Guid("189fb6db-765d-8139-b14f-24c7d3eb097a")
+                        },
+                        new
+                        {
+                            RoleId = "role-projectmgr-0000000-0005",
+                            PermissionId = new Guid("1aa71bcb-ea52-b836-8207-c24037ce0339")
+                        },
+                        new
+                        {
+                            RoleId = "role-projectmgr-0000000-0005",
+                            PermissionId = new Guid("ebb49a61-e7f7-7831-a074-05d3319ed3bd")
+                        },
+                        new
+                        {
+                            RoleId = "role-projectmgr-0000000-0005",
+                            PermissionId = new Guid("6243f5b3-7ec5-f63d-bf6d-74892dcbe7b8")
+                        },
+                        new
+                        {
+                            RoleId = "role-projectmgr-0000000-0005",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        },
+                        new
+                        {
+                            RoleId = "role-projectmgr-0000000-0005",
+                            PermissionId = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9")
+                        },
+                        new
+                        {
+                            RoleId = "role-sitemgr-000000000-0006",
+                            PermissionId = new Guid("a68c4e40-7195-e33e-9ff9-c9d994fc9dcc")
+                        },
+                        new
+                        {
+                            RoleId = "role-sitemgr-000000000-0006",
+                            PermissionId = new Guid("189fb6db-765d-8139-b14f-24c7d3eb097a")
+                        },
+                        new
+                        {
+                            RoleId = "role-sitemgr-000000000-0006",
+                            PermissionId = new Guid("1aa71bcb-ea52-b836-8207-c24037ce0339")
+                        },
+                        new
+                        {
+                            RoleId = "role-sitemgr-000000000-0006",
+                            PermissionId = new Guid("fe4a36d4-c9ec-a230-8064-1a7122ccafb8")
+                        },
+                        new
+                        {
+                            RoleId = "role-sitemgr-000000000-0006",
+                            PermissionId = new Guid("8887ef85-43d3-713f-b044-ba2e3c035363")
+                        },
+                        new
+                        {
+                            RoleId = "role-sitemgr-000000000-0006",
+                            PermissionId = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018")
+                        },
+                        new
+                        {
+                            RoleId = "role-sitemgr-000000000-0006",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        },
+                        new
+                        {
+                            RoleId = "role-sitemgr-000000000-0006",
+                            PermissionId = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9")
+                        },
+                        new
+                        {
+                            RoleId = "role-salesmgr-00000000-0007",
+                            PermissionId = new Guid("209bd5fa-9c7a-b83e-9657-b9e8c92b3b6a")
+                        },
+                        new
+                        {
+                            RoleId = "role-salesmgr-00000000-0007",
+                            PermissionId = new Guid("6ab89998-b47c-fb35-a5ec-1269c45cf988")
+                        },
+                        new
+                        {
+                            RoleId = "role-salesmgr-00000000-0007",
+                            PermissionId = new Guid("cd8ab91f-0284-4635-ad94-c8abb0a7441d")
+                        },
+                        new
+                        {
+                            RoleId = "role-salesmgr-00000000-0007",
+                            PermissionId = new Guid("d7acb01c-27a6-9d38-b777-0068349ed309")
+                        },
+                        new
+                        {
+                            RoleId = "role-salesmgr-00000000-0007",
+                            PermissionId = new Guid("6f313074-752a-4d34-890a-b42d5ac2f175")
+                        },
+                        new
+                        {
+                            RoleId = "role-salesmgr-00000000-0007",
+                            PermissionId = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018")
+                        },
+                        new
+                        {
+                            RoleId = "role-salesmgr-00000000-0007",
+                            PermissionId = new Guid("ebb49a61-e7f7-7831-a074-05d3319ed3bd")
+                        },
+                        new
+                        {
+                            RoleId = "role-salesmgr-00000000-0007",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        },
+                        new
+                        {
+                            RoleId = "role-salesmgr-00000000-0007",
+                            PermissionId = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9")
+                        },
+                        new
+                        {
+                            RoleId = "role-completionmgr-000-0008",
+                            PermissionId = new Guid("6ab89998-b47c-fb35-a5ec-1269c45cf988")
+                        },
+                        new
+                        {
+                            RoleId = "role-completionmgr-000-0008",
+                            PermissionId = new Guid("cd8ab91f-0284-4635-ad94-c8abb0a7441d")
+                        },
+                        new
+                        {
+                            RoleId = "role-completionmgr-000-0008",
+                            PermissionId = new Guid("189fb6db-765d-8139-b14f-24c7d3eb097a")
+                        },
+                        new
+                        {
+                            RoleId = "role-completionmgr-000-0008",
+                            PermissionId = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018")
+                        },
+                        new
+                        {
+                            RoleId = "role-completionmgr-000-0008",
+                            PermissionId = new Guid("8623c0e1-c163-fb3d-bbf0-19eeee934d78")
+                        },
+                        new
+                        {
+                            RoleId = "role-completionmgr-000-0008",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        },
+                        new
+                        {
+                            RoleId = "role-completionmgr-000-0008",
+                            PermissionId = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9")
+                        },
+                        new
+                        {
+                            RoleId = "role-propertymgr-00000-0009",
+                            PermissionId = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018")
+                        },
+                        new
+                        {
+                            RoleId = "role-propertymgr-00000-0009",
+                            PermissionId = new Guid("189fb6db-765d-8139-b14f-24c7d3eb097a")
+                        },
+                        new
+                        {
+                            RoleId = "role-propertymgr-00000-0009",
+                            PermissionId = new Guid("6ab89998-b47c-fb35-a5ec-1269c45cf988")
+                        },
+                        new
+                        {
+                            RoleId = "role-propertymgr-00000-0009",
+                            PermissionId = new Guid("ebb49a61-e7f7-7831-a074-05d3319ed3bd")
+                        },
+                        new
+                        {
+                            RoleId = "role-propertymgr-00000-0009",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        },
+                        new
+                        {
+                            RoleId = "role-propertymgr-00000-0009",
+                            PermissionId = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9")
+                        },
+                        new
+                        {
+                            RoleId = "role-financedir-000000-0010",
+                            PermissionId = new Guid("5b990f59-7f40-df39-a7cf-17903b570de9")
+                        },
+                        new
+                        {
+                            RoleId = "role-financedir-000000-0010",
+                            PermissionId = new Guid("ebb49a61-e7f7-7831-a074-05d3319ed3bd")
+                        },
+                        new
+                        {
+                            RoleId = "role-financedir-000000-0010",
+                            PermissionId = new Guid("fc471112-c100-3d3d-ba01-feab0a1c58be")
+                        },
+                        new
+                        {
+                            RoleId = "role-financedir-000000-0010",
+                            PermissionId = new Guid("48dc2e8e-565f-e43d-b9fa-dfe3d760d495")
+                        },
+                        new
+                        {
+                            RoleId = "role-financedir-000000-0010",
+                            PermissionId = new Guid("15a10da3-c268-4231-8f18-979ec6416402")
+                        },
+                        new
+                        {
+                            RoleId = "role-financedir-000000-0010",
+                            PermissionId = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018")
+                        },
+                        new
+                        {
+                            RoleId = "role-financedir-000000-0010",
+                            PermissionId = new Guid("6ab89998-b47c-fb35-a5ec-1269c45cf988")
+                        },
+                        new
+                        {
+                            RoleId = "role-financedir-000000-0010",
+                            PermissionId = new Guid("6243f5b3-7ec5-f63d-bf6d-74892dcbe7b8")
+                        },
+                        new
+                        {
+                            RoleId = "role-financedir-000000-0010",
+                            PermissionId = new Guid("189fb6db-765d-8139-b14f-24c7d3eb097a")
+                        },
+                        new
+                        {
+                            RoleId = "role-financedir-000000-0010",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        },
+                        new
+                        {
+                            RoleId = "role-financedir-000000-0010",
+                            PermissionId = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9")
+                        },
+                        new
+                        {
+                            RoleId = "role-financedir-000000-0010",
+                            PermissionId = new Guid("5fe44f44-30ee-4239-9e47-ad8e511abc23")
+                        },
+                        new
+                        {
+                            RoleId = "role-valuationanlst-00-0011",
+                            PermissionId = new Guid("ebb49a61-e7f7-7831-a074-05d3319ed3bd")
+                        },
+                        new
+                        {
+                            RoleId = "role-valuationanlst-00-0011",
+                            PermissionId = new Guid("6243f5b3-7ec5-f63d-bf6d-74892dcbe7b8")
+                        },
+                        new
+                        {
+                            RoleId = "role-valuationanlst-00-0011",
+                            PermissionId = new Guid("1282fab2-e057-243c-a259-6cbd6c091503")
+                        },
+                        new
+                        {
+                            RoleId = "role-valuationanlst-00-0011",
+                            PermissionId = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018")
+                        },
+                        new
+                        {
+                            RoleId = "role-valuationanlst-00-0011",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        },
+                        new
+                        {
+                            RoleId = "role-valuationanlst-00-0011",
+                            PermissionId = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9")
+                        },
+                        new
+                        {
+                            RoleId = "role-surveyor-00000000-0012",
+                            PermissionId = new Guid("189fb6db-765d-8139-b14f-24c7d3eb097a")
+                        },
+                        new
+                        {
+                            RoleId = "role-surveyor-00000000-0012",
+                            PermissionId = new Guid("6243f5b3-7ec5-f63d-bf6d-74892dcbe7b8")
+                        },
+                        new
+                        {
+                            RoleId = "role-surveyor-00000000-0012",
+                            PermissionId = new Guid("6c78480d-708a-9c32-b8fa-7d6a81e03018")
+                        },
+                        new
+                        {
+                            RoleId = "role-surveyor-00000000-0012",
+                            PermissionId = new Guid("d9aeef87-343d-4f38-b5c0-bd790f6907f7")
+                        },
+                        new
+                        {
+                            RoleId = "role-surveyor-00000000-0012",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        },
+                        new
+                        {
+                            RoleId = "role-surveyor-00000000-0012",
+                            PermissionId = new Guid("d64041bd-6bfa-8f34-b9a7-71451d0b90a9")
+                        },
+                        new
+                        {
+                            RoleId = "role-admin-0000000000000-0013",
+                            PermissionId = new Guid("8099fcfd-8a9d-9c33-8868-a31af58fb9e1")
+                        },
+                        new
+                        {
+                            RoleId = "role-admin-0000000000000-0013",
+                            PermissionId = new Guid("6b9222ec-ed1e-bb3b-8589-08c02fcd08a6")
+                        },
+                        new
+                        {
+                            RoleId = "role-admin-0000000000000-0013",
+                            PermissionId = new Guid("17f4940e-47ce-cc31-bec2-fe2975810db2")
+                        },
+                        new
+                        {
+                            RoleId = "role-admin-0000000000000-0013",
+                            PermissionId = new Guid("028c0e60-0a42-683f-943d-990a61df2212")
+                        },
+                        new
+                        {
+                            RoleId = "role-admin-0000000000000-0013",
+                            PermissionId = new Guid("ed4353ad-9e77-bd36-a916-d84bf921f7c9")
+                        });
+                });
+
+            modelBuilder.Entity("BuildEstate.Domain.Entities.UserManagement.UserSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Browser")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeviceInfo")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("LastActiveAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OperatingSystem")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RevokedReason")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "IsRevoked");
+
+                    b.ToTable("UserSessions", (string)null);
+                });
+
             modelBuilder.Entity("BuildEstate.Infrastructure.Identity.ApplicationRole", b =>
                 {
                     b.Property<string>("Id")
@@ -1890,10 +3201,18 @@ namespace BuildEstate.Infrastructure.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("IsBuiltIn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Name")
                         .HasMaxLength(256)
@@ -1905,12 +3224,150 @@ namespace BuildEstate.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasFilter("[Name] IS NOT NULL");
+
                     b.HasIndex("NormalizedName")
                         .IsUnique()
                         .HasDatabaseName("RoleNameIndex")
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "role-superadmin-00000000-0001",
+                            ConcurrencyStamp = "stamp-superadmin",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Full system access with administrative control over all platform features",
+                            IsBuiltIn = true,
+                            Name = "SuperAdmin",
+                            NormalizedName = "SUPERADMIN"
+                        },
+                        new
+                        {
+                            Id = "role-acquisitionmgr-0000-0002",
+                            ConcurrencyStamp = "stamp-acquisitionmgr",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Manages land acquisition pipeline, evaluates opportunities, and submits for approval",
+                            IsBuiltIn = true,
+                            Name = "AcquisitionManager",
+                            NormalizedName = "ACQUISITIONMANAGER"
+                        },
+                        new
+                        {
+                            Id = "role-legalofficer-00000-0003",
+                            ConcurrencyStamp = "stamp-legalofficer",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Performs due diligence, manages legal documents and compliance requirements",
+                            IsBuiltIn = true,
+                            Name = "LegalOfficer",
+                            NormalizedName = "LEGALOFFICER"
+                        },
+                        new
+                        {
+                            Id = "role-planningmgr-000000-0004",
+                            ConcurrencyStamp = "stamp-planningmgr",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Handles planning applications, council submissions, and approvals",
+                            IsBuiltIn = true,
+                            Name = "PlanningManager",
+                            NormalizedName = "PLANNINGMANAGER"
+                        },
+                        new
+                        {
+                            Id = "role-projectmgr-0000000-0005",
+                            ConcurrencyStamp = "stamp-projectmgr",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Plans projects, manages budgets, timelines, and resources",
+                            IsBuiltIn = true,
+                            Name = "ProjectManager",
+                            NormalizedName = "PROJECTMANAGER"
+                        },
+                        new
+                        {
+                            Id = "role-sitemgr-000000000-0006",
+                            ConcurrencyStamp = "stamp-sitemgr",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Oversees construction, tracks progress, ensures quality and safety on-site",
+                            IsBuiltIn = true,
+                            Name = "SiteManager",
+                            NormalizedName = "SITEMANAGER"
+                        },
+                        new
+                        {
+                            Id = "role-salesmgr-00000000-0007",
+                            ConcurrencyStamp = "stamp-salesmgr",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Manages marketing, leads, sales pipeline, and unit reservations",
+                            IsBuiltIn = true,
+                            Name = "SalesManager",
+                            NormalizedName = "SALESMANAGER"
+                        },
+                        new
+                        {
+                            Id = "role-completionmgr-000-0008",
+                            ConcurrencyStamp = "stamp-completionmgr",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Coordinates handover, legal completion, and project closeout",
+                            IsBuiltIn = true,
+                            Name = "CompletionManager",
+                            NormalizedName = "COMPLETIONMANAGER"
+                        },
+                        new
+                        {
+                            Id = "role-propertymgr-00000-0009",
+                            ConcurrencyStamp = "stamp-propertymgr",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Manages rentals, tenants, maintenance, and day-to-day property operations",
+                            IsBuiltIn = true,
+                            Name = "PropertyManager",
+                            NormalizedName = "PROPERTYMANAGER"
+                        },
+                        new
+                        {
+                            Id = "role-financedir-000000-0010",
+                            ConcurrencyStamp = "stamp-financedir",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Monitors financial performance, profitability, and investor returns",
+                            IsBuiltIn = true,
+                            Name = "FinanceDirector",
+                            NormalizedName = "FINANCEDIRECTOR"
+                        },
+                        new
+                        {
+                            Id = "role-valuationanlst-00-0011",
+                            ConcurrencyStamp = "stamp-valuationanlst",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Performs financial review and feasibility analysis for land opportunities",
+                            IsBuiltIn = true,
+                            Name = "ValuationAnalyst",
+                            NormalizedName = "VALUATIONANALYST"
+                        },
+                        new
+                        {
+                            Id = "role-surveyor-00000000-0012",
+                            ConcurrencyStamp = "stamp-surveyor",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Conducts technical assessments and produces survey reports",
+                            IsBuiltIn = true,
+                            Name = "Surveyor",
+                            NormalizedName = "SURVEYOR"
+                        },
+                        new
+                        {
+                            Id = "role-admin-0000000000000-0013",
+                            ConcurrencyStamp = "stamp-admin",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Documentation, data entry, and general administrative support",
+                            IsBuiltIn = true,
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        });
                 });
 
             modelBuilder.Entity("BuildEstate.Infrastructure.Identity.ApplicationUser", b =>
@@ -1925,6 +3382,13 @@ namespace BuildEstate.Infrastructure.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -1938,7 +3402,12 @@ namespace BuildEstate.Infrastructure.Migrations
                         .HasColumnType("nvarchar(128)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -1974,11 +3443,26 @@ namespace BuildEstate.Infrastructure.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasFilter("[Email] IS NOT NULL");
+
+                    b.HasIndex("IsActive");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -2000,8 +3484,18 @@ namespace BuildEstate.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DeviceInfo")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
 
                     b.Property<bool>("IsRevoked")
                         .ValueGeneratedOnAdd()
@@ -2024,6 +3518,8 @@ namespace BuildEstate.Infrastructure.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
 
                     b.HasIndex("Token")
                         .IsUnique();
@@ -2317,7 +3813,7 @@ namespace BuildEstate.Infrastructure.Migrations
                     b.HasOne("BuildEstate.Domain.Entities.LegalCompliance.LegalCase", "LegalCase")
                         .WithMany("Contracts")
                         .HasForeignKey("LegalCaseId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("LegalCase");
@@ -2416,10 +3912,45 @@ namespace BuildEstate.Infrastructure.Migrations
                     b.Navigation("Application");
                 });
 
+            modelBuilder.Entity("BuildEstate.Domain.Entities.UserManagement.PasswordHistory", b =>
+                {
+                    b.HasOne("BuildEstate.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany("PasswordHistories")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("BuildEstate.Domain.Entities.UserManagement.RolePermission", b =>
+                {
+                    b.HasOne("BuildEstate.Domain.Entities.UserManagement.Permission", "Permission")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BuildEstate.Infrastructure.Identity.ApplicationRole", null)
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
+                });
+
+            modelBuilder.Entity("BuildEstate.Domain.Entities.UserManagement.UserSession", b =>
+                {
+                    b.HasOne("BuildEstate.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany("Sessions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("BuildEstate.Infrastructure.Identity.RefreshToken", b =>
                 {
                     b.HasOne("BuildEstate.Infrastructure.Identity.ApplicationUser", "User")
-                        .WithMany()
+                        .WithMany("RefreshTokens")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2529,6 +4060,25 @@ namespace BuildEstate.Infrastructure.Migrations
                     b.Navigation("Fees");
 
                     b.Navigation("Milestones");
+                });
+
+            modelBuilder.Entity("BuildEstate.Domain.Entities.UserManagement.Permission", b =>
+                {
+                    b.Navigation("RolePermissions");
+                });
+
+            modelBuilder.Entity("BuildEstate.Infrastructure.Identity.ApplicationRole", b =>
+                {
+                    b.Navigation("RolePermissions");
+                });
+
+            modelBuilder.Entity("BuildEstate.Infrastructure.Identity.ApplicationUser", b =>
+                {
+                    b.Navigation("PasswordHistories");
+
+                    b.Navigation("RefreshTokens");
+
+                    b.Navigation("Sessions");
                 });
 #pragma warning restore 612, 618
         }

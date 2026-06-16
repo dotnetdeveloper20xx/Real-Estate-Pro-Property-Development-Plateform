@@ -26,6 +26,9 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         builder.Property(t => t.IsUsed)
             .HasDefaultValue(false);
 
+        builder.Property(t => t.UsedAt)
+            .IsRequired(false);
+
         builder.Property(t => t.IsRevoked)
             .HasDefaultValue(false);
 
@@ -35,11 +38,20 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         // Indexes for common query patterns
         builder.HasIndex(t => t.Token).IsUnique();
         builder.HasIndex(t => t.UserId);
+        builder.HasIndex(t => t.CreatedAt);
         builder.HasIndex(t => new { t.UserId, t.IsUsed, t.IsRevoked });
+
+        builder.Property(t => t.DeviceInfo)
+            .IsRequired()
+            .HasMaxLength(512);
+
+        builder.Property(t => t.IpAddress)
+            .IsRequired()
+            .HasMaxLength(45);
 
         // Relationship to ApplicationUser
         builder.HasOne(t => t.User)
-            .WithMany()
+            .WithMany(u => u.RefreshTokens)
             .HasForeignKey(t => t.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }
