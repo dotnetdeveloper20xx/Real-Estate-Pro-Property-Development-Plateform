@@ -1,6 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ToastService } from '../../core/services/toast.service';
+import { ThemeService } from '../../core/services/theme.service';
+import { AuthService } from '../../core/services/auth.service';
 
 /**
  * Settings page component.
@@ -206,12 +209,19 @@ import { FormsModule } from '@angular/forms';
   `
 })
 export class SettingsComponent {
-  readonly account = {
-    name: 'John Mitchell',
-    email: 'j.mitchell@buildestate.co.uk',
-    role: 'Acquisition Manager',
-    department: 'Land Acquisition'
-  };
+  private readonly toast = inject(ToastService);
+  private readonly themeService = inject(ThemeService);
+  private readonly authService = inject(AuthService);
+
+  get account() {
+    const user = this.authService.getCurrentUser();
+    return {
+      name: user ? `${user.firstName} ${user.lastName}` : 'Unknown User',
+      email: user?.email ?? 'N/A',
+      role: user?.roles?.[0]?.replace(/([a-z])([A-Z])/g, '$1 $2') ?? 'N/A',
+      department: 'BuildEstate Pro'
+    };
+  }
 
   notificationPrefs = [
     {
@@ -253,24 +263,28 @@ export class SettingsComponent {
   ];
 
   readonly themes = [
-    { value: 'corporate', label: 'Corporate (Light)' },
-    { value: 'business', label: 'Business (Dark)' },
-    { value: 'nord', label: 'Nord' },
-    { value: 'winter', label: 'Winter' }
+    { value: 'light', label: 'Light' },
+    { value: 'dark', label: 'Dark' },
+    { value: 'corporate', label: 'Corporate' },
+    { value: 'business', label: 'Business' }
   ];
 
-  selectedTheme = 'corporate';
+  selectedTheme = this.themeService.getTheme();
   sidebarDefault = 'expanded';
   itemsPerPage = 25;
   dateFormat = 'dd/MM/yyyy';
   readonly pageOptions = [10, 25, 50, 100];
 
   applyTheme(theme: string): void {
-    document.documentElement.setAttribute('data-theme', theme);
+    this.themeService.setTheme(theme);
   }
 
   saveSettings(): void {
-    // In a real app this would persist to backend/localStorage
-    alert('Preferences saved successfully.');
+    // Persist theme (already saved by ThemeService on change)
+    // Other settings would persist to backend in a real app
+    localStorage.setItem('be_settings_sidebar', this.sidebarDefault);
+    localStorage.setItem('be_settings_pageSize', String(this.itemsPerPage));
+    localStorage.setItem('be_settings_dateFormat', this.dateFormat);
+    this.toast.showSuccess('Preferences saved successfully.');
   }
 }

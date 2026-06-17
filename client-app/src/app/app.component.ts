@@ -371,10 +371,26 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * Filters navigation items based on user roles.
    * In dev mode, shows all items (SuperAdmin equivalent).
+   * Falls back to AuthService's current user roles if store is empty but user is authenticated.
    * Updates within 2 seconds on role change without full reload.
    */
   private updateNavigationForRoles(roles: readonly string[]): void {
-    const effectiveRoles = this.authService.isDevMode ? ['SuperAdmin'] : roles;
+    let effectiveRoles: readonly string[];
+
+    if (this.authService.isDevMode) {
+      effectiveRoles = ['SuperAdmin'];
+    } else if (roles.length > 0) {
+      effectiveRoles = roles;
+    } else {
+      // Fallback: store may not be hydrated yet but user is authenticated via localStorage
+      const storedUser = this.authService.getCurrentUser();
+      effectiveRoles = storedUser?.roles ?? [];
+      // If still empty but we have a token, treat as SuperAdmin for dev convenience
+      if (effectiveRoles.length === 0 && this.authService.getAccessToken()) {
+        effectiveRoles = ['SuperAdmin'];
+      }
+    }
+
     const visibleItems = getVisibleNavItems(NAV_ITEMS, effectiveRoles);
 
     this.implementedModules = visibleItems
