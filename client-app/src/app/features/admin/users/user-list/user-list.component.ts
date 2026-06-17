@@ -20,13 +20,17 @@ interface IUserListItem {
 }
 
 /**
- * Paginated API response envelope.
+ * Paginated API response envelope (after response wrapper interceptor).
  */
 interface IPagedResponse {
-  readonly items: IUserListItem[];
-  readonly totalCount: number;
-  readonly pageNumber: number;
-  readonly pageSize: number;
+  readonly data: IUserListItem[];
+  readonly success: boolean;
+  readonly pagination: {
+    readonly totalCount: number;
+    readonly pageNumber: number;
+    readonly pageSize: number;
+    readonly totalPages: number;
+  } | null;
 }
 
 /**
@@ -426,8 +430,8 @@ export class UserListComponent implements OnInit, OnDestroy {
 
     this.http.get<IPagedResponse>('/api/v1/users', { params }).subscribe({
       next: (response) => {
-        this.users = response.items;
-        this.totalCount = response.totalCount;
+        this.users = response.data ?? [];
+        this.totalCount = response.pagination?.totalCount ?? 0;
         this.loading = false;
       },
       error: () => {

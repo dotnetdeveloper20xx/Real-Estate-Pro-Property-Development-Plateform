@@ -467,9 +467,9 @@ export class RoleListComponent implements OnInit, OnDestroy {
   private loadRoles(): void {
     this.loading = true;
 
-    this.http.get<IRoleListItem[]>('/api/v1/roles').subscribe({
-      next: (roles) => {
-        this.roles = roles;
+    this.http.get<{ data: IRoleListItem[]; success: boolean }>('/api/v1/roles').subscribe({
+      next: (response) => {
+        this.roles = Array.isArray(response) ? response : (response.data ?? []);
         this.applyFilter();
         this.loading = false;
       },
@@ -481,9 +481,9 @@ export class RoleListComponent implements OnInit, OnDestroy {
   }
 
   private loadRoleDetail(roleId: string): void {
-    this.http.get<IRoleDetail>(`/api/v1/roles/${roleId}`).subscribe({
-      next: (detail) => {
-        this.selectedRoleDetail = detail;
+    this.http.get<{ data: IRoleDetail; success: boolean }>(`/api/v1/roles/${roleId}`).subscribe({
+      next: (response) => {
+        this.selectedRoleDetail = (response as any).data ?? response;
       },
       error: () => {
         this.toast.showError('Failed to load role details.');
