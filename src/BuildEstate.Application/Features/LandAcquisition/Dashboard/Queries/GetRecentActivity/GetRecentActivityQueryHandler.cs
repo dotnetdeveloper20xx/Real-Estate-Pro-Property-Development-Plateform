@@ -26,15 +26,14 @@ public sealed class GetRecentActivityQueryHandler
         var recentActivity = await _repository
             .Query()
             .AsNoTracking()
-            .Where(x => x.UpdatedAt != null)
-            .OrderByDescending(x => x.UpdatedAt)
+            .OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt)
             .Take(10)
             .Select(x => new RecentActivityDto
             {
                 OpportunityId = x.Id,
                 OpportunityName = x.Name,
                 Status = x.Status.ToString(),
-                Timestamp = x.UpdatedAt!.Value,
+                Timestamp = x.UpdatedAt ?? x.CreatedAt,
                 UserName = x.UpdatedBy ?? x.CreatedBy
             })
             .ToListAsync(cancellationToken);
