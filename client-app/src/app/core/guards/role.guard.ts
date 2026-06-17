@@ -30,8 +30,8 @@ export const roleGuard: CanActivateFn = (route) => {
   const store = inject(Store);
   const toastService = inject(ToastService);
 
-  // In dev mode or no token (development testing), allow all access
-  if (authService.isDevMode || !authService.getAccessToken()) {
+  // In dev mode (no explicit login), allow all access
+  if (authService.isDevMode) {
     return true;
   }
 
@@ -83,8 +83,8 @@ export const adminGuard: CanActivateFn = () => {
   const store = inject(Store);
   const toastService = inject(ToastService);
 
-  // In dev mode or no token (development testing), allow all access
-  if (authService.isDevMode || !authService.getAccessToken()) {
+  // In dev mode (no explicit login), allow all access
+  if (authService.isDevMode) {
     return true;
   }
 

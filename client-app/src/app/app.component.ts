@@ -382,13 +382,9 @@ export class AppComponent implements OnInit, OnDestroy {
     } else if (roles.length > 0) {
       effectiveRoles = roles;
     } else {
-      // Fallback: store may not be hydrated yet but user is authenticated via localStorage
+      // Fallback: check AuthService for stored user roles
       const storedUser = this.authService.getCurrentUser();
       effectiveRoles = storedUser?.roles ?? [];
-      // If still empty but we have a token, treat as SuperAdmin for dev convenience
-      if (effectiveRoles.length === 0 && this.authService.getAccessToken()) {
-        effectiveRoles = ['SuperAdmin'];
-      }
     }
 
     const visibleItems = getVisibleNavItems(NAV_ITEMS, effectiveRoles);

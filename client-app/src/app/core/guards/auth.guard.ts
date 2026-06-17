@@ -28,14 +28,13 @@ export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
   const store = inject(Store);
 
-  // In dev mode, allow all access (DevAuthMiddleware handles auth on backend)
+  // In dev mode (no token ever stored), allow all access
   if (authService.isDevMode) {
     return true;
   }
 
-  // If no token exists and running in Angular dev mode, allow access
-  if (!authService.getAccessToken()) {
-    // Allow navigation without login for testing in development
+  // Check if a token exists in storage
+  if (authService.getAccessToken()) {
     return true;
   }
 
