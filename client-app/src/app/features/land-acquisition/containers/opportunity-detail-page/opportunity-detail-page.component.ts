@@ -16,6 +16,7 @@ import { Store } from '@ngrx/store';
 
 import { OpportunityService } from '../../services/opportunity.service';
 import { ToastService } from '@core/services/toast.service';
+import { AuthService } from '@core/services/auth.service';
 import { StatusProgressComponent } from '../../components/status-progress/status-progress.component';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ActivityTimelineComponent } from '../../components/activity-timeline/activity-timeline.component';
@@ -651,6 +652,15 @@ interface IActionButton {
               role="tabpanel"
               aria-labelledby="tab-financials">
 
+              <!-- Permission Notice for non-finance users -->
+              <div *ngIf="!canEditFinancials()" class="alert alert-info mb-4 shadow-sm">
+                <span class="material-symbols-outlined">info</span>
+                <div>
+                  <p class="font-medium text-sm">View Only — Financial editing requires Valuation Analyst or Finance Director role</p>
+                  <p class="text-xs opacity-70">You can view the financial assessment but changes must be made by a Valuation Analyst or Finance Director. Contact your administrator if you need access.</p>
+                </div>
+              </div>
+
               <!-- Show existing assessment when it exists AND form is NOT open -->
               <div *ngIf="opportunity()!.feasibilityAssessment as assessment">
                 <div *ngIf="!showFeasibilityForm()" class="space-y-6">
@@ -721,11 +731,14 @@ interface IActionButton {
                 <span class="material-symbols-outlined text-4xl mb-2">analytics</span>
                 <p class="text-sm font-medium">No feasibility assessment available</p>
                 <p class="text-xs mt-1 mb-4">Create a feasibility assessment to evaluate this opportunity's financial viability.</p>
-                <button class="btn btn-primary btn-sm gap-1" (click)="showFeasibilityForm.set(true)">
+                <button *ngIf="canEditFinancials()" class="btn btn-primary btn-sm gap-1" (click)="showFeasibilityForm.set(true)">
                   <span class="material-symbols-outlined text-sm">add</span>
                   Create Feasibility Assessment
-                  <span class="badge badge-ghost badge-xs ml-1">Finance Director</span>
                 </button>
+                <p *ngIf="!canEditFinancials()" class="text-xs text-warning mt-2">
+                  <span class="material-symbols-outlined text-sm align-middle">lock</span>
+                  Only Valuation Analyst or Finance Director can create assessments
+                </p>
               </div>
 
               <!-- Inline Feasibility Form (shown for both create and edit) -->
@@ -870,6 +883,7 @@ export class OpportunityDetailPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly http = inject(HttpClient);
   private readonly toast = inject(ToastService);
+  private readonly authService = inject(AuthService);
 
   /** Reactive state signals */
   readonly opportunity = signal<IOpportunityDetail | null>(null);
@@ -1485,6 +1499,11 @@ export class OpportunityDetailPageComponent implements OnInit {
 
   /** Save a new feasibility assessment (or update existing in edit mode) */
   saveFeasibility(): void {
+    if (!this.canEditFinancials()) {
+      this.toast.showError('Permission denied. Financial assessments can only be created or edited by a Valuation Analyst or Finance Director.');
+      return;
+    }
+
     const opp = this.opportunity();
     if (!opp) return;
 
@@ -1529,6 +1548,11 @@ export class OpportunityDetailPageComponent implements OnInit {
     this.showFeasibilityForm.set(false);
     this.editingFeasibility.set(false);
     this.feasibilityForm = { landCost: 0, buildCost: 0, fees: 0, financeCosts: 0, revenue: 0, scenario: 'Expected' };
+  }
+
+  /** Check if the current user has permission to edit financial assessments. */
+  canEditFinancials(): boolean {
+    return this.authService.hasAnyRole(['ValuationAnalyst', 'FinanceDirector', 'SuperAdmin']);
   }
 
   /** Submit approval request */
