@@ -41,8 +41,8 @@ interface IAssignmentCell {
  */
 interface IPermissionMatrix {
   readonly roles: readonly IRoleItem[];
-  readonly permissions: readonly IPermissionItem[];
-  readonly assignments: readonly IAssignmentCell[];
+  readonly permissionGroups: readonly { readonly domainArea: string; readonly permissions: readonly IPermissionItem[] }[];
+  readonly cells: readonly IAssignmentCell[];
 }
 
 /**
@@ -370,7 +370,12 @@ export class PermissionMatrixComponent implements OnInit, OnDestroy {
       next: (matrix) => {
         this.matrix = matrix;
         this.buildAssignmentMap(matrix);
-        this.permissionGroups = this.groupPermissions(matrix.permissions);
+        // permissionGroups from API are already grouped by domain
+        this.permissionGroups = matrix.permissionGroups.map(g => ({
+          domainArea: g.domainArea,
+          permissions: [...g.permissions],
+          expanded: true
+        }));
         this.applyFilter();
         this.loading = false;
       },
@@ -383,28 +388,9 @@ export class PermissionMatrixComponent implements OnInit, OnDestroy {
 
   private buildAssignmentMap(matrix: IPermissionMatrix): void {
     this.assignmentMap.clear();
-    for (const cell of matrix.assignments) {
+    for (const cell of matrix.cells) {
       this.assignmentMap.set(`${cell.roleId}:${cell.permissionId}`, cell.isGranted);
     }
-  }
-
-  private groupPermissions(permissions: readonly IPermissionItem[]): IPermissionGroup[] {
-    const groups = new Map<string, IPermissionItem[]>();
-    for (const perm of permissions) {
-      const area = perm.domainArea || 'General';
-      if (!groups.has(area)) {
-        groups.set(area, []);
-      }
-      groups.get(area)!.push(perm);
-    }
-
-    return Array.from(groups.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([domainArea, perms]) => ({
-        domainArea,
-        permissions: perms.sort((a, b) => a.displayName.localeCompare(b.displayName)),
-        expanded: true
-      }));
   }
 
   private applyFilter(): void {
