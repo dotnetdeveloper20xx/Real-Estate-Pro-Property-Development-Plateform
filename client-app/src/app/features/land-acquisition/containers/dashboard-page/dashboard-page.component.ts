@@ -172,7 +172,7 @@ Chart.register(...registerables);
           <div class="card bg-base-100 border border-base-200 animate-in delay-5">
             <div class="card-body p-5">
               <h2 class="text-lg font-semibold text-base-content mb-4">Pipeline by Status</h2>
-              <div class="flex justify-center items-center w-full" style="height: 280px;">
+              <div class="w-full" style="position: relative; height: 260px;">
                 <canvas #pipelineBarCanvas></canvas>
               </div>
             </div>
@@ -376,9 +376,12 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
     this.subscription = this.metrics$.pipe(
       filter((m): m is IDashboardMetrics => m !== null)
     ).subscribe((metrics) => {
-      this.renderPipelineDonut(metrics);
-      this.renderPipelineBar(metrics);
-      this.renderActivityDonut(metrics);
+      // Defer chart rendering to next tick so Angular has time to create canvas elements
+      setTimeout(() => {
+        this.renderPipelineDonut(metrics);
+        this.renderPipelineBar(metrics);
+        this.renderActivityDonut(metrics);
+      }, 100);
     });
   }
 
