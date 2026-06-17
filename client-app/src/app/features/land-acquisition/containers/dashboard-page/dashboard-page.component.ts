@@ -9,6 +9,7 @@ import {
   ElementRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, Subscription, filter } from 'rxjs';
 import { Chart, registerables } from 'chart.js';
@@ -30,7 +31,7 @@ Chart.register(...registerables);
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [CommonModule, KpiCardComponent],
+  imports: [CommonModule, RouterLink, KpiCardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host { display: block; }
@@ -161,7 +162,7 @@ Chart.register(...registerables);
                   <span>{{ formatStatusLabel(status) }} ({{ getStatusCount(metrics, status) }})</span>
                 </div>
               </div>
-              <a class="text-sm text-primary mt-3 inline-block hover:underline cursor-pointer">
+              <a routerLink="/land-acquisition/pipeline" class="text-sm text-primary mt-3 inline-block hover:underline cursor-pointer">
                 View full pipeline →
               </a>
             </div>
@@ -174,7 +175,7 @@ Chart.register(...registerables);
               <div class="flex justify-center">
                 <canvas #pipelineBarCanvas width="300" height="220"></canvas>
               </div>
-              <a class="text-sm text-primary mt-3 inline-block hover:underline cursor-pointer">
+              <a routerLink="/land-acquisition/opportunities" class="text-sm text-primary mt-3 inline-block hover:underline cursor-pointer">
                 View detailed analytics →
               </a>
             </div>
@@ -255,7 +256,7 @@ Chart.register(...registerables);
                 <span class="material-symbols-outlined text-3xl mb-2">history</span>
                 <p class="text-sm">No recent activity.</p>
               </div>
-              <a class="text-sm text-primary mt-3 inline-block hover:underline cursor-pointer">
+              <a routerLink="/land-acquisition/opportunities" class="text-sm text-primary mt-3 inline-block hover:underline cursor-pointer">
                 View all activity →
               </a>
             </div>
@@ -289,7 +290,7 @@ Chart.register(...registerables);
                 <span class="material-symbols-outlined text-3xl mb-2">leaderboard</span>
                 <p class="text-sm">No opportunities with feasibility data.</p>
               </div>
-              <a class="text-sm text-primary mt-3 inline-block hover:underline cursor-pointer">
+              <a routerLink="/land-acquisition/opportunities" class="text-sm text-primary mt-3 inline-block hover:underline cursor-pointer">
                 View all opportunities →
               </a>
             </div>
