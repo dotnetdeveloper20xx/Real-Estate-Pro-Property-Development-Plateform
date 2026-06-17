@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using BuildEstate.Application.Interfaces;
 using BuildEstate.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -17,15 +18,18 @@ public class RolesController : BaseApiController
 {
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IRoleManagementService _roleManagementService;
     private readonly ILogger<RolesController> _logger;
 
     public RolesController(
         RoleManager<ApplicationRole> roleManager,
         UserManager<ApplicationUser> userManager,
+        IRoleManagementService roleManagementService,
         ILogger<RolesController> logger)
     {
         _roleManager = roleManager;
         _userManager = userManager;
+        _roleManagementService = roleManagementService;
         _logger = logger;
     }
 
@@ -109,9 +113,16 @@ public class RolesController : BaseApiController
             return BadRequest(new { errors });
         }
 
-        _logger.LogInformation("Role {RoleName} created by {AdminId}",
+        // Assign permissions if provided
+        if (request.PermissionIds is { Count: > 0 })
+        {
+            await _roleManagementService.AssignPermissionsAsync(role.Id, request.PermissionIds);
+        }
+
+        _logger.LogInformation("Role {RoleName} created by {AdminId} with {PermCount} permissions",
             role.Name,
-            User.FindFirstValue(ClaimTypes.NameIdentifier));
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            request.PermissionIds?.Count ?? 0);
 
         return CreatedAtAction(nameof(GetById), new { id = role.Id }, new
         {
@@ -202,6 +213,7 @@ public sealed record CreateRoleRequest
 {
     public string Name { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
+    public List<Guid> PermissionIds { get; init; } = new();
 }
 
 public sealed record UpdateRoleRequest
