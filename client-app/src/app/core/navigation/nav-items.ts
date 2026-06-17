@@ -211,6 +211,13 @@ export const ADMIN_NAV_ITEMS: readonly INavItem[] = [
     enabled: true
   },
   {
+    label: 'Permissions',
+    routerLink: '/admin/permissions',
+    icon: 'lock',
+    roles: ['SuperAdmin'],
+    enabled: true
+  },
+  {
     label: 'Audit Logs',
     routerLink: '/admin/audit-logs',
     icon: 'history',
