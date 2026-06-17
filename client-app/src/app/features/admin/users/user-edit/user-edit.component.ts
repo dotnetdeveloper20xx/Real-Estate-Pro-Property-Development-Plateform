@@ -218,14 +218,26 @@ export class UserEditComponent implements OnInit {
 
     this.submitting = true;
     const { firstName, lastName, email, roles } = this.form.getRawValue();
+    const userId = this.userData.id;
 
-    this.http.put(`/api/v1/users/${this.userData.id}`, {
-      firstName, lastName, email, roles
+    // Update profile info
+    this.http.put(`/api/v1/users/${userId}`, {
+      firstName, lastName, email, isActive: this.userData.isActive
     }).subscribe({
       next: () => {
-        this.submitting = false;
-        this.toast.showSuccess('User updated successfully');
-        this.router.navigate(['/admin/users', this.userData!.id]);
+        // Also update roles via the separate endpoint
+        this.http.put(`/api/v1/users/${userId}/roles`, { roles }).subscribe({
+          next: () => {
+            this.submitting = false;
+            this.toast.showSuccess('User updated successfully');
+            this.router.navigate(['/admin/users', userId]);
+          },
+          error: () => {
+            this.submitting = false;
+            this.toast.showSuccess('User profile updated but role assignment failed');
+            this.router.navigate(['/admin/users', userId]);
+          }
+        });
       },
       error: (err) => {
         this.submitting = false;
