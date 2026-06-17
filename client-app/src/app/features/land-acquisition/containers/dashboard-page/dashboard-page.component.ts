@@ -172,12 +172,9 @@ Chart.register(...registerables);
           <div class="card bg-base-100 border border-base-200 animate-in delay-5">
             <div class="card-body p-5">
               <h2 class="text-lg font-semibold text-base-content mb-4">Pipeline by Status</h2>
-              <div class="flex justify-center">
-                <canvas #pipelineBarCanvas width="300" height="220"></canvas>
+              <div class="flex justify-center items-center w-full" style="height: 280px;">
+                <canvas #pipelineBarCanvas></canvas>
               </div>
-              <a routerLink="/land-acquisition/opportunities" class="text-sm text-primary mt-3 inline-block hover:underline cursor-pointer">
-                View detailed analytics →
-              </a>
             </div>
           </div>
 
@@ -438,23 +435,23 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
         datasets: [{
           data,
           backgroundColor: colors,
-          borderRadius: 4,
-          barThickness: 28
+          borderRadius: 4
         }]
       },
       options: {
-        responsive: false,
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: { display: false }
         },
         scales: {
           x: {
-            ticks: { font: { size: 10 } },
+            ticks: { font: { size: 11 } },
             grid: { display: false }
           },
           y: {
             beginAtZero: true,
-            ticks: { stepSize: 1, font: { size: 10 } },
+            ticks: { stepSize: 2, font: { size: 11 } },
             grid: { color: 'rgba(0,0,0,0.05)' }
           }
         }
