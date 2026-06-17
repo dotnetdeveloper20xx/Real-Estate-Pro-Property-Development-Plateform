@@ -21,6 +21,7 @@ public class AuthController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IInfrastructureTokenService _tokenService;
+    private readonly ISessionService _sessionService;
     private readonly IAuditLogService _auditLogService;
     private readonly ILogger<AuthController> _logger;
 
@@ -28,12 +29,14 @@ public class AuthController : ControllerBase
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         IInfrastructureTokenService tokenService,
+        ISessionService sessionService,
         IAuditLogService auditLogService,
         ILogger<AuthController> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _tokenService = tokenService;
+        _sessionService = sessionService;
         _auditLogService = auditLogService;
         _logger = logger;
     }
@@ -74,10 +77,13 @@ public class AuthController : ControllerBase
         }
 
         var roles = await _userManager.GetRolesAsync(user);
-        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
         var deviceInfo = Request.Headers.UserAgent.ToString();
         var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(
             user, roles, request.RememberMe, deviceInfo, ipAddress);
+
+        // Create session record so SessionValidationMiddleware won't reject subsequent requests
+        await _sessionService.CreateSessionAsync(user.Id, ipAddress, deviceInfo);
 
         _logger.LogInformation("User {UserId} logged in successfully", user.Id);
 
