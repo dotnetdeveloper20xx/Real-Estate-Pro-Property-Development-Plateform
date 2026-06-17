@@ -670,16 +670,14 @@ interface IActionButton {
                     <span class="badge badge-sm badge-primary">{{ assessment.scenario }}</span>
                     <span *ngIf="assessment.isReadyForReview" class="badge badge-sm badge-success">Ready for Review</span>
                     <!-- Gap 5: Edit Assessment Button -->
-                    <button class="btn btn-ghost btn-xs gap-1" (click)="editFeasibility()">
+                    <button class="btn btn-ghost btn-xs gap-1" (click)="editFeasibility()" [disabled]="!canEditFinancials()" [class.btn-disabled]="!canEditFinancials()">
                       <span class="material-symbols-outlined text-sm">edit</span>
                       Edit
-                      <span class="badge badge-ghost badge-xs ml-1">Finance Director</span>
                     </button>
                     <!-- Gap 6: Mark Ready for Review -->
-                    <button *ngIf="!assessment.isReadyForReview" class="btn btn-success btn-xs gap-1" (click)="markReadyForReview()">
+                    <button *ngIf="!assessment.isReadyForReview" class="btn btn-success btn-xs gap-1" (click)="markReadyForReview()" [disabled]="!canEditFinancials()">
                       <span class="material-symbols-outlined text-sm">check_circle</span>
                       Mark Ready for Review
-                      <span class="badge badge-ghost badge-xs ml-1">Finance Director</span>
                     </button>
                   </div>
 
@@ -797,7 +795,7 @@ interface IActionButton {
 
                   <div class="flex justify-end gap-2 pt-2">
                     <button class="btn btn-ghost btn-sm" (click)="cancelFeasibilityForm()">Cancel</button>
-                    <button class="btn btn-primary btn-sm" (click)="saveFeasibility()">
+                    <button class="btn btn-primary btn-sm" (click)="saveFeasibility()" [disabled]="!canEditFinancials()">
                       <span class="material-symbols-outlined text-sm">save</span>
                       {{ editingFeasibility() ? 'Update Assessment' : 'Save Assessment' }}
                     </button>
