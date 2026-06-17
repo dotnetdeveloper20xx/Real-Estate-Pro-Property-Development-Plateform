@@ -188,88 +188,94 @@ import { ToastService } from '../../../../core/services/toast.service';
       </div>
     </div>
 
-    <!-- Role Detail Side Panel (Drawer) -->
-    <div class="drawer drawer-end" [class.drawer-open]="showDetailPanel">
-      <input type="checkbox" class="drawer-toggle" [checked]="showDetailPanel" />
-      <div class="drawer-side z-50">
-        <label class="drawer-overlay" (click)="closeDetailPanel()"></label>
-        <div class="bg-base-100 min-h-full w-96 p-6 border-l border-base-200 space-y-6">
-          <ng-container *ngIf="selectedRole">
-            <!-- Panel Header -->
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-bold text-base-content">Role Details</h2>
-              <button class="btn btn-ghost btn-sm btn-square" (click)="closeDetailPanel()">
-                <span class="material-symbols-outlined">close</span>
-              </button>
-            </div>
+    <!-- Role Detail Side Panel (Fixed Overlay) -->
+    <div
+      *ngIf="showDetailPanel"
+      class="fixed inset-0 z-50 flex justify-end"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Role details panel">
+      <!-- Backdrop -->
+      <div
+        class="absolute inset-0 bg-black/40 transition-opacity"
+        (click)="closeDetailPanel()"></div>
+      <!-- Panel -->
+      <div class="relative bg-base-100 w-96 max-w-full h-full overflow-y-auto p-6 shadow-2xl border-l border-base-200 space-y-6 animate-[slide-in-right_0.25s_ease-out]">
+        <ng-container *ngIf="selectedRole">
+          <!-- Panel Header -->
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold text-base-content">Role Details</h2>
+            <button class="btn btn-ghost btn-sm btn-square" (click)="closeDetailPanel()">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
 
-            <!-- Role Info -->
-            <div class="space-y-4">
+          <!-- Role Info -->
+          <div class="space-y-4">
+            <div>
+              <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Role Name</p>
+              <p class="text-base font-semibold">{{ formatRoleName(selectedRole.name) }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Description</p>
+              <p class="text-sm text-base-content/80">{{ selectedRole.description || 'No description' }}</p>
+            </div>
+            <div class="flex items-center gap-4">
               <div>
-                <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Role Name</p>
-                <p class="text-base font-semibold">{{ formatRoleName(selectedRole.name) }}</p>
+                <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Users</p>
+                <span class="badge badge-ghost">{{ selectedRole.userCount }} assigned</span>
               </div>
               <div>
-                <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Description</p>
-                <p class="text-sm text-base-content/80">{{ selectedRole.description || 'No description' }}</p>
-              </div>
-              <div class="flex items-center gap-4">
-                <div>
-                  <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Users</p>
-                  <span class="badge badge-ghost">{{ selectedRole.userCount }} assigned</span>
-                </div>
-                <div>
-                  <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Type</p>
-                  <span class="badge badge-sm" [ngClass]="selectedRole.isBuiltIn ? 'badge-info' : 'badge-accent'">
-                    {{ selectedRole.isBuiltIn ? 'Built-in' : 'Custom' }}
-                  </span>
-                </div>
+                <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Type</p>
+                <span class="badge badge-sm" [ngClass]="selectedRole.isBuiltIn ? 'badge-info' : 'badge-accent'">
+                  {{ selectedRole.isBuiltIn ? 'Built-in' : 'Custom' }}
+                </span>
               </div>
             </div>
+          </div>
 
-            <!-- Permissions Summary -->
-            <div *ngIf="selectedRoleDetail">
-              <div class="flex items-center justify-between mb-2">
-                <p class="text-xs text-base-content/50 uppercase tracking-wider">
-                  Permissions ({{ selectedRoleDetail.permissions.length }})
-                </p>
-                <button class="btn btn-ghost btn-xs gap-1" (click)="navigateToPermissionMatrix()">
-                  View All
-                  <span class="material-symbols-outlined text-xs">open_in_new</span>
-                </button>
-              </div>
-              <div class="space-y-1 max-h-48 overflow-y-auto">
-                <div
-                  *ngFor="let perm of selectedRoleDetail.permissions"
-                  class="flex items-center gap-2 py-1 px-2 rounded bg-base-200/50 text-sm">
-                  <span class="material-symbols-outlined text-success text-sm">check_circle</span>
-                  <span>{{ perm.displayName }}</span>
-                </div>
-                <p *ngIf="selectedRoleDetail.permissions.length === 0" class="text-sm text-base-content/50 italic">
-                  No permissions assigned
-                </p>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="pt-4 border-t border-base-200 space-y-2">
-              <button
-                *ngIf="!selectedRole.isBuiltIn"
-                class="btn btn-outline btn-sm w-full gap-2"
-                (click)="navigateToEdit(selectedRole.id)">
-                <span class="material-symbols-outlined text-sm">edit</span>
-                Edit Role
-              </button>
-              <button
-                *ngIf="!selectedRole.isBuiltIn"
-                class="btn btn-error btn-outline btn-sm w-full gap-2"
-                (click)="openDeleteConfirm()">
-                <span class="material-symbols-outlined text-sm">delete</span>
-                Delete Role
+          <!-- Permissions Summary -->
+          <div *ngIf="selectedRoleDetail">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs text-base-content/50 uppercase tracking-wider">
+                Permissions ({{ selectedRoleDetail.permissions.length }})
+              </p>
+              <button class="btn btn-ghost btn-xs gap-1" (click)="navigateToPermissionMatrix()">
+                View All
+                <span class="material-symbols-outlined text-xs">open_in_new</span>
               </button>
             </div>
-          </ng-container>
-        </div>
+            <div class="space-y-1 max-h-48 overflow-y-auto">
+              <div
+                *ngFor="let perm of selectedRoleDetail.permissions"
+                class="flex items-center gap-2 py-1 px-2 rounded bg-base-200/50 text-sm">
+                <span class="material-symbols-outlined text-success text-sm">check_circle</span>
+                <span>{{ perm.displayName }}</span>
+              </div>
+              <p *ngIf="selectedRoleDetail.permissions.length === 0" class="text-sm text-base-content/50 italic">
+                No permissions assigned
+              </p>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="pt-4 border-t border-base-200 space-y-2">
+            <button
+              *ngIf="!selectedRole.isBuiltIn"
+              class="btn btn-outline btn-sm w-full gap-2"
+              (click)="navigateToEdit(selectedRole.id)">
+              <span class="material-symbols-outlined text-sm">edit</span>
+              Edit Role
+            </button>
+            <button
+              *ngIf="!selectedRole.isBuiltIn"
+              class="btn btn-error btn-outline btn-sm w-full gap-2"
+              (click)="openDeleteConfirm()">
+              <span class="material-symbols-outlined text-sm">delete</span>
+              Delete Role
+            </button>
+          </div>
+        </ng-container>
       </div>
     </div>
 

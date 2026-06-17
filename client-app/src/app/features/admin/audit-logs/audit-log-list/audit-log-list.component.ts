@@ -124,7 +124,14 @@ interface IPagedResult {
 
       <!-- Table -->
       <div *ngIf="!isLoading" class="card bg-base-100 shadow-sm border border-base-300/50">
-        <div class="overflow-x-auto">
+        <!-- Empty State -->
+        <div *ngIf="entries.length === 0" class="p-12 text-center">
+          <span class="material-symbols-outlined text-4xl text-base-content/30">history</span>
+          <p class="mt-2 text-base-content/50 font-medium">No records found for the selected criteria</p>
+          <p class="text-xs text-base-content/40 mt-1">Try adjusting your filters or date range</p>
+        </div>
+
+        <div *ngIf="entries.length > 0" class="overflow-x-auto">
           <table class="table">
             <thead>
               <tr>
@@ -147,13 +154,6 @@ interface IPagedResult {
               </tr>
             </tbody>
           </table>
-        </div>
-
-        <!-- Empty State -->
-        <div *ngIf="entries.length === 0" class="p-12 text-center">
-          <span class="material-symbols-outlined text-4xl text-base-content/30">history</span>
-          <p class="mt-2 text-base-content/50">No records found for the selected criteria</p>
-          <p class="text-xs text-base-content/40 mt-1">Try adjusting your filters or date range</p>
         </div>
 
         <!-- Pagination -->

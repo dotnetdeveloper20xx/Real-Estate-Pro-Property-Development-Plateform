@@ -191,16 +191,18 @@ interface IPagedResponse {
                   <td class="text-sm text-base-content/60">
                     {{ user.lastLoginAt ? (user.lastLoginAt | date:'dd MMM yyyy, HH:mm') : 'Never' }}
                   </td>
-                  <td (click)="$event.stopPropagation()">
-                    <div class="flex items-center gap-1">
+                  <td>
+                    <div class="flex items-center gap-1" (click)="$event.stopPropagation()">
                       <button
                         class="btn btn-ghost btn-xs btn-square"
+                        type="button"
                         aria-label="View user details"
                         (click)="navigateToDetail(user.id)">
                         <span class="material-symbols-outlined text-sm">visibility</span>
                       </button>
                       <button
                         class="btn btn-ghost btn-xs btn-square"
+                        type="button"
                         aria-label="Edit user"
                         (click)="navigateToEdit(user.id)">
                         <span class="material-symbols-outlined text-sm">edit</span>
@@ -383,10 +385,12 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   navigateToDetail(userId: string): void {
+    if (!userId) return;
     this.router.navigate(['/admin/users', userId]);
   }
 
   navigateToEdit(userId: string): void {
+    if (!userId) return;
     this.router.navigate(['/admin/users', userId, 'edit']);
   }
 
