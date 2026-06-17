@@ -6,9 +6,9 @@ import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { ConfirmDialogService } from './shared/services/confirm-dialog.service';
 import { ToastContainerComponent } from './shared/components/toast-container/toast-container.component';
-import { AuthService } from './core/services/auth.service';
+import { AuthService, ICurrentUser } from './core/services/auth.service';
 import { HasRoleDirective } from './shared/directives/has-role.directive';
-import { selectUserRoles } from './core/store/auth/auth.selectors';
+import { selectCurrentUser, selectUserRoles } from './core/store/auth/auth.selectors';
 import { NAV_ITEMS, ADMIN_NAV_ITEMS, getVisibleNavItems, INavItem as INavItemConfig } from './core/navigation/nav-items';
 
 /**
@@ -274,6 +274,7 @@ interface INavItem {
                   </div>
                 </div>
                 <span class="text-sm font-medium text-base-content hidden sm:inline">{{ userName }}</span>
+                <span *ngIf="userRole" class="badge badge-primary badge-sm hidden sm:inline-flex">{{ userRole }}</span>
                 <span class="material-symbols-outlined text-xs text-base-content/50">expand_more</span>
               </div>
               <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-xl z-50 w-56 p-2 shadow-xl border border-base-200 mt-2">
@@ -319,8 +320,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private routerSub: Subscription | null = null;
   private rolesSub: Subscription | null = null;
+  private userSub: Subscription | null = null;
   private currentUrl = '';
   private readonly store = inject(Store);
+
+  /** Current user from the auth store */
+  private currentUser: ICurrentUser | null = null;
 
   /** Visible implemented modules filtered by role (dynamically updated) */
   implementedModules: INavItem[] = [];
@@ -336,6 +341,11 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Set initial URL and expand active module
     this.currentUrl = this.router.url;
+
+    // Subscribe to current user from NgRx store for top bar user display
+    this.userSub = this.store.select(selectCurrentUser).subscribe((user) => {
+      this.currentUser = user;
+    });
 
     // Subscribe to role changes from NgRx store for dynamic navigation filtering
     this.rolesSub = this.store.select(selectUserRoles).subscribe((roles) => {
@@ -355,6 +365,7 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.routerSub?.unsubscribe();
     this.rolesSub?.unsubscribe();
+    this.userSub?.unsubscribe();
   }
 
   /**
@@ -445,22 +456,31 @@ export class AppComponent implements OnInit, OnDestroy {
     // TODO: Navigate to dedicated notifications page when implemented
   }
 
-  /** Get displayed user initials from auth service or fallback. */
+  /** Get displayed user initials from auth store or fallback. */
   get userInitials(): string {
-    const user = this.authService.getCurrentUser();
+    const user = this.currentUser ?? this.authService.getCurrentUser();
     if (user) {
       return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
     }
-    return 'JM';
+    return 'U';
   }
 
-  /** Get displayed user name from auth service or fallback. */
+  /** Get displayed user name from auth store or fallback. */
   get userName(): string {
-    const user = this.authService.getCurrentUser();
+    const user = this.currentUser ?? this.authService.getCurrentUser();
     if (user) {
       return `${user.firstName} ${user.lastName}`;
     }
-    return 'John Mitchell';
+    return '';
+  }
+
+  /** Get the primary role of the current user for display. */
+  get userRole(): string {
+    const user = this.currentUser ?? this.authService.getCurrentUser();
+    if (user && user.roles.length > 0) {
+      return user.roles[0].replace(/([a-z])([A-Z])/g, '$1 $2');
+    }
+    return '';
   }
 
   handleLogout(): void {

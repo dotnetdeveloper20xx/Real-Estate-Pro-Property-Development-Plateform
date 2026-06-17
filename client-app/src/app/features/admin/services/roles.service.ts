@@ -17,7 +17,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class RolesService {
   private readonly http = inject(HttpClient);
-  private readonly rolesUrl = '/api/v1/admin/roles';
+  private readonly rolesUrl = '/api/v1/roles';
   private readonly permissionsUrl = '/api/v1/permissions';
 
   /**

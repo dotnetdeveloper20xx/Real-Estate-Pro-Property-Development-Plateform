@@ -151,8 +151,8 @@ export class SessionListComponent implements OnInit, OnDestroy {
     // Check if contextual (from user detail page via query param)
     const userId = this.route.snapshot.queryParamMap.get('userId');
     const url = userId
-      ? `/api/v1/admin/sessions?userId=${userId}`
-      : '/api/v1/admin/sessions';
+      ? `/api/v1/sessions?userId=${userId}`
+      : '/api/v1/sessions';
 
     this.http.get<ISessionItem[]>(url).pipe(
       takeUntil(this.destroy$)
@@ -170,7 +170,7 @@ export class SessionListComponent implements OnInit, OnDestroy {
 
   revokeSession(session: ISessionItem): void {
     this.isRevoking = true;
-    this.http.post(`/api/v1/admin/sessions/${session.id}/revoke`, {}).pipe(
+    this.http.post(`/api/v1/sessions/${session.id}/revoke`, {}).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
@@ -187,7 +187,7 @@ export class SessionListComponent implements OnInit, OnDestroy {
 
   revokeAllOther(): void {
     this.isRevoking = true;
-    this.http.post('/api/v1/admin/sessions/revoke-all', {}).pipe(
+    this.http.post('/api/v1/sessions/revoke-all', {}).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {

@@ -206,7 +206,7 @@ export class UserDetailComponent implements OnInit {
 
   confirmDeactivation(): void {
     if (!this.user) return;
-    const endpoint = this.user.isActive ? `/api/v1/admin/users/${this.user.id}/deactivate` : `/api/v1/admin/users/${this.user.id}/reactivate`;
+    const endpoint = this.user.isActive ? `/api/v1/users/${this.user.id}/deactivate` : `/api/v1/users/${this.user.id}/reactivate`;
     this.http.post(endpoint, {}).subscribe({
       next: () => { this.showDeactivateDialog = false; this.toast.showSuccess(this.user!.isActive ? 'User deactivated' : 'User reactivated'); this.loadUser(this.user!.id); },
       error: () => { this.showDeactivateDialog = false; this.toast.showError('Operation failed'); }
@@ -215,7 +215,7 @@ export class UserDetailComponent implements OnInit {
 
   confirmPasswordReset(): void {
     if (!this.user || !this.resetPasswordValue) return;
-    this.http.post(`/api/v1/admin/users/${this.user.id}/reset-password`, { newPassword: this.resetPasswordValue }).subscribe({
+    this.http.post(`/api/v1/users/${this.user.id}/reset-password`, { newPassword: this.resetPasswordValue }).subscribe({
       next: () => { this.showPasswordResetDialog = false; this.resetPasswordValue = ''; this.toast.showSuccess('Password reset successfully'); },
       error: () => { this.toast.showError('Failed to reset password'); }
     });
@@ -223,7 +223,7 @@ export class UserDetailComponent implements OnInit {
 
   revokeAllSessions(): void {
     if (!this.user) return;
-    this.http.post(`/api/v1/admin/sessions/${this.user.id}/revoke-all`, {}).subscribe({
+    this.http.post(`/api/v1/sessions/${this.user.id}/revoke-all`, {}).subscribe({
       next: () => { this.toast.showSuccess('All sessions revoked'); },
       error: () => { this.toast.showError('Failed to revoke sessions'); }
     });
@@ -231,7 +231,7 @@ export class UserDetailComponent implements OnInit {
 
   private loadUser(userId: string): void {
     this.loading = true;
-    this.http.get<IUserDetail>(`/api/v1/admin/users/${userId}`).subscribe({
+    this.http.get<IUserDetail>(`/api/v1/users/${userId}`).subscribe({
       next: (user) => { this.user = user; this.loading = false; },
       error: (err) => { this.loading = false; if (err.status === 404) { this.notFound = true; } else { this.toast.showError('Failed to load user'); } }
     });

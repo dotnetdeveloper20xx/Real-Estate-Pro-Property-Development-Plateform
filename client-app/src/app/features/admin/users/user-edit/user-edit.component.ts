@@ -219,7 +219,7 @@ export class UserEditComponent implements OnInit {
     this.submitting = true;
     const { firstName, lastName, email, roles } = this.form.getRawValue();
 
-    this.http.put(`/api/v1/admin/users/${this.userData.id}`, {
+    this.http.put(`/api/v1/users/${this.userData.id}`, {
       firstName, lastName, email, roles
     }).subscribe({
       next: () => {
@@ -265,7 +265,7 @@ export class UserEditComponent implements OnInit {
   }
 
   private loadUser(userId: string): void {
-    this.http.get<IUserData>(`/api/v1/admin/users/${userId}`).subscribe({
+    this.http.get<IUserData>(`/api/v1/users/${userId}`).subscribe({
       next: (user) => {
         this.userData = user;
         this.form.patchValue({
@@ -285,7 +285,7 @@ export class UserEditComponent implements OnInit {
   }
 
   private loadRoles(): void {
-    this.http.get<IRoleOption[]>('/api/v1/admin/roles').subscribe({
+    this.http.get<IRoleOption[]>('/api/v1/roles').subscribe({
       next: (roles) => { this.availableRoles = roles; },
       error: () => {
         this.availableRoles = [

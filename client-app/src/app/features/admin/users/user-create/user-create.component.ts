@@ -355,7 +355,7 @@ export class UserCreateComponent implements OnInit, OnDestroy {
     this.submitting = true;
     const { firstName, lastName, email, password, roles } = this.form.getRawValue();
 
-    this.http.post('/api/v1/admin/users', {
+    this.http.post('/api/v1/users', {
       firstName,
       lastName,
       email,
@@ -427,7 +427,7 @@ export class UserCreateComponent implements OnInit, OnDestroy {
   }
 
   private loadRoles(): void {
-    this.http.get<IRoleOption[]>('/api/v1/admin/roles').subscribe({
+    this.http.get<IRoleOption[]>('/api/v1/roles').subscribe({
       next: (roles) => {
         this.availableRoles = roles;
       },
@@ -472,7 +472,7 @@ export class UserCreateComponent implements OnInit, OnDestroy {
       return of(control.value).pipe(
         debounceTime(500),
         switchMap(email =>
-          this.http.get<{ available: boolean }>(`/api/v1/admin/users/check-email`, {
+          this.http.get<{ available: boolean }>(`/api/v1/users/check-email`, {
             params: { email }
           }).pipe(
             map(response => response.available ? null : { emailTaken: true }),

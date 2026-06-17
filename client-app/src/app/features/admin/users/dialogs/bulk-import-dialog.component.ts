@@ -228,7 +228,7 @@ export class BulkImportDialogComponent {
       roles: row.roles.split(';').map(r => r.trim()).filter(r => r)
     }));
 
-    this.http.post<IImportResult>('/api/v1/admin/users/bulk-import', { users: payload }).subscribe({
+    this.http.post<IImportResult>('/api/v1/users/bulk-import', { users: payload }).subscribe({
       next: (result) => {
         this.importResult = result;
         this.importing = false;

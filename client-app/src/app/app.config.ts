@@ -10,6 +10,7 @@ import { httpErrorInterceptor } from './core/interceptors';
 import { responseWrapperInterceptor } from './core/interceptors/response-wrapper.interceptor';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { AuthService } from './core/services/auth.service';
+import { ThemeService } from './core/services/theme.service';
 import { authReducer, AuthEffects } from './core/store/auth';
 import { applicationReducer, ApplicationEffects } from './features/planning-approvals/store/application';
 import { dashboardReducer, DashboardEffects } from './features/planning-approvals/store/dashboard';
@@ -19,11 +20,14 @@ import { sessionsReducer, SessionsEffects } from './features/admin/store/session
 import { auditLogsReducer, AuditLogsEffects } from './features/admin/store/audit-logs';
 
 /**
- * App initializer that loads the current user profile on startup.
+ * App initializer that loads the current user profile on startup
+ * and initializes the theme service to apply the persisted theme.
  * If a token exists in localStorage, fetches user from /auth/me to restore session.
  */
-function initializeAuth(): () => void {
+function initializeApp(): () => void {
   const authService = inject(AuthService);
+  // Inject ThemeService to trigger constructor, which applies the stored theme
+  inject(ThemeService);
   return () => authService.loadUserProfile();
 }
 
@@ -46,7 +50,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor, responseWrapperInterceptor, httpErrorInterceptor])),
     {
       provide: APP_INITIALIZER,
-      useFactory: initializeAuth,
+      useFactory: initializeApp,
       multi: true
     },
     provideStore({

@@ -19,7 +19,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class UsersService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/v1/admin/users';
+  private readonly baseUrl = '/api/v1/users';
 
   /**
    * Get paginated list of users with search and filter support.

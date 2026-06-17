@@ -110,5 +110,16 @@ export const adminRoutes: Routes = [
       ),
     canActivate: [authGuard],
     data: { roles: ['SuperAdmin'], breadcrumb: 'Audit Logs' }
+  },
+
+  // ── System Settings ─────────────────────────────────────────────────────────
+  {
+    path: 'settings',
+    loadComponent: () =>
+      import('./settings/system-settings.component').then(
+        m => m.SystemSettingsComponent
+      ),
+    canActivate: [authGuard],
+    data: { roles: ['SuperAdmin'], breadcrumb: 'System Settings' }
   }
 ];

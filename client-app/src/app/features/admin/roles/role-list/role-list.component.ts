@@ -437,7 +437,7 @@ export class RoleListComponent implements OnInit, OnDestroy {
     if (!this.selectedRole) return;
     this.deleting = true;
 
-    this.http.delete(`/api/v1/admin/roles/${this.selectedRole.id}`).subscribe({
+    this.http.delete(`/api/v1/roles/${this.selectedRole.id}`).subscribe({
       next: () => {
         this.deleting = false;
         this.showDeleteModal = false;
@@ -467,7 +467,7 @@ export class RoleListComponent implements OnInit, OnDestroy {
   private loadRoles(): void {
     this.loading = true;
 
-    this.http.get<IRoleListItem[]>('/api/v1/admin/roles').subscribe({
+    this.http.get<IRoleListItem[]>('/api/v1/roles').subscribe({
       next: (roles) => {
         this.roles = roles;
         this.applyFilter();
@@ -481,7 +481,7 @@ export class RoleListComponent implements OnInit, OnDestroy {
   }
 
   private loadRoleDetail(roleId: string): void {
-    this.http.get<IRoleDetail>(`/api/v1/admin/roles/${roleId}`).subscribe({
+    this.http.get<IRoleDetail>(`/api/v1/roles/${roleId}`).subscribe({
       next: (detail) => {
         this.selectedRoleDetail = detail;
       },

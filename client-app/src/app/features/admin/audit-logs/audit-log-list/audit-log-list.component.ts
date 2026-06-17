@@ -230,7 +230,7 @@ export class AuditLogListComponent implements OnInit, OnDestroy {
       params = params.set('toDate', this.dateTo);
     }
 
-    this.http.get<IPagedResult>('/api/v1/admin/audit-logs', { params }).pipe(
+    this.http.get<IPagedResult>('/api/v1/audit-logs', { params }).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: (result) => {

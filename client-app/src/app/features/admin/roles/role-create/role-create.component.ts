@@ -318,7 +318,7 @@ export class RoleCreateComponent implements OnInit, OnDestroy {
     };
 
     if (this.isEditMode && this.editRoleId) {
-      this.http.put(`/api/v1/admin/roles/${this.editRoleId}`, payload).subscribe({
+      this.http.put(`/api/v1/roles/${this.editRoleId}`, payload).subscribe({
         next: () => {
           this.saving = false;
           this.toast.showSuccess('Role updated successfully');
@@ -330,7 +330,7 @@ export class RoleCreateComponent implements OnInit, OnDestroy {
         }
       });
     } else {
-      this.http.post('/api/v1/admin/roles', payload).subscribe({
+      this.http.post('/api/v1/roles', payload).subscribe({
         next: () => {
           this.saving = false;
           this.toast.showSuccess('Role created successfully');
@@ -361,7 +361,7 @@ export class RoleCreateComponent implements OnInit, OnDestroy {
   }
 
   private loadRoleForEdit(roleId: string): void {
-    this.http.get<IRoleDetail>(`/api/v1/admin/roles/${roleId}`).subscribe({
+    this.http.get<IRoleDetail>(`/api/v1/roles/${roleId}`).subscribe({
       next: (role) => {
         this.originalName = role.name;
         this.roleForm.patchValue({
@@ -410,7 +410,7 @@ export class RoleCreateComponent implements OnInit, OnDestroy {
       return of(control.value).pipe(
         debounceTime(400),
         switchMap(name =>
-          this.http.get<{ exists: boolean }>(`/api/v1/admin/roles/check-name?name=${encodeURIComponent(name)}`).pipe(
+          this.http.get<{ exists: boolean }>(`/api/v1/roles/check-name?name=${encodeURIComponent(name)}`).pipe(
             map(response => response.exists ? { nameTaken: true } as ValidationErrors : null),
             catchError(() => of(null))
           )
