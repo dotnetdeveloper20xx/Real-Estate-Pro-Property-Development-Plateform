@@ -101,7 +101,7 @@ interface IPermissionGroup {
               aria-label="Search permissions" />
           </div>
           <div class="text-sm text-base-content/60" *ngIf="matrix">
-            {{ matrix.permissions.length }} permissions × {{ matrix.roles.length }} roles
+            {{ getTotalPermissionCount() }} permissions × {{ matrix.roles.length }} roles
           </div>
         </div>
       </div>
@@ -296,6 +296,11 @@ export class PermissionMatrixComponent implements OnInit, OnDestroy {
 
   trackByRoleId(_index: number, role: IRoleItem): string {
     return role.id;
+  }
+
+  getTotalPermissionCount(): number {
+    if (!this.matrix) return 0;
+    return this.matrix.permissionGroups.reduce((sum, g) => sum + g.permissions.length, 0);
   }
 
   trackByPermId(_index: number, perm: IPermissionItem): string {
