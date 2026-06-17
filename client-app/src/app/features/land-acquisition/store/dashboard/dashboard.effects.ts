@@ -7,7 +7,7 @@ import { DashboardActions } from './dashboard.actions';
 
 /**
  * NgRx effects for the dashboard feature.
- * Handles API calls for loading KPI metrics and recent activity.
+ * Handles the single API call that retrieves all dashboard data.
  */
 @Injectable()
 export class DashboardEffects {
@@ -15,8 +15,7 @@ export class DashboardEffects {
   private readonly dashboardService = inject(DashboardService);
 
   /**
-   * Effect: Load dashboard KPI metrics from the API.
-   * Uses switchMap since only the latest request matters (navigating back to dashboard).
+   * Effect: Load full dashboard data from the API.
    */
   readonly loadMetrics$ = createEffect(() =>
     this.actions$.pipe(
@@ -26,24 +25,6 @@ export class DashboardEffects {
           map((response) => DashboardActions.loadMetricsSuccess({ metrics: response.data! })),
           catchError((error: { message: string }) =>
             of(DashboardActions.loadMetricsFailure({ error: error.message }))
-          )
-        )
-      )
-    )
-  );
-
-  /**
-   * Effect: Load recent activity feed from the API.
-   * Uses switchMap to cancel stale requests on repeated navigation.
-   */
-  readonly loadActivity$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(DashboardActions.loadActivity),
-      switchMap(() =>
-        this.dashboardService.getActivity().pipe(
-          map((response) => DashboardActions.loadActivitySuccess({ activity: response.data! })),
-          catchError((error: { message: string }) =>
-            of(DashboardActions.loadActivityFailure({ error: error.message }))
           )
         )
       )

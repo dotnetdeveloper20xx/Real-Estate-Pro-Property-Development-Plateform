@@ -4,7 +4,6 @@ export { DashboardEffects } from './dashboard.effects';
 export {
   selectDashboardState,
   selectMetrics,
-  selectActivity,
   selectDashboardLoading,
   selectDashboardError
 } from './dashboard.selectors';

@@ -2,15 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-import {
-  IApiResponse,
-  IDashboardMetrics,
-  IRecentActivity
-} from '../models';
+import { IApiResponse, IDashboardMetrics } from '../models';
 
 /**
- * HTTP service for retrieving dashboard KPI metrics and activity.
- * Wraps all API calls and returns typed Observables using the standard ApiResponse envelope.
+ * HTTP service for retrieving comprehensive dashboard data.
+ * Single endpoint returns all KPIs, alerts, activity, and chart data.
  */
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
@@ -18,13 +14,8 @@ export class DashboardService {
 
   constructor(private readonly http: HttpClient) {}
 
-  /** Retrieve dashboard KPI metrics. */
+  /** Retrieve full dashboard data including metrics, alerts, and activity. */
   getMetrics(): Observable<IApiResponse<IDashboardMetrics>> {
     return this.http.get<IApiResponse<IDashboardMetrics>>(`${this.baseUrl}/metrics`);
-  }
-
-  /** Retrieve recent activity entries for the dashboard timeline. */
-  getActivity(): Observable<IApiResponse<IRecentActivity[]>> {
-    return this.http.get<IApiResponse<IRecentActivity[]>>(`${this.baseUrl}/activity`);
   }
 }

@@ -26,6 +26,8 @@ public class DashboardMetricsPropertyTests
 
     /// <summary>
     /// Creates a mock handler with the given in-memory data sets.
+    /// Additional repositories (Offer, ApprovalRequest, FeasibilityAssessment, Document)
+    /// are mocked with empty collections since these tests focus on KPI calculations.
     /// </summary>
     private static GetDashboardMetricsQueryHandler CreateHandler(
         List<LandOpportunity> opportunities,
@@ -41,9 +43,33 @@ public class DashboardMetricsPropertyTests
             .Setup(r => r.Query())
             .Returns(dueDiligences.AsAsyncQueryable());
 
+        var offerRepoMock = new Mock<IRepository<Offer>>();
+        offerRepoMock
+            .Setup(r => r.Query())
+            .Returns(new List<Offer>().AsAsyncQueryable());
+
+        var approvalRepoMock = new Mock<IRepository<ApprovalRequest>>();
+        approvalRepoMock
+            .Setup(r => r.Query())
+            .Returns(new List<ApprovalRequest>().AsAsyncQueryable());
+
+        var feasibilityRepoMock = new Mock<IRepository<FeasibilityAssessment>>();
+        feasibilityRepoMock
+            .Setup(r => r.Query())
+            .Returns(new List<FeasibilityAssessment>().AsAsyncQueryable());
+
+        var documentRepoMock = new Mock<IRepository<Document>>();
+        documentRepoMock
+            .Setup(r => r.Query())
+            .Returns(new List<Document>().AsAsyncQueryable());
+
         return new GetDashboardMetricsQueryHandler(
             opportunityRepoMock.Object,
-            ddRepoMock.Object);
+            ddRepoMock.Object,
+            offerRepoMock.Object,
+            approvalRepoMock.Object,
+            feasibilityRepoMock.Object,
+            documentRepoMock.Object);
     }
 
     /// <summary>

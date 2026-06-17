@@ -5,17 +5,16 @@ using Microsoft.AspNetCore.Mvc;
 namespace BuildEstate.API.Controllers.LandAcquisition;
 
 /// <summary>
-/// Provides dashboard KPI metrics and recent activity data for the
-/// land acquisition module. All endpoints are accessible by any
-/// authenticated user (base [Authorize] from BaseApiController).
+/// Provides comprehensive dashboard data for the land acquisition module.
+/// Returns KPI metrics, alerts, top opportunities, recent activity,
+/// and activity-by-type breakdown in a single endpoint.
 /// </summary>
 [Route("api/v1/dashboard")]
 public class DashboardController : BaseApiController
 {
     /// <summary>
-    /// Returns aggregated KPI metrics including opportunities by status,
-    /// average acquisition cycle, conversion rate, due diligence pass rate,
-    /// and total evaluated count.
+    /// Returns the full dashboard data including KPI metrics, pipeline status,
+    /// alerts, top opportunities, recent activity, and activity breakdown.
     /// </summary>
     [HttpGet("metrics")]
     [ProducesResponseType(StatusCodes.Status200OK)]

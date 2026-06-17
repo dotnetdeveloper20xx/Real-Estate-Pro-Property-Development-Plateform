@@ -7,20 +7,12 @@ import { IDashboardState } from './dashboard.state';
 export const selectDashboardState = createFeatureSelector<IDashboardState>('dashboard');
 
 /**
- * Select dashboard KPI metrics.
- * Returns null when metrics have not yet been loaded.
+ * Select dashboard metrics (all data in one object).
+ * Returns null when data has not yet been loaded.
  */
 export const selectMetrics = createSelector(
   selectDashboardState,
   (state) => state.metrics
-);
-
-/**
- * Select the recent activity feed.
- */
-export const selectActivity = createSelector(
-  selectDashboardState,
-  (state) => state.recentActivity
 );
 
 /**
@@ -33,7 +25,6 @@ export const selectDashboardLoading = createSelector(
 
 /**
  * Select the error message from the dashboard state.
- * Returns null when no error is present.
  */
 export const selectDashboardError = createSelector(
   selectDashboardState,
