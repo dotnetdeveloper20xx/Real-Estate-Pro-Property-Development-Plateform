@@ -24,8 +24,7 @@ public class CsrfValidationMiddleware
 
     private static readonly string[] ExemptPaths =
     [
-        "/api/v1/auth/login",
-        "/api/v1/auth/refresh",
+        "/api/",           // All API endpoints use Bearer token auth — CSRF not needed
         "/health"
     ];
 
