@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 /**
  * Navigation module card data for the quick access grid.
@@ -53,7 +54,7 @@ interface IStatCard {
       <div class="card bg-gradient-to-r from-primary to-secondary text-primary-content"
            style="animation: slide-up 0.4s ease-out backwards">
         <div class="card-body">
-          <h1 class="text-2xl font-bold">{{ greeting }}, John</h1>
+          <h1 class="text-2xl font-bold">{{ greeting }}, {{ userFirstName }}</h1>
           <p class="text-primary-content/80">Here's what's happening across your portfolio today.</p>
         </div>
       </div>
@@ -128,6 +129,13 @@ interface IStatCard {
   `
 })
 export class HomeComponent {
+  private readonly authService = inject(AuthService);
+
+  /** Current user's first name */
+  get userFirstName(): string {
+    return this.authService.getCurrentUser()?.firstName ?? 'there';
+  }
+
   /** Time-based greeting */
   get greeting(): string {
     const hour = new Date().getHours();
