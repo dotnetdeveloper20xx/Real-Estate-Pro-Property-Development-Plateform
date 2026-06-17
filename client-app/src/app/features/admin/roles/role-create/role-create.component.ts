@@ -1,9 +1,9 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { Subject, takeUntil, debounceTime, switchMap, of, map, catchError } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import { ToastService } from '../../../../core/services/toast.service';
 
 /**
@@ -222,7 +222,6 @@ export class RoleCreateComponent implements OnInit, OnDestroy {
   isEditMode = false;
   editRoleId: string | null = null;
   saving = false;
-  private originalName = '';
 
   ngOnInit(): void {
     // Check if editing
@@ -234,8 +233,7 @@ export class RoleCreateComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Add async name uniqueness validator
-    this.roleForm.controls.name.addAsyncValidators(this.nameUniquenessValidator());
+    // Load permissions for assignment panel
     this.loadPermissions();
   }
 
@@ -348,9 +346,10 @@ export class RoleCreateComponent implements OnInit, OnDestroy {
 
   private loadPermissions(): void {
     this.loadingPermissions = true;
-    this.http.get<IPermissionItem[]>('/api/v1/permissions').subscribe({
-      next: (permissions) => {
-        this.permissionGroups = this.groupPermissions(permissions);
+    this.http.get<{ roles: unknown[]; permissionGroups: { domainArea: string; permissions: IPermissionItem[] }[] }>('/api/v1/permissions/matrix').subscribe({
+      next: (matrix) => {
+        const allPermissions = matrix.permissionGroups.flatMap(g => g.permissions);
+        this.permissionGroups = this.groupPermissions(allPermissions);
         this.loadingPermissions = false;
       },
       error: () => {
@@ -363,7 +362,6 @@ export class RoleCreateComponent implements OnInit, OnDestroy {
   private loadRoleForEdit(roleId: string): void {
     this.http.get<IRoleDetail>(`/api/v1/roles/${roleId}`).subscribe({
       next: (role) => {
-        this.originalName = role.name;
         this.roleForm.patchValue({
           name: role.name,
           description: role.description
@@ -397,25 +395,5 @@ export class RoleCreateComponent implements OnInit, OnDestroy {
         permissions: perms.sort((a, b) => a.displayName.localeCompare(b.displayName)),
         expanded: true
       }));
-  }
-
-  // ── Async Validator ─────────────────────────────────────────────────────────
-
-  private nameUniquenessValidator() {
-    return (control: AbstractControl) => {
-      if (!control.value || control.value === this.originalName) {
-        return of(null);
-      }
-
-      return of(control.value).pipe(
-        debounceTime(400),
-        switchMap(name =>
-          this.http.get<{ exists: boolean }>(`/api/v1/roles/check-name?name=${encodeURIComponent(name)}`).pipe(
-            map(response => response.exists ? { nameTaken: true } as ValidationErrors : null),
-            catchError(() => of(null))
-          )
-        )
-      );
-    };
   }
 }
