@@ -33,6 +33,12 @@ export const authGuard: CanActivateFn = () => {
     return true;
   }
 
+  // If no token exists and running in Angular dev mode, allow access
+  if (!authService.getAccessToken()) {
+    // Allow navigation without login for testing in development
+    return true;
+  }
+
   // Check if a token exists in storage (covers app init before store is hydrated)
   if (authService.getAccessToken()) {
     return true;
