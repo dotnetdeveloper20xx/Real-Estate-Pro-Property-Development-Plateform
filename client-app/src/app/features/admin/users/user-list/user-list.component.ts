@@ -434,8 +434,8 @@ export class UserListComponent implements OnInit, OnDestroy {
 
     this.http.get<IPagedResponse>('/api/v1/users', { params }).subscribe({
       next: (response) => {
-        this.users = response.data ?? [];
-        this.totalCount = response.pagination?.totalCount ?? 0;
+        this.users = (response as any).items ?? response.data ?? [];
+        this.totalCount = (response as any).totalCount ?? response.pagination?.totalCount ?? 0;
         this.loading = false;
       },
       error: () => {

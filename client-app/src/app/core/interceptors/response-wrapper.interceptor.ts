@@ -16,6 +16,18 @@ export const responseWrapperInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
+  // Don't wrap auth endpoints — AuthService reads raw responses
+  if (req.url.includes('/api/v1/auth/')) {
+    return next(req);
+  }
+
+  // Don't wrap admin endpoints — admin pages handle raw responses
+  if (req.url.includes('/api/v1/users') || req.url.includes('/api/v1/roles') ||
+      req.url.includes('/api/v1/sessions') || req.url.includes('/api/v1/audit-logs') ||
+      req.url.includes('/api/v1/permissions')) {
+    return next(req);
+  }
+
   return next(req).pipe(
     map((event) => {
       if (event instanceof HttpResponse && event.body !== null && event.body !== undefined) {
