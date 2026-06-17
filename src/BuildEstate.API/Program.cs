@@ -150,6 +150,27 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1"
     });
 
+    // Resolve schema ID conflicts for types with the same class name in different namespaces
+    options.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
+
+    // Support IFormFile uploads in Swagger
+    options.MapType<IFormFile>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Format = "binary"
+    });
+
+    // Ignore actions that fail Swagger generation (pre-existing IFormFile issues)
+    options.DocInclusionPredicate((docName, apiDesc) =>
+    {
+        // Exclude the Documents Upload endpoint that uses [FromForm] IFormFile
+        // which the current Swashbuckle version can't handle automatically
+        var actionName = apiDesc.ActionDescriptor.DisplayName ?? "";
+        if (actionName.Contains("DocumentsController.Upload"))
+            return false;
+        return true;
+    });
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",

@@ -114,6 +114,9 @@ public static class InfrastructureDependencyInjection
         // 7f. Register IRoleQueryService → RoleQueryService with scoped lifetime
         services.AddScoped<IRoleQueryService, RoleQueryService>();
 
+        // 7g. Register IRoleManagementService → RoleManagementService with scoped lifetime
+        services.AddScoped<IRoleManagementService, RoleManagementService>();
+
         // 8. Register Land Acquisition state machines (stateless — Singleton)
         services.AddSingleton<IOpportunityStateMachine, OpportunityStateMachine>();
         services.AddSingleton<IOfferStateMachine, OfferStateMachine>();
