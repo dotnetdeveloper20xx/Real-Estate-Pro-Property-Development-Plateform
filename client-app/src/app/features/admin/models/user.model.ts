@@ -106,11 +106,16 @@ export interface IPaginationMeta {
 }
 
 /**
- * Paginated API response wrapper for user list.
+ * Paginated API response from the raw backend for user list.
+ * The backend returns items and pagination metadata at the top level.
  */
 export interface IPagedUsersResponse {
   readonly items: readonly IUserListItem[];
-  readonly pagination: IPaginationMeta;
+  readonly totalCount: number;
+  readonly pageNumber: number;
+  readonly pageSize: number;
+  readonly totalPages: number;
+  readonly pagination?: IPaginationMeta;
 }
 
 /**

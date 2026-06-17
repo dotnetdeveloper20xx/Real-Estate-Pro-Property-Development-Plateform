@@ -19,17 +19,14 @@ interface IAuditLogEntry {
 }
 
 /**
- * Paginated response from the API (after response wrapper interceptor).
+ * Paginated response from the raw backend API.
  */
 interface IPagedResult {
-  readonly data: IAuditLogEntry[];
-  readonly success: boolean;
-  readonly pagination: {
-    readonly totalCount: number;
-    readonly pageNumber: number;
-    readonly pageSize: number;
-    readonly totalPages: number;
-  } | null;
+  readonly items: IAuditLogEntry[];
+  readonly totalCount: number;
+  readonly pageNumber: number;
+  readonly pageSize: number;
+  readonly totalPages: number;
 }
 
 /**
@@ -238,8 +235,8 @@ export class AuditLogListComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (result) => {
-        this.entries = result.data ?? [];
-        this.totalCount = result.pagination?.totalCount ?? 0;
+        this.entries = result.items ?? [];
+        this.totalCount = result.totalCount ?? 0;
         this.isLoading = false;
       },
       error: () => {

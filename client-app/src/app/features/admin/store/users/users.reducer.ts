@@ -40,7 +40,12 @@ export const usersReducer = createReducer(
   on(UsersActions.loadUsersSuccess, (state, { response }): UsersState =>
     usersAdapter.setAll([...response.items], {
       ...state,
-      pagination: response.pagination,
+      pagination: {
+        currentPage: response.pageNumber ?? response.pagination?.currentPage ?? 1,
+        pageSize: response.pageSize ?? response.pagination?.pageSize ?? 10,
+        totalCount: response.totalCount ?? response.pagination?.totalCount ?? 0,
+        totalPages: response.totalPages ?? response.pagination?.totalPages ?? 0
+      },
       loading: false,
       error: null
     })

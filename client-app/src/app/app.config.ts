@@ -7,7 +7,6 @@ import { provideStoreDevtools } from '@ngrx/store-devtools';
 
 import { appRoutes } from './app.routes';
 import { httpErrorInterceptor } from './core/interceptors';
-import { responseWrapperInterceptor } from './core/interceptors/response-wrapper.interceptor';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { AuthService } from './core/services/auth.service';
 import { ThemeService } from './core/services/theme.service';
@@ -37,7 +36,7 @@ function initializeApp(): () => void {
  * Registers:
  * - Zone-based change detection (event coalescing for performance)
  * - Router with component input binding for route params
- * - HTTP client with auth, response wrapper, and error interceptors
+ * - HTTP client with auth and error interceptors
  * - App initializer for auth session restoration
  * - NgRx root store with feature state slices
  * - NgRx effects for side-effect management
@@ -47,7 +46,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(appRoutes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([authInterceptor, responseWrapperInterceptor, httpErrorInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, httpErrorInterceptor])),
     {
       provide: APP_INITIALIZER,
       useFactory: initializeApp,

@@ -223,7 +223,7 @@ export class UserDetailComponent implements OnInit {
 
   revokeAllSessions(): void {
     if (!this.user) return;
-    this.http.post(`/api/v1/sessions/${this.user.id}/revoke-all`, {}).subscribe({
+    this.http.post(`/api/v1/sessions/user/${this.user.id}/revoke-all`, {}).subscribe({
       next: () => { this.toast.showSuccess('All sessions revoked'); },
       error: () => { this.toast.showError('Failed to revoke sessions'); }
     });

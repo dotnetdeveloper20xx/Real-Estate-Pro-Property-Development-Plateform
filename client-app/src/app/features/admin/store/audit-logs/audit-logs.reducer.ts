@@ -18,7 +18,12 @@ export const auditLogsReducer = createReducer(
   on(AuditLogsActions.loadAuditLogsSuccess, (state, { response }): AuditLogsState => ({
     ...state,
     entries: response.items,
-    pagination: response.pagination,
+    pagination: {
+      currentPage: response.pageNumber ?? response.pagination?.currentPage ?? 1,
+      pageSize: response.pageSize ?? response.pagination?.pageSize ?? 25,
+      totalCount: response.totalCount ?? response.pagination?.totalCount ?? 0,
+      totalPages: response.totalPages ?? response.pagination?.totalPages ?? 0
+    },
     loading: false,
     error: null
   })),

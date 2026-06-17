@@ -14,11 +14,15 @@ export interface IAuditLogEntry {
 }
 
 /**
- * Paginated audit log API response.
+ * Paginated audit log API response from the raw backend.
  */
 export interface IPagedAuditLogsResponse {
   readonly items: readonly IAuditLogEntry[];
-  readonly pagination: IPaginationMeta;
+  readonly totalCount: number;
+  readonly pageNumber: number;
+  readonly pageSize: number;
+  readonly totalPages: number;
+  readonly pagination?: IPaginationMeta;
 }
 
 /**

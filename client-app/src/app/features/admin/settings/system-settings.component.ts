@@ -63,7 +63,7 @@ import { ThemeService } from '../../../core/services/theme.service';
         </div>
       </div>
 
-      <!-- Notifications Settings (Placeholder) -->
+      <!-- Notifications Settings -->
       <div class="card bg-base-100 shadow-sm border border-base-300/50">
         <div class="card-body">
           <h2 class="card-title text-lg flex items-center gap-2">
@@ -73,14 +73,34 @@ import { ThemeService } from '../../../core/services/theme.service';
           <p class="text-sm text-base-content/60">
             Configure system notification preferences and delivery channels.
           </p>
-          <div class="mt-4 p-4 bg-base-200/50 rounded-lg text-center">
-            <span class="material-symbols-outlined text-3xl text-base-content/30">construction</span>
-            <p class="text-sm text-base-content/50 mt-2">Notification settings coming soon</p>
+          <div class="mt-4 space-y-3">
+            <div class="flex items-center justify-between p-3 bg-base-200/50 rounded-lg">
+              <div>
+                <p class="text-sm font-medium">Email on login</p>
+                <p class="text-xs text-base-content/50">Send email notification when a user logs in from a new device</p>
+              </div>
+              <input type="checkbox" class="toggle toggle-primary toggle-sm" disabled checked />
+            </div>
+            <div class="flex items-center justify-between p-3 bg-base-200/50 rounded-lg">
+              <div>
+                <p class="text-sm font-medium">Email on password change</p>
+                <p class="text-xs text-base-content/50">Notify users when their password is changed or reset</p>
+              </div>
+              <input type="checkbox" class="toggle toggle-primary toggle-sm" disabled checked />
+            </div>
+            <div class="flex items-center justify-between p-3 bg-base-200/50 rounded-lg">
+              <div>
+                <p class="text-sm font-medium">In-app notifications</p>
+                <p class="text-xs text-base-content/50">Show real-time notifications within the application</p>
+              </div>
+              <input type="checkbox" class="toggle toggle-primary toggle-sm" disabled checked />
+            </div>
+            <p class="text-xs text-base-content/40 italic mt-2">These settings will be configurable in a future release.</p>
           </div>
         </div>
       </div>
 
-      <!-- Security Settings (Placeholder) -->
+      <!-- Security Settings -->
       <div class="card bg-base-100 shadow-sm border border-base-300/50">
         <div class="card-body">
           <h2 class="card-title text-lg flex items-center gap-2">
@@ -90,14 +110,45 @@ import { ThemeService } from '../../../core/services/theme.service';
           <p class="text-sm text-base-content/60">
             Password policies, session timeouts, and authentication settings.
           </p>
-          <div class="mt-4 p-4 bg-base-200/50 rounded-lg text-center">
-            <span class="material-symbols-outlined text-3xl text-base-content/30">construction</span>
-            <p class="text-sm text-base-content/50 mt-2">Security settings coming soon</p>
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-4 bg-base-200/50 rounded-lg">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-sm text-primary">password</span>
+                <p class="text-sm font-semibold">Password Policy</p>
+              </div>
+              <ul class="text-xs text-base-content/70 space-y-1">
+                <li>• Min 8 characters</li>
+                <li>• 1 uppercase letter</li>
+                <li>• 1 number</li>
+                <li>• 1 special character</li>
+              </ul>
+            </div>
+            <div class="p-4 bg-base-200/50 rounded-lg">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-sm text-warning">lock</span>
+                <p class="text-sm font-semibold">Account Lockout</p>
+              </div>
+              <ul class="text-xs text-base-content/70 space-y-1">
+                <li>• 5 failed attempts</li>
+                <li>• 15 min lockout duration</li>
+              </ul>
+            </div>
+            <div class="p-4 bg-base-200/50 rounded-lg">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="material-symbols-outlined text-sm text-info">schedule</span>
+                <p class="text-sm font-semibold">Session Timeout</p>
+              </div>
+              <ul class="text-xs text-base-content/70 space-y-1">
+                <li>• 60 minutes inactivity</li>
+                <li>• Token refresh rotation</li>
+              </ul>
+            </div>
           </div>
+          <p class="text-xs text-base-content/40 italic mt-3">These values are enforced server-side. Configuration UI will be available in a future release.</p>
         </div>
       </div>
 
-      <!-- General Settings (Placeholder) -->
+      <!-- General Settings -->
       <div class="card bg-base-100 shadow-sm border border-base-300/50">
         <div class="card-body">
           <h2 class="card-title text-lg flex items-center gap-2">
@@ -107,10 +158,21 @@ import { ThemeService } from '../../../core/services/theme.service';
           <p class="text-sm text-base-content/60">
             System-wide configuration options including locale, timezone, and defaults.
           </p>
-          <div class="mt-4 p-4 bg-base-200/50 rounded-lg text-center">
-            <span class="material-symbols-outlined text-3xl text-base-content/30">construction</span>
-            <p class="text-sm text-base-content/50 mt-2">General settings coming soon</p>
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-4 bg-base-200/50 rounded-lg">
+              <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Application Name</p>
+              <p class="text-sm font-semibold">BuildEstate Pro</p>
+            </div>
+            <div class="p-4 bg-base-200/50 rounded-lg">
+              <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Version</p>
+              <p class="text-sm font-semibold">1.0.0</p>
+            </div>
+            <div class="p-4 bg-base-200/50 rounded-lg">
+              <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Environment</p>
+              <p class="text-sm font-semibold">Development</p>
+            </div>
           </div>
+          <p class="text-xs text-base-content/40 italic mt-3">Additional configuration options will be available in a future release.</p>
         </div>
       </div>
     </div>

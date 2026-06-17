@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using BuildEstate.Application.Interfaces;
+using BuildEstate.Domain.Entities.UserManagement;
 using BuildEstate.Infrastructure.Identity;
 using BuildEstate.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -19,17 +21,20 @@ public class AuthController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IInfrastructureTokenService _tokenService;
+    private readonly IAuditLogService _auditLogService;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         IInfrastructureTokenService tokenService,
+        IAuditLogService auditLogService,
         ILogger<AuthController> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _tokenService = tokenService;
+        _auditLogService = auditLogService;
         _logger = logger;
     }
 
@@ -75,6 +80,19 @@ public class AuthController : ControllerBase
             user, roles, request.RememberMe, deviceInfo, ipAddress);
 
         _logger.LogInformation("User {UserId} logged in successfully", user.Id);
+
+        // Record audit log entry for successful login
+        await _auditLogService.LogAsync(new AuditLogEntry
+        {
+            Action = "UserLogin",
+            PerformedByUserId = user.Id,
+            PerformedByUserName = $"{user.FirstName} {user.LastName}",
+            TargetEntityType = "User",
+            TargetEntityId = user.Id,
+            TargetUserName = $"{user.FirstName} {user.LastName}",
+            IpAddress = ipAddress ?? "unknown",
+            Details = $"User logged in from {deviceInfo}"
+        });
 
         return Ok(new
         {
