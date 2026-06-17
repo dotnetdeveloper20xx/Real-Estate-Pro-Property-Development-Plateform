@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { Subject, debounceTime, switchMap, of, takeUntil, Observable, map, catchError } from 'rxjs';
+import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { ToastService } from '../../../../core/services/toast.service';
 
 /**
@@ -306,7 +306,7 @@ export class UserCreateComponent implements OnInit, OnDestroy {
   form: FormGroup<ICreateUserForm> = this.fb.nonNullable.group({
     firstName: ['', [Validators.required, Validators.maxLength(100)]],
     lastName: ['', [Validators.required, Validators.maxLength(100)]],
-    email: ['', [Validators.required, Validators.email], [this.emailUniqueValidator()]],
+    email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128)]],
     confirmPassword: ['', [Validators.required]],
     roles: [[] as string[]]
@@ -461,25 +461,5 @@ export class UserCreateComponent implements OnInit, OnDestroy {
       return { mismatch: true };
     }
     return null;
-  }
-
-  /** Async validator for email uniqueness. */
-  private emailUniqueValidator(): (control: AbstractControl) => Observable<ValidationErrors | null> {
-    return (control: AbstractControl) => {
-      if (!control.value || control.hasError('email')) {
-        return of(null);
-      }
-      return of(control.value).pipe(
-        debounceTime(500),
-        switchMap(email =>
-          this.http.get<{ available: boolean }>(`/api/v1/users/check-email`, {
-            params: { email }
-          }).pipe(
-            map(response => response.available ? null : { emailTaken: true }),
-            catchError(() => of(null))
-          )
-        )
-      );
-    };
   }
 }
