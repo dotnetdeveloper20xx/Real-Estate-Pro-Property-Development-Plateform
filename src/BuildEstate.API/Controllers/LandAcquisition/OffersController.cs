@@ -34,10 +34,10 @@ public class OffersController : BaseApiController
 
     /// <summary>
     /// Creates a new offer for the specified opportunity.
-    /// Restricted to AcquisitionManager and AdminSupport roles.
+    /// Restricted to AcquisitionManager and Admin roles.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "AcquisitionManager,AdminSupport")]
+    [Authorize(Roles = "AcquisitionManager,Admin")]
     public async Task<IActionResult> Create(
         [FromRoute] Guid opportunityId,
         [FromBody] CreateOfferCommand command,
@@ -52,10 +52,10 @@ public class OffersController : BaseApiController
 
     /// <summary>
     /// Transitions the status of an offer using the offer state machine.
-    /// Restricted to AcquisitionManager and AdminSupport roles.
+    /// Restricted to AcquisitionManager and Admin roles.
     /// </summary>
     [HttpPatch("{offerId:guid}/status")]
-    [Authorize(Roles = "AcquisitionManager,AdminSupport")]
+    [Authorize(Roles = "AcquisitionManager,Admin")]
     public async Task<IActionResult> TransitionStatus(
         [FromRoute] Guid opportunityId,
         [FromRoute] Guid offerId,

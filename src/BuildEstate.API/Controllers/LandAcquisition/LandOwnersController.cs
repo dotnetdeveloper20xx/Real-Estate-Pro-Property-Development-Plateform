@@ -21,7 +21,7 @@ public class LandOwnersController : BaseApiController
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created land owner record.</returns>
     [HttpPost]
-    [Authorize(Roles = "AcquisitionManager,AdminSupport")]
+    [Authorize(Roles = "AcquisitionManager,Admin")]
     [ProducesResponseType(typeof(LandOwnerDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -53,7 +53,7 @@ public class LandOwnersController : BaseApiController
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The updated land owner record.</returns>
     [HttpPut("{ownerId:guid}")]
-    [Authorize(Roles = "AcquisitionManager,AdminSupport")]
+    [Authorize(Roles = "AcquisitionManager,Admin")]
     [ProducesResponseType(typeof(LandOwnerDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -7,7 +7,7 @@ namespace BuildEstate.API.Controllers.LandAcquisition;
 
 /// <summary>
 /// Manages land acquisition record creation and status transitions for opportunities.
-/// All endpoints require authentication. Operations are restricted to the AdminSupport role.
+/// All endpoints require authentication. Operations are restricted to the Admin role.
 /// </summary>
 [Route("api/v1/opportunities/{opportunityId:guid}/acquisitions")]
 public class AcquisitionsController : BaseApiController
@@ -18,7 +18,7 @@ public class AcquisitionsController : BaseApiController
     /// The record is created with status Completed.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "AdminSupport")]
+    [Authorize(Roles = "SuperAdmin,AcquisitionManager,Admin")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -41,7 +41,7 @@ public class AcquisitionsController : BaseApiController
     /// When transitioning to Registered, the parent opportunity is cascaded to Acquired status.
     /// </summary>
     [HttpPatch("{acqId:guid}/status")]
-    [Authorize(Roles = "AdminSupport")]
+    [Authorize(Roles = "SuperAdmin,AcquisitionManager,Admin")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -8,7 +8,7 @@ namespace BuildEstate.API.Controllers.LandAcquisition;
 /// <summary>
 /// Manages contract creation and status transitions for land opportunities.
 /// All endpoints require authentication. Operations are restricted to
-/// LegalComplianceOfficer and AdminSupport roles.
+/// LegalOfficer and Admin roles.
 /// </summary>
 [Route("api/v1/opportunities/{opportunityId:guid}/contracts")]
 public class ContractsController : BaseApiController
@@ -18,7 +18,7 @@ public class ContractsController : BaseApiController
     /// The contract is created with status Draft.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "LegalComplianceOfficer,AdminSupport")]
+    [Authorize(Roles = "SuperAdmin,AcquisitionManager,LegalOfficer,Admin")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -39,7 +39,7 @@ public class ContractsController : BaseApiController
     /// When transitioning to Exchanged status, a deposit amount must be provided.
     /// </summary>
     [HttpPatch("{contractId:guid}/status")]
-    [Authorize(Roles = "LegalComplianceOfficer,AdminSupport")]
+    [Authorize(Roles = "SuperAdmin,AcquisitionManager,LegalOfficer,Admin")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

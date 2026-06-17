@@ -86,11 +86,11 @@ public class DocumentsController : BaseApiController
     }
 
     /// <summary>
-    /// Deletes (soft-deletes) a document. Restricted to AdminSupport role.
+    /// Deletes (soft-deletes) a document. Restricted to Admin role.
     /// Records the deletion in the audit trail.
     /// </summary>
     [HttpDelete("{docId:guid}")]
-    [Authorize(Roles = "AdminSupport")]
+    [Authorize(Roles = "SuperAdmin,AcquisitionManager,Admin")]
     public async Task<IActionResult> Delete(
         [FromRoute] Guid opportunityId,
         [FromRoute] Guid docId,
