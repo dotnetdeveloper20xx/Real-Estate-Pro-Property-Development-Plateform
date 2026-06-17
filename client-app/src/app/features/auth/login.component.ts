@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { isDevMode } from '@angular/core';
-import { AuthService } from '../../core/services/auth.service';
+import { Store } from '@ngrx/store';
+import { AuthService, ILoginResponse } from '../../core/services/auth.service';
+import { AuthActions } from '../../core/store/auth';
 
 /**
  * Typed form interface for the login form.
@@ -271,6 +273,7 @@ export class LoginComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly store = inject(Store);
 
   showPassword = false;
   isLoading = false;
@@ -323,8 +326,10 @@ export class LoginComponent {
     const { email, password } = this.loginForm.getRawValue();
 
     this.authService.login(email, password).subscribe({
-      next: () => {
+      next: (response: ILoginResponse) => {
         this.isLoading = false;
+        // Update NgRx store with user/roles so sidebar and directives reflect the logged-in state
+        this.store.dispatch(AuthActions.loginSuccess({ response }));
         this.router.navigate(['/home']);
       },
       error: (err) => {
