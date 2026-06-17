@@ -277,8 +277,9 @@ export class UserEditComponent implements OnInit {
   }
 
   private loadUser(userId: string): void {
-    this.http.get<IUserData>(`/api/v1/users/${userId}`).subscribe({
-      next: (user) => {
+    this.http.get<any>(`/api/v1/users/${userId}`).subscribe({
+      next: (response) => {
+        const user = response.data ?? response;
         this.userData = user;
         this.form.patchValue({
           firstName: user.firstName,
@@ -297,8 +298,8 @@ export class UserEditComponent implements OnInit {
   }
 
   private loadRoles(): void {
-    this.http.get<IRoleOption[]>('/api/v1/roles').subscribe({
-      next: (roles) => { this.availableRoles = roles; },
+    this.http.get<any>('/api/v1/roles').subscribe({
+      next: (response) => { this.availableRoles = response.data ?? (Array.isArray(response) ? response : []); },
       error: () => {
         this.availableRoles = [
           { id: '1', name: 'SuperAdmin', description: 'Full system access' },

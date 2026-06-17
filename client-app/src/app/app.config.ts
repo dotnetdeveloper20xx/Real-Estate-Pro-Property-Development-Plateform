@@ -7,6 +7,7 @@ import { provideStoreDevtools } from '@ngrx/store-devtools';
 
 import { appRoutes } from './app.routes';
 import { httpErrorInterceptor } from './core/interceptors';
+import { responseWrapperInterceptor } from './core/interceptors/response-wrapper.interceptor';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { AuthService } from './core/services/auth.service';
 import { ThemeService } from './core/services/theme.service';
@@ -46,7 +47,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(appRoutes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([authInterceptor, httpErrorInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, responseWrapperInterceptor, httpErrorInterceptor])),
     {
       provide: APP_INITIALIZER,
       useFactory: initializeApp,

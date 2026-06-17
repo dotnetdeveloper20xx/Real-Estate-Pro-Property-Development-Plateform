@@ -235,8 +235,8 @@ export class AuditLogListComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (result) => {
-        this.entries = result.items ?? [];
-        this.totalCount = result.totalCount ?? 0;
+        this.entries = (result as any).data ?? result.items ?? [];
+        this.totalCount = (result as any).pagination?.totalCount ?? result.totalCount ?? 0;
         this.isLoading = false;
       },
       error: () => {

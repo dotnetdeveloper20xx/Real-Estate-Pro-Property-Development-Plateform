@@ -231,8 +231,8 @@ export class UserDetailComponent implements OnInit {
 
   private loadUser(userId: string): void {
     this.loading = true;
-    this.http.get<IUserDetail>(`/api/v1/users/${userId}`).subscribe({
-      next: (user) => { this.user = user; this.loading = false; },
+    this.http.get<any>(`/api/v1/users/${userId}`).subscribe({
+      next: (response) => { this.user = response.data ?? response; this.loading = false; },
       error: (err) => { this.loading = false; if (err.status === 404) { this.notFound = true; } else { this.toast.showError('Failed to load user'); } }
     });
   }
