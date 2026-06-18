@@ -5,9 +5,6 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Subject, takeUntil } from 'rxjs';
 import { ToastService } from '../../../../core/services/toast.service';
 
-/**
- * Audit log entry model.
- */
 interface IAuditLogEntry {
   readonly id: string;
   readonly timestamp: string;
@@ -18,156 +15,111 @@ interface IAuditLogEntry {
   readonly ipAddress: string;
 }
 
-/**
- * Paginated response from the raw backend API.
- */
-interface IPagedResult {
-  readonly items: IAuditLogEntry[];
-  readonly totalCount: number;
-  readonly pageNumber: number;
-  readonly pageSize: number;
-  readonly totalPages: number;
-}
-
-/**
- * Audit Log List Page Component
- *
- * Features:
- * - Paginated table: Date & Time, Action, Performed By, Target User, Details
- * - Page sizes: 10, 25, 50, 100 (default 25)
- * - Tab-based filtering: "All Actions", "All Users"
- * - Date range filter (max 12-month span)
- * - Empty state with suggestion to adjust filters
- *
- * Requirements: 12.2, 12.3, 12.7
- */
 @Component({
   selector: 'app-audit-log-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="p-6 space-y-6 animate-[fade-in_0.4s_ease-out]">
+    <div class="p-6 space-y-6">
       <!-- Page Header -->
-      <div>
-        <h1 class="text-2xl font-bold text-base-content">Audit Logs</h1>
-        <p class="text-sm text-base-content/60 mt-1">
-          Immutable record of all security-critical actions
-        </p>
-      </div>
-
-      <!-- Filters -->
-      <div class="card bg-base-100 shadow-sm border border-base-300/50 p-4">
-        <div class="flex flex-wrap gap-4 items-end">
-          <!-- Action filter -->
-          <div class="form-control">
-            <label class="label"><span class="label-text text-xs">Action</span></label>
-            <select
-              class="select select-bordered select-sm w-48"
-              [(ngModel)]="actionFilter"
-              (ngModelChange)="onFilterChange()">
-              <option value="">All Actions</option>
-              <option value="UserLogin">User Login</option>
-              <option value="UserLogout">User Logout</option>
-              <option value="UserCreated">User Created</option>
-              <option value="UserUpdated">User Updated</option>
-              <option value="UserDeactivated">User Deactivated</option>
-              <option value="UserReactivated">User Reactivated</option>
-              <option value="PasswordChanged">Password Changed</option>
-              <option value="PasswordReset">Password Reset</option>
-              <option value="RoleChanged">Role Changed</option>
-              <option value="PermissionToggled">Permission Toggled</option>
-              <option value="SessionRevoked">Session Revoked</option>
-            </select>
-          </div>
-
-          <!-- Date range -->
-          <div class="form-control">
-            <label class="label"><span class="label-text text-xs">From</span></label>
-            <input
-              type="date"
-              class="input input-bordered input-sm w-40"
-              [(ngModel)]="dateFrom"
-              (ngModelChange)="onFilterChange()">
-          </div>
-          <div class="form-control">
-            <label class="label"><span class="label-text text-xs">To</span></label>
-            <input
-              type="date"
-              class="input input-bordered input-sm w-40"
-              [(ngModel)]="dateTo"
-              (ngModelChange)="onFilterChange()">
-          </div>
-
-          <!-- Page Size -->
-          <div class="form-control">
-            <label class="label"><span class="label-text text-xs">Per Page</span></label>
-            <select
-              class="select select-bordered select-sm w-24"
-              [(ngModel)]="pageSize"
-              (ngModelChange)="onPageSizeChange()">
-              <option [ngValue]="10">10</option>
-              <option [ngValue]="25">25</option>
-              <option [ngValue]="50">50</option>
-              <option [ngValue]="100">100</option>
-            </select>
-          </div>
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
+          <span class="text-white text-sm font-bold">6</span>
         </div>
+        <h1 class="text-xl font-bold text-base-content uppercase tracking-wide">Activity Log</h1>
       </div>
 
-      <!-- Loading State -->
+      <!-- Filters Row -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <select class="select select-bordered w-full" [(ngModel)]="actionFilter" (ngModelChange)="onFilterChange()">
+          <option value="">All Actions</option>
+          <option value="UserLogin">User Login</option>
+          <option value="UserLogout">User Logout</option>
+          <option value="UserCreated">User Created</option>
+          <option value="UserUpdated">User Updated</option>
+          <option value="UserDeactivated">User Deactivated</option>
+          <option value="UserReactivated">User Reactivated</option>
+          <option value="PasswordChanged">Password Changed</option>
+          <option value="PasswordReset">Password Reset</option>
+          <option value="RoleAssigned">Role Assigned</option>
+          <option value="RoleUpdated">Role Updated</option>
+          <option value="SessionRevoked">Session Revoked</option>
+        </select>
+
+        <select class="select select-bordered w-full" [(ngModel)]="userFilter" (ngModelChange)="onFilterChange()">
+          <option value="">All Users</option>
+          <option *ngFor="let u of uniqueUsers" [value]="u">{{ u }}</option>
+        </select>
+
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 text-lg">calendar_today</span>
+          <input type="date" class="input input-bordered w-full pl-10" [(ngModel)]="dateFrom" (ngModelChange)="onFilterChange()"
+                 placeholder="Select Date Range" />
+        </div>
+
+        <select class="select select-bordered w-full" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option [ngValue]="8">8 per page</option>
+          <option [ngValue]="10">10 per page</option>
+          <option [ngValue]="25">25 per page</option>
+          <option [ngValue]="50">50 per page</option>
+        </select>
+      </div>
+
+      <!-- Loading -->
       <div *ngIf="isLoading" class="flex justify-center py-12">
         <span class="loading loading-spinner loading-lg text-primary"></span>
       </div>
 
       <!-- Table -->
-      <div *ngIf="!isLoading" class="card bg-base-100 shadow-sm border border-base-300/50">
+      <div *ngIf="!isLoading" class="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
         <!-- Empty State -->
-        <div *ngIf="entries.length === 0" class="p-12 text-center">
+        <div *ngIf="filteredEntries.length === 0" class="p-12 text-center">
           <span class="material-symbols-outlined text-4xl text-base-content/30">history</span>
-          <p class="mt-2 text-base-content/50 font-medium">No records found for the selected criteria</p>
+          <p class="mt-2 text-base-content/50 font-medium">No activity records found</p>
           <p class="text-xs text-base-content/40 mt-1">Try adjusting your filters or date range</p>
         </div>
 
-        <div *ngIf="entries.length > 0" class="overflow-x-auto">
+        <div *ngIf="filteredEntries.length > 0" class="overflow-x-auto">
           <table class="table">
             <thead>
-              <tr>
-                <th>Date & Time</th>
-                <th>Action</th>
-                <th>Performed By</th>
-                <th>Target User</th>
-                <th>Details</th>
+              <tr class="bg-base-200/40">
+                <th class="text-xs font-bold text-base-content uppercase">Date & Time</th>
+                <th class="text-xs font-bold text-base-content uppercase">User</th>
+                <th class="text-xs font-bold text-base-content uppercase">Action</th>
+                <th class="text-xs font-bold text-base-content uppercase">Target</th>
+                <th class="text-xs font-bold text-base-content uppercase">Details</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let entry of entries" class="hover">
-                <td class="text-sm whitespace-nowrap">{{ entry.timestamp | date:'medium' }}</td>
-                <td>
-                  <span class="badge badge-ghost badge-sm">{{ entry.action }}</span>
-                </td>
-                <td class="text-sm font-medium">{{ entry.performedByUserName }}</td>
+              <tr *ngFor="let entry of paginatedEntries" class="hover:bg-base-200/20">
+                <td class="text-sm whitespace-nowrap">{{ entry.timestamp | date:'dd MMM yyyy, hh:mm a' }}</td>
+                <td class="text-sm">{{ entry.performedByUserName }}</td>
+                <td class="text-sm font-medium">{{ formatAction(entry.action) }}</td>
                 <td class="text-sm">{{ entry.targetUserName || '—' }}</td>
-                <td class="text-sm text-base-content/60 max-w-xs truncate">{{ entry.details || '—' }}</td>
+                <td class="text-sm text-base-content/70 italic">{{ entry.details || '—' }}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
         <!-- Pagination -->
-        <div *ngIf="entries.length > 0" class="flex items-center justify-between p-4 border-t border-base-300/50">
-          <span class="text-sm text-base-content/60">
-            Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, totalCount) }} of {{ totalCount }} entries
+        <div *ngIf="filteredEntries.length > 0" class="flex items-center justify-between px-4 py-3 border-t border-base-200">
+          <span class="text-sm text-primary">
+            Showing {{ startRecord }} to {{ endRecord }} of {{ filteredEntries.length }} activities
           </span>
-          <div class="join">
-            <button
-              class="join-item btn btn-sm"
-              (click)="goToPage(currentPage - 1)"
-              [disabled]="currentPage === 1">«</button>
-            <button class="join-item btn btn-sm btn-active">{{ currentPage }}</button>
-            <button
-              class="join-item btn btn-sm"
-              (click)="goToPage(currentPage + 1)"
-              [disabled]="currentPage * pageSize >= totalCount">»</button>
+          <div class="flex items-center gap-1">
+            <button class="btn btn-ghost btn-sm btn-square" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+              <span class="material-symbols-outlined text-sm">chevron_left</span>
+            </button>
+            <ng-container *ngFor="let page of visiblePages">
+              <button *ngIf="page !== -1" class="btn btn-sm btn-square"
+                      [ngClass]="page === currentPage ? 'btn-primary text-white' : 'btn-ghost'"
+                      (click)="goToPage(page)">{{ page }}</button>
+              <span *ngIf="page === -1" class="px-1 text-base-content/40">...</span>
+            </ng-container>
+            <button class="btn btn-ghost btn-sm btn-square" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+              <span class="material-symbols-outlined text-sm">chevron_right</span>
+            </button>
           </div>
         </div>
       </div>
@@ -179,70 +131,79 @@ export class AuditLogListComponent implements OnInit, OnDestroy {
   private readonly toast = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
 
-  entries: IAuditLogEntry[] = [];
+  allEntries: IAuditLogEntry[] = [];
+  filteredEntries: IAuditLogEntry[] = [];
+  uniqueUsers: string[] = [];
   isLoading = false;
   totalCount = 0;
   currentPage = 1;
-  pageSize = 25;
+  pageSize = 8;
   actionFilter = '';
+  userFilter = '';
   dateFrom = '';
   dateTo = '';
 
-  readonly Math = Math;
+  ngOnInit(): void { this.loadAuditLogs(); }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
-  ngOnInit(): void {
-    this.loadAuditLogs();
+  get totalPages(): number { return Math.max(1, Math.ceil(this.filteredEntries.length / this.pageSize)); }
+  get startRecord(): number { return this.filteredEntries.length === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1; }
+  get endRecord(): number { return Math.min(this.currentPage * this.pageSize, this.filteredEntries.length); }
+
+  get paginatedEntries(): IAuditLogEntry[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredEntries.slice(start, start + this.pageSize);
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+  get visiblePages(): number[] {
+    const pages: number[] = [];
+    const total = this.totalPages;
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1, 2, 3, 4);
+      if (this.currentPage > 4 && this.currentPage < total - 2) {
+        pages.length = 0;
+        pages.push(1, -1, this.currentPage - 1, this.currentPage, this.currentPage + 1, -1, total);
+      } else {
+        pages.push(-1, total);
+      }
+    }
+    return pages;
   }
 
-  onFilterChange(): void {
-    this.currentPage = 1;
-    this.loadAuditLogs();
+  onFilterChange(): void { this.currentPage = 1; this.applyFilters(); }
+  onPageSizeChange(): void { this.currentPage = 1; }
+  goToPage(page: number): void { if (page >= 1 && page <= this.totalPages) this.currentPage = page; }
+
+  formatAction(action: string): string {
+    return action.replace(/([a-z])([A-Z])/g, '$1 $2');
   }
 
-  onPageSizeChange(): void {
-    this.currentPage = 1;
-    this.loadAuditLogs();
-  }
-
-  goToPage(page: number): void {
-    this.currentPage = page;
-    this.loadAuditLogs();
+  private applyFilters(): void {
+    let result = [...this.allEntries];
+    if (this.actionFilter) result = result.filter(e => e.action === this.actionFilter);
+    if (this.userFilter) result = result.filter(e => e.performedByUserName === this.userFilter);
+    if (this.dateFrom) {
+      const from = new Date(this.dateFrom);
+      result = result.filter(e => new Date(e.timestamp) >= from);
+    }
+    this.filteredEntries = result;
   }
 
   private loadAuditLogs(): void {
     this.isLoading = true;
+    const params = new HttpParams().set('pageNumber', '1').set('pageSize', '200');
 
-    let params = new HttpParams()
-      .set('pageNumber', this.currentPage.toString())
-      .set('pageSize', this.pageSize.toString());
-
-    if (this.actionFilter) {
-      params = params.set('action', this.actionFilter);
-    }
-    if (this.dateFrom) {
-      params = params.set('fromDate', this.dateFrom);
-    }
-    if (this.dateTo) {
-      params = params.set('toDate', this.dateTo);
-    }
-
-    this.http.get<IPagedResult>('/api/v1/audit-logs', { params }).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
+    this.http.get<any>('/api/v1/audit-logs', { params }).pipe(takeUntil(this.destroy$)).subscribe({
       next: (result) => {
-        this.entries = (result as any).data ?? result.items ?? [];
-        this.totalCount = (result as any).pagination?.totalCount ?? result.totalCount ?? 0;
+        this.allEntries = result?.data ?? result?.items ?? [];
+        this.filteredEntries = [...this.allEntries];
+        this.totalCount = this.allEntries.length;
+        this.uniqueUsers = [...new Set(this.allEntries.map(e => e.performedByUserName))].sort();
         this.isLoading = false;
       },
-      error: () => {
-        this.isLoading = false;
-        this.toast.showError('Failed to load audit logs');
-      }
+      error: () => { this.isLoading = false; this.toast.showError('Failed to load activity logs'); }
     });
   }
 }

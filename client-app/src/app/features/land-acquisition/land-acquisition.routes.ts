@@ -40,7 +40,8 @@ export const landAcquisitionRoutes: Routes = [
       ),
     providers: [
       provideState('opportunities', opportunityReducer),
-      provideEffects([OpportunityEffects])
+      provideState('dashboard', dashboardReducer),
+      provideEffects([OpportunityEffects, DashboardEffects])
     ],
     data: { breadcrumb: 'Pipeline' }
   },

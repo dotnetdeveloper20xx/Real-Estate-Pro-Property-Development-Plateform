@@ -5,9 +5,6 @@ import { ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { ToastService } from '../../../../core/services/toast.service';
 
-/**
- * Session item model.
- */
 interface ISessionItem {
   readonly id: string;
   readonly deviceInfo: string;
@@ -21,95 +18,69 @@ interface ISessionItem {
   readonly isRevoked: boolean;
 }
 
-/**
- * Session List Page Component
- *
- * Features:
- * - Table: Device (browser/OS), Location (city/country), IP Address, Last Active, Status
- * - "Revoke" button per row (disabled for current session)
- * - "Revoke All Other Sessions" button
- * - Notice about current session protection
- * - Real-time removal of revoked sessions without page reload
- *
- * Requirements: 11.1, 11.2, 11.3, 11.4, 11.6
- */
 @Component({
   selector: 'app-session-list',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="p-6 space-y-6 animate-[fade-in_0.4s_ease-out]">
+    <div class="p-6 space-y-6">
       <!-- Page Header -->
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-base-content">Active Sessions</h1>
-          <p class="text-sm text-base-content/60 mt-1">
-            Manage active user sessions across devices
-          </p>
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
+          <span class="text-white text-sm font-bold">7</span>
         </div>
-        <button
-          class="btn btn-error btn-sm gap-2"
-          (click)="revokeAllOther()"
-          [disabled]="isRevoking || sessions.length <= 1">
-          <span class="material-symbols-outlined text-base">block</span>
-          Revoke All Other Sessions
-        </button>
+        <h1 class="text-xl font-bold text-base-content uppercase tracking-wide">Session Management</h1>
       </div>
 
-      <!-- Info Notice -->
-      <div class="alert alert-info shadow-sm">
-        <span class="material-symbols-outlined">info</span>
-        <span>You can revoke other active sessions. Current session cannot be revoked.</span>
-      </div>
-
-      <!-- Loading State -->
+      <!-- Loading -->
       <div *ngIf="isLoading" class="flex justify-center py-12">
         <span class="loading loading-spinner loading-lg text-primary"></span>
       </div>
 
       <!-- Sessions Table -->
-      <div *ngIf="!isLoading" class="card bg-base-100 shadow-sm border border-base-300/50">
-        <div class="overflow-x-auto">
-          <table class="table table-zebra">
+      <div *ngIf="!isLoading" class="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
+        <!-- Empty State -->
+        <div *ngIf="sessions.length === 0" class="p-12 text-center">
+          <span class="material-symbols-outlined text-4xl text-base-content/30">devices</span>
+          <p class="mt-2 text-base-content/50 font-medium">No active sessions found</p>
+        </div>
+
+        <div *ngIf="sessions.length > 0" class="overflow-x-auto">
+          <table class="table">
             <thead>
-              <tr>
-                <th>Device</th>
-                <th>Location</th>
-                <th>IP Address</th>
-                <th>Last Active</th>
-                <th>Status</th>
-                <th>Actions</th>
+              <tr class="bg-base-200/30">
+                <th class="text-xs font-bold text-base-content uppercase">Device</th>
+                <th class="text-xs font-bold text-base-content uppercase">Location</th>
+                <th class="text-xs font-bold text-base-content uppercase">IP Address</th>
+                <th class="text-xs font-bold text-base-content uppercase">Last Active</th>
+                <th class="text-xs font-bold text-base-content uppercase">Status</th>
+                <th class="text-xs font-bold text-base-content uppercase">Action</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let session of sessions" class="hover">
+              <tr *ngFor="let session of sessions" class="hover:bg-base-200/20">
+                <td class="text-sm font-medium">{{ session.browser }} on {{ session.operatingSystem }}</td>
+                <td class="text-sm">{{ getLocation(session) }}</td>
+                <td class="text-sm font-mono">{{ session.ipAddress }}</td>
+                <td class="text-sm">{{ session.lastActiveAt | date:'dd MMM yyyy, hh:mm a' }}</td>
                 <td>
-                  <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-base-content/50">devices</span>
-                    <div>
-                      <div class="font-medium text-sm">{{ session.browser }}</div>
-                      <div class="text-xs text-base-content/50">{{ session.operatingSystem }}</div>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span *ngIf="session.city || session.country">
-                    {{ session.city }}{{ session.city && session.country ? ', ' : '' }}{{ session.country }}
+                  <span *ngIf="session.isCurrent"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-success text-success bg-success/5">
+                    Current
                   </span>
-                  <span *ngIf="!session.city && !session.country" class="text-base-content/40">Unknown</span>
+                  <span *ngIf="!session.isCurrent && !session.isRevoked"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-success text-success bg-success/5">
+                    Active
+                  </span>
+                  <span *ngIf="session.isRevoked"
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-error text-error bg-error/5">
+                    Expired
+                  </span>
                 </td>
-                <td class="font-mono text-sm">{{ session.ipAddress }}</td>
-                <td class="text-sm">{{ session.lastActiveAt | date:'short' }}</td>
                 <td>
-                  <span *ngIf="session.isCurrent" class="badge badge-success badge-sm">Current</span>
-                  <span *ngIf="!session.isCurrent && !session.isRevoked" class="badge badge-info badge-sm">Active</span>
-                  <span *ngIf="session.isRevoked" class="badge badge-error badge-sm">Revoked</span>
-                </td>
-                <td>
-                  <button
-                    class="btn btn-ghost btn-xs text-error"
-                    (click)="revokeSession(session)"
-                    [disabled]="session.isCurrent || session.isRevoked || isRevoking">
+                  <button *ngIf="!session.isCurrent && !session.isRevoked"
+                          class="btn btn-outline btn-error btn-xs px-3"
+                          (click)="revokeSession(session)" [disabled]="isRevoking">
                     Revoke
                   </button>
                 </td>
@@ -118,10 +89,15 @@ interface ISessionItem {
           </table>
         </div>
 
-        <!-- Empty State -->
-        <div *ngIf="sessions.length === 0" class="p-12 text-center">
-          <span class="material-symbols-outlined text-4xl text-base-content/30">devices</span>
-          <p class="mt-2 text-base-content/50">No active sessions found</p>
+        <!-- Footer: Info + Revoke All -->
+        <div *ngIf="sessions.length > 0" class="flex items-center justify-between px-5 py-4 border-t border-base-200 bg-base-200/20">
+          <p class="text-sm text-base-content/60 italic">
+            You can revoke other active sessions. Current session cannot be revoked.
+          </p>
+          <button class="btn btn-error btn-sm px-4 gap-1.5 font-semibold"
+                  (click)="revokeAllOther()" [disabled]="isRevoking || sessions.length <= 1">
+            Revoke All Other Sessions
+          </button>
         </div>
       </div>
     </div>
@@ -137,68 +113,39 @@ export class SessionListComponent implements OnInit, OnDestroy {
   isLoading = false;
   isRevoking = false;
 
-  ngOnInit(): void {
-    this.loadSessions();
-  }
+  ngOnInit(): void { this.loadSessions(); }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  loadSessions(): void {
-    this.isLoading = true;
-    // Check if contextual (from user detail page via query param)
-    const userId = this.route.snapshot.queryParamMap.get('userId');
-    const url = userId
-      ? `/api/v1/sessions?userId=${userId}`
-      : '/api/v1/sessions';
-
-    this.http.get<ISessionItem[]>(url).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
-      next: (sessions) => {
-        this.sessions = sessions;
-        this.isLoading = false;
-      },
-      error: () => {
-        this.isLoading = false;
-        this.toast.showError('Failed to load sessions');
-      }
-    });
+  getLocation(session: ISessionItem): string {
+    if (session.city && session.country) return `${session.city}, ${session.country}`;
+    if (session.city) return session.city;
+    if (session.country) return session.country;
+    return 'Unknown';
   }
 
   revokeSession(session: ISessionItem): void {
     this.isRevoking = true;
-    this.http.post(`/api/v1/sessions/${session.id}/revoke`, {}).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
-      next: () => {
-        this.sessions = this.sessions.filter(s => s.id !== session.id);
-        this.isRevoking = false;
-        this.toast.showSuccess('Session revoked successfully');
-      },
-      error: () => {
-        this.isRevoking = false;
-        this.toast.showError('Failed to revoke session');
-      }
+    this.http.post(`/api/v1/sessions/${session.id}/revoke`, {}).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.sessions = this.sessions.filter(s => s.id !== session.id); this.isRevoking = false; this.toast.showSuccess('Session revoked'); },
+      error: () => { this.isRevoking = false; this.toast.showError('Failed to revoke session'); }
     });
   }
 
   revokeAllOther(): void {
     this.isRevoking = true;
-    this.http.post('/api/v1/sessions/revoke-all', {}).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
-      next: () => {
-        this.sessions = this.sessions.filter(s => s.isCurrent);
-        this.isRevoking = false;
-        this.toast.showSuccess('All other sessions revoked');
-      },
-      error: () => {
-        this.isRevoking = false;
-        this.toast.showError('Failed to revoke sessions');
-      }
+    this.http.post('/api/v1/sessions/revoke-all', {}).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.sessions = this.sessions.filter(s => s.isCurrent); this.isRevoking = false; this.toast.showSuccess('All other sessions revoked'); },
+      error: () => { this.isRevoking = false; this.toast.showError('Failed to revoke sessions'); }
+    });
+  }
+
+  private loadSessions(): void {
+    this.isLoading = true;
+    const userId = this.route.snapshot.queryParamMap.get('userId');
+    const url = userId ? `/api/v1/sessions?userId=${userId}` : '/api/v1/sessions';
+    this.http.get<ISessionItem[]>(url).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (sessions) => { this.sessions = Array.isArray(sessions) ? sessions : (sessions as any)?.data ?? []; this.isLoading = false; },
+      error: () => { this.isLoading = false; this.toast.showError('Failed to load sessions'); }
     });
   }
 }

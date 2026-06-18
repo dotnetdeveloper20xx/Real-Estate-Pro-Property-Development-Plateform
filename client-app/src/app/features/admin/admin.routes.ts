@@ -3,58 +3,35 @@ import { authGuard } from '../../core/guards/auth.guard';
 
 /**
  * Admin feature routes.
- *
- * All routes are protected by authGuard with SuperAdmin role requirement.
- * Components are lazy-loaded to reduce initial bundle size.
- *
- * Route structure:
- * - /admin/users → user list
- * - /admin/users/create → create user
- * - /admin/users/:id → user detail
- * - /admin/users/:id/edit → edit user
- * - /admin/roles → role list
- * - /admin/roles/create → create role
- * - /admin/permissions → permission matrix
- * - /admin/sessions → session list (contextual per user via query param)
- * - /admin/audit-logs → audit log list
- *
- * Requirements: 18.1, 18.2, 18.4, 18.5
+ * All routes protected by authGuard with SuperAdmin role requirement.
  */
 export const adminRoutes: Routes = [
   // ── User Management ─────────────────────────────────────────────────────────
   {
     path: 'users',
     loadComponent: () =>
-      import('./users/user-list/user-list.component').then(
-        m => m.UserListComponent
-      ),
+      import('./users/user-list/user-list.component').then(m => m.UserListComponent),
     canActivate: [authGuard],
     data: { roles: ['SuperAdmin'], breadcrumb: 'Users' }
   },
   {
     path: 'users/create',
     loadComponent: () =>
-      import('./users/user-create/user-create.component').then(
-        m => m.UserCreateComponent
-      ),
+      import('./users/user-create/user-create.component').then(m => m.UserCreateComponent),
     canActivate: [authGuard],
     data: { roles: ['SuperAdmin'], breadcrumb: 'Create User' }
   },
   {
     path: 'users/:id',
     loadComponent: () =>
-      import('./users/user-detail/user-detail.component').then(
-        m => m.UserDetailComponent
-      ),
+      import('./users/user-detail/user-detail.component').then(m => m.UserDetailComponent),
     canActivate: [authGuard],
     data: { roles: ['SuperAdmin'], breadcrumb: 'User Detail' }
   },
   {
     path: 'users/:id/edit',
     loadComponent: () =>
-      import('./users/user-edit/user-edit.component').then(
-        m => m.UserEditComponent
-      ),
+      import('./users/user-create/user-create.component').then(m => m.UserCreateComponent),
     canActivate: [authGuard],
     data: { roles: ['SuperAdmin'], breadcrumb: 'Edit User' }
   },

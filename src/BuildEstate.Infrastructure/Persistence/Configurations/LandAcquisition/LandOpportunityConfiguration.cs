@@ -13,7 +13,12 @@ public class LandOpportunityConfiguration : IEntityTypeConfiguration<LandOpportu
 
         builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Location).HasMaxLength(500).IsRequired();
+        builder.Property(x => x.County).HasMaxLength(100);
         builder.Property(x => x.LandSize).HasPrecision(18, 4).IsRequired();
+        builder.Property(x => x.SiteType).HasMaxLength(100);
+        builder.Property(x => x.CurrentUse).HasMaxLength(100);
+        builder.Property(x => x.Tenure).HasMaxLength(100);
+        builder.Property(x => x.Description).HasMaxLength(500);
         builder.Property(x => x.Status).HasConversion<int>().IsRequired();
         builder.Property(x => x.Source).HasMaxLength(200);
         builder.Property(x => x.WithdrawalReason).HasMaxLength(1000);

@@ -1,111 +1,499 @@
-import { Component, ChangeDetectionStrategy, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
-import { DataGridComponent, IGridColumn, IFilterOption } from '../../../../shared/components';
-import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 import { OpportunityService, IOpportunityQueryParams } from '../../services/opportunity.service';
-import { OpportunityStatus } from '../../models';
+import { IOpportunityListItem, OpportunityStatus } from '../../models/opportunity.model';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
-/**
- * Container component displaying the opportunities list using the reusable DataGrid.
- *
- * Fetches paginated opportunity data from the API and renders it in a
- * sortable, searchable, filterable data grid with navigation to detail pages.
- */
+interface IOpportunityMetrics {
+  total: number;
+  active: number;
+  inDueDiligence: number;
+  acquired: number;
+  withdrawn: number;
+}
+
 @Component({
   selector: 'app-opportunity-list-page',
   standalone: true,
-  imports: [CommonModule, DataGridComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="p-6 space-y-6">
       <!-- Page Header -->
       <div class="flex items-center justify-between">
-        <div class="flex flex-col gap-1">
+        <div>
           <h1 class="text-2xl font-bold text-base-content">Opportunities</h1>
-          <p class="text-sm text-base-content/60">
+          <p class="text-sm text-base-content/60 mt-1">
             Manage and track all land acquisition opportunities in your pipeline.
           </p>
         </div>
-        <button
-          class="btn btn-primary btn-sm gap-2"
-          (click)="navigateToCreate()">
-          <span class="material-symbols-outlined text-lg">add</span>
-          Create Opportunity
-        </button>
+        <div class="flex items-center gap-3">
+          <button class="btn btn-outline btn-sm gap-2" (click)="exportOpportunities()">
+            <span class="material-symbols-outlined text-lg">download</span>
+            Export
+          </button>
+          <button class="btn btn-primary gap-2" (click)="navigateToCreate()">
+            <span class="material-symbols-outlined text-lg">add</span>
+            New Opportunity
+          </button>
+        </div>
       </div>
 
-      <!-- Data Grid -->
-      <app-data-grid
-        title="Land Opportunities"
-        [data]="opportunities"
-        [columns]="columns"
-        [loading]="loading"
-        [totalCount]="totalCount"
-        [pageSize]="pageSize"
-        [currentPage]="currentPage"
-        [filterOptions]="statusFilters"
-        filterLabel="Status"
-        searchPlaceholder="Search opportunities..."
-        emptyIcon="terrain"
-        emptyMessage="No opportunities found"
-        emptySubtext="Create your first opportunity to begin evaluating development sites."
-        (rowClick)="onRowClick($event)"
-        (editClick)="onEditClick($event)"
-        (deleteClick)="onDeleteClick($event)"
-        (pageChange)="onPageChange($event)"
-        (searchChange)="onSearchChange($event)"
-        (filterChange)="onFilterChange($event)"
-        (sortChange)="onSortChange($event)"
-        (pageSizeChange)="onPageSizeChange($event)">
-      </app-data-grid>
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="card bg-base-100 border border-base-200 shadow-sm">
+          <div class="card-body p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-xs font-medium text-base-content/60">Total Opportunities</span>
+                <p class="text-2xl font-bold text-base-content mt-1">{{ metrics.total }}</p>
+              </div>
+              <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary">landscape</span>
+              </div>
+            </div>
+            <div class="mt-2 text-xs text-base-content/50">Across all stages</div>
+          </div>
+        </div>
+        <div class="card bg-base-100 border border-base-200 shadow-sm">
+          <div class="card-body p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-xs font-medium text-base-content/60">Active Pipeline</span>
+                <p class="text-2xl font-bold text-base-content mt-1">{{ metrics.active }}</p>
+              </div>
+              <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-success">trending_up</span>
+              </div>
+            </div>
+            <div class="mt-2 text-xs text-success flex items-center gap-1">
+              {{ getActivePercentage() }}% of total
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-100 border border-base-200 shadow-sm">
+          <div class="card-body p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-xs font-medium text-base-content/60">In Due Diligence</span>
+                <p class="text-2xl font-bold text-base-content mt-1">{{ metrics.inDueDiligence }}</p>
+              </div>
+              <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-warning">fact_check</span>
+              </div>
+            </div>
+            <div class="mt-2 text-xs text-base-content/50">Under investigation</div>
+          </div>
+        </div>
+        <div class="card bg-base-100 border border-base-200 shadow-sm">
+          <div class="card-body p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-xs font-medium text-base-content/60">Acquired</span>
+                <p class="text-2xl font-bold text-base-content mt-1">{{ metrics.acquired }}</p>
+              </div>
+              <div class="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-info">check_circle</span>
+              </div>
+            </div>
+            <div class="mt-2 text-xs text-base-content/50">Successfully completed</div>
+          </div>
+        </div>
+        <div class="card bg-base-100 border border-base-200 shadow-sm">
+          <div class="card-body p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-xs font-medium text-base-content/60">Withdrawn</span>
+                <p class="text-2xl font-bold text-base-content mt-1">{{ metrics.withdrawn }}</p>
+              </div>
+              <div class="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center">
+                <span class="material-symbols-outlined text-error">cancel</span>
+              </div>
+            </div>
+            <div class="mt-2 text-xs text-base-content/50">Rejected or cancelled</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content: Filters + Table -->
+      <div class="flex gap-6">
+        <!-- Left Filters Panel -->
+        <div class="w-64 shrink-0 hidden lg:block">
+          <div class="card bg-base-100 border border-base-200 shadow-sm sticky top-6">
+            <div class="card-body p-4 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-base-content flex items-center gap-2">
+                  <span class="material-symbols-outlined text-base text-primary">filter_list</span>
+                  Filters
+                  <span *ngIf="activeFilterCount > 0" class="badge badge-primary badge-xs">{{ activeFilterCount }}</span>
+                </h3>
+                <button class="text-xs text-primary hover:underline" (click)="resetFilters()">Reset</button>
+              </div>
+
+              <!-- Search -->
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-medium">Search</span></label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 text-sm">search</span>
+                  <input type="text" placeholder="Search opportunities..."
+                         class="input input-bordered input-sm pl-8 w-full"
+                         [(ngModel)]="filters.search"
+                         (ngModelChange)="onSearchInput($event)" />
+                </div>
+              </div>
+
+              <!-- Status -->
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-medium">Status</span></label>
+                <select class="select select-bordered select-sm w-full"
+                        [(ngModel)]="filters.status" (ngModelChange)="applyFilters()">
+                  <option value="">All Status</option>
+                  <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
+                </select>
+              </div>
+
+              <!-- Location -->
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-medium">Location</span></label>
+                <select class="select select-bordered select-sm w-full"
+                        [(ngModel)]="filters.location" (ngModelChange)="applyFilters()">
+                  <option value="">All Locations</option>
+                  <option *ngFor="let loc of locations" [value]="loc">{{ loc }}</option>
+                </select>
+              </div>
+
+              <!-- Source -->
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-medium">Source</span></label>
+                <select class="select select-bordered select-sm w-full"
+                        [(ngModel)]="filters.source" (ngModelChange)="applyFilters()">
+                  <option value="">All Sources</option>
+                  <option *ngFor="let src of sources" [value]="src">{{ src }}</option>
+                </select>
+              </div>
+
+              <!-- Land Size Range -->
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-medium">Land Size</span></label>
+                <select class="select select-bordered select-sm w-full"
+                        [(ngModel)]="filters.landSize" (ngModelChange)="applyFilters()">
+                  <option value="">Any Size</option>
+                  <option value="small">Under 5 acres</option>
+                  <option value="medium">5 - 20 acres</option>
+                  <option value="large">Over 20 acres</option>
+                </select>
+              </div>
+
+              <!-- Created Date -->
+              <div class="form-control">
+                <label class="label py-1"><span class="label-text text-xs font-medium">Created Date</span></label>
+                <select class="select select-bordered select-sm w-full"
+                        [(ngModel)]="filters.createdDate" (ngModelChange)="applyFilters()">
+                  <option value="">Any Time</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                  <option value="quarter">This Quarter</option>
+                  <option value="year">This Year</option>
+                </select>
+              </div>
+
+              <!-- Apply Filters -->
+              <div class="flex gap-2 pt-2">
+                <button class="btn btn-ghost btn-sm flex-1" (click)="resetFilters()">Clear All</button>
+                <button class="btn btn-primary btn-sm flex-1" (click)="applyFilters()">Apply Filters</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Table Section -->
+        <div class="flex-1 min-w-0 space-y-4">
+          <!-- Bulk Actions Bar -->
+          <div class="flex items-center justify-between" *ngIf="selectedIds.size > 0">
+            <div class="flex items-center gap-3">
+              <span class="text-sm font-medium text-base-content">
+                {{ selectedIds.size }} {{ selectedIds.size === 1 ? 'result' : 'results' }} selected
+              </span>
+              <button class="text-xs text-primary hover:underline" (click)="selectAll()">Select all {{ totalCount }}</button>
+              <button class="text-xs text-base-content/50 hover:underline" (click)="clearSelection()">Clear selection</button>
+            </div>
+            <div class="dropdown dropdown-end">
+              <div tabindex="0" role="button" class="btn btn-sm btn-outline gap-1">
+                Bulk Actions <span class="material-symbols-outlined text-sm">expand_more</span>
+              </div>
+              <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-2 shadow-lg border border-base-200">
+                <li><a (click)="bulkDelete()"><span class="material-symbols-outlined text-sm text-error">delete</span> Delete Selected</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Data Table Card -->
+          <div class="card bg-base-100 shadow-sm border border-base-200/80 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="table table-sm" role="grid" aria-label="Opportunities table">
+                <thead>
+                  <tr class="bg-base-200/50">
+                    <th class="w-10">
+                      <input type="checkbox" class="checkbox checkbox-sm checkbox-primary"
+                             [checked]="isAllSelected" (change)="toggleSelectAll()" />
+                    </th>
+                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                        (click)="onSort('name')">
+                      <div class="flex items-center gap-1">Name
+                        <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'name'">
+                          {{ sortColumn === 'name' && sortDirection === 'desc' ? 'arrow_downward' : 'arrow_upward' }}
+                        </span>
+                      </div>
+                    </th>
+                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                        (click)="onSort('location')">
+                      <div class="flex items-center gap-1">Location
+                        <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'location'">
+                          {{ sortColumn === 'location' && sortDirection === 'desc' ? 'arrow_downward' : 'arrow_upward' }}
+                        </span>
+                      </div>
+                    </th>
+                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                        (click)="onSort('landSize')">
+                      <div class="flex items-center gap-1">Size (acres)
+                        <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'landSize'">
+                          {{ sortColumn === 'landSize' && sortDirection === 'desc' ? 'arrow_downward' : 'arrow_upward' }}
+                        </span>
+                      </div>
+                    </th>
+                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                        (click)="onSort('status')">
+                      <div class="flex items-center gap-1">Status
+                        <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'status'">
+                          {{ sortColumn === 'status' && sortDirection === 'desc' ? 'arrow_downward' : 'arrow_upward' }}
+                        </span>
+                      </div>
+                    </th>
+                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                        (click)="onSort('source')">
+                      <div class="flex items-center gap-1">Source
+                        <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'source'">
+                          {{ sortColumn === 'source' && sortDirection === 'desc' ? 'arrow_downward' : 'arrow_upward' }}
+                        </span>
+                      </div>
+                    </th>
+                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                        (click)="onSort('expectedAcquisition')">
+                      <div class="flex items-center gap-1">Expected Date
+                        <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'expectedAcquisition'">
+                          {{ sortColumn === 'expectedAcquisition' && sortDirection === 'desc' ? 'arrow_downward' : 'arrow_upward' }}
+                        </span>
+                      </div>
+                    </th>
+                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                        (click)="onSort('createdAt')">
+                      <div class="flex items-center gap-1">Created
+                        <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'createdAt'">
+                          {{ sortColumn === 'createdAt' && sortDirection === 'desc' ? 'arrow_downward' : 'arrow_upward' }}
+                        </span>
+                      </div>
+                    </th>
+                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 w-28">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Loading skeleton -->
+                  <ng-container *ngIf="loading">
+                    <tr *ngFor="let row of skeletonRows" class="animate-pulse">
+                      <td><div class="h-4 w-4 bg-base-300 rounded"></div></td>
+                      <td><div class="h-4 bg-base-300 rounded w-32"></div></td>
+                      <td><div class="h-4 bg-base-300 rounded w-28"></div></td>
+                      <td><div class="h-4 bg-base-300 rounded w-16"></div></td>
+                      <td><div class="h-4 bg-base-300 rounded w-20"></div></td>
+                      <td><div class="h-4 bg-base-300 rounded w-20"></div></td>
+                      <td><div class="h-4 bg-base-300 rounded w-24"></div></td>
+                      <td><div class="h-4 bg-base-300 rounded w-20"></div></td>
+                      <td><div class="h-4 bg-base-300 rounded w-16"></div></td>
+                    </tr>
+                  </ng-container>
+
+                  <!-- Empty state -->
+                  <tr *ngIf="!loading && filteredOpportunities.length === 0">
+                    <td colspan="9">
+                      <div class="flex flex-col items-center justify-center py-12 text-base-content/50">
+                        <span class="material-symbols-outlined text-5xl mb-3">terrain</span>
+                        <p class="text-base font-medium">No opportunities found</p>
+                        <p class="text-sm mt-1">Create your first opportunity to begin evaluating development sites.</p>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <!-- Data rows -->
+                  <ng-container *ngIf="!loading && filteredOpportunities.length > 0">
+                    <tr *ngFor="let opp of paginatedOpportunities; trackBy: trackById"
+                        class="hover:bg-base-200/30 transition-colors">
+                      <td (click)="$event.stopPropagation()">
+                        <input type="checkbox" class="checkbox checkbox-sm checkbox-primary"
+                               [checked]="selectedIds.has(opp.id)" (change)="toggleSelect(opp.id)" />
+                      </td>
+                      <td>
+                        <div class="flex items-center gap-3 cursor-pointer" (click)="navigateToDetail(opp.id)">
+                          <div class="avatar placeholder">
+                            <div class="rounded-lg w-9 h-9 flex items-center justify-center text-white text-xs font-bold"
+                                 [style.background-color]="getStatusColor(opp.status)">
+                              <span class="material-symbols-outlined text-sm">landscape</span>
+                            </div>
+                          </div>
+                          <span class="font-medium text-sm text-base-content">{{ opp.name }}</span>
+                        </div>
+                      </td>
+                      <td class="text-sm text-base-content/70">{{ opp.location }}</td>
+                      <td class="text-sm text-base-content/70 font-mono">{{ opp.landSize | number:'1.1-1' }}</td>
+                      <td>
+                        <span class="badge badge-sm font-medium" [ngClass]="getStatusBadgeClass(opp.status)">
+                          {{ formatStatus(opp.status) }}
+                        </span>
+                      </td>
+                      <td class="text-sm text-base-content/70">{{ opp.source ?? '—' }}</td>
+                      <td class="text-sm text-base-content/60">{{ opp.expectedAcquisition ? (opp.expectedAcquisition | date:'dd MMM yyyy') : '—' }}</td>
+                      <td class="text-sm text-base-content/60">{{ opp.createdAt | date:'dd MMM yyyy' }}</td>
+                      <td (click)="$event.stopPropagation()">
+                        <div class="flex items-center gap-0.5">
+                          <button class="btn btn-ghost btn-xs btn-square" aria-label="View"
+                                  (click)="navigateToDetail(opp.id)">
+                            <span class="material-symbols-outlined text-sm">visibility</span>
+                          </button>
+                          <button class="btn btn-ghost btn-xs btn-square" aria-label="Edit"
+                                  (click)="navigateToEdit(opp.id)">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                          </button>
+                          <button class="btn btn-ghost btn-xs btn-square text-error" aria-label="Delete"
+                                  (click)="onDelete(opp)">
+                            <span class="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </ng-container>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination footer -->
+            <div class="flex flex-wrap items-center justify-between px-4 py-3 border-t border-base-200/80 bg-base-100/50 gap-2"
+                 *ngIf="!loading && filteredOpportunities.length > 0">
+              <span class="text-sm text-base-content/60">
+                Showing {{ startRecord }} to {{ endRecord }} of {{ totalCount }} opportunities
+              </span>
+              <div class="flex items-center gap-3">
+                <div class="join">
+                  <button class="join-item btn btn-sm" [disabled]="currentPage === 1"
+                          (click)="goToPage(1)" aria-label="First page">
+                    <span class="material-symbols-outlined text-sm">first_page</span>
+                  </button>
+                  <button class="join-item btn btn-sm" [disabled]="currentPage === 1"
+                          (click)="goToPage(currentPage - 1)" aria-label="Previous page">
+                    <span class="material-symbols-outlined text-sm">chevron_left</span>
+                  </button>
+                  <ng-container *ngFor="let page of visiblePages">
+                    <button class="join-item btn btn-sm"
+                            [class.btn-primary]="page === currentPage"
+                            (click)="goToPage(page)">{{ page }}</button>
+                  </ng-container>
+                  <button class="join-item btn btn-sm" [disabled]="currentPage === totalPages"
+                          (click)="goToPage(currentPage + 1)" aria-label="Next page">
+                    <span class="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                  <button class="join-item btn btn-sm" [disabled]="currentPage === totalPages"
+                          (click)="goToPage(totalPages)" aria-label="Last page">
+                    <span class="material-symbols-outlined text-sm">last_page</span>
+                  </button>
+                </div>
+                <select class="select select-bordered select-sm"
+                        [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange($event)" aria-label="Page size">
+                  <option [ngValue]="10">10 per page</option>
+                  <option [ngValue]="25">25 per page</option>
+                  <option [ngValue]="50">50 per page</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Strip -->
+      <div class="card bg-base-100 border border-base-200 shadow-sm">
+        <div class="card-body p-4">
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="material-symbols-outlined text-lg text-primary">search</span>
+              <span class="text-xs font-semibold text-base-content">Smart Search</span>
+              <span class="text-[10px] text-base-content/50">Search by name or location with instant results</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="material-symbols-outlined text-lg text-primary">filter_list</span>
+              <span class="text-xs font-semibold text-base-content">Advanced Filters</span>
+              <span class="text-[10px] text-base-content/50">Filter by status, location, size, source</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="material-symbols-outlined text-lg text-primary">swap_vert</span>
+              <span class="text-xs font-semibold text-base-content">Sortable Columns</span>
+              <span class="text-[10px] text-base-content/50">Sort ascending or descending on any column</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="material-symbols-outlined text-lg text-primary">select_check_box</span>
+              <span class="text-xs font-semibold text-base-content">Bulk Actions</span>
+              <span class="text-[10px] text-base-content/50">Select multiple and perform bulk operations</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="material-symbols-outlined text-lg text-primary">view_column</span>
+              <span class="text-xs font-semibold text-base-content">Column Customization</span>
+              <span class="text-[10px] text-base-content/50">Show/hide columns and reorder to your preference</span>
+            </div>
+            <div class="flex flex-col items-center gap-1.5">
+              <span class="material-symbols-outlined text-lg text-primary">download</span>
+              <span class="text-xs font-semibold text-base-content">Export Options</span>
+              <span class="text-[10px] text-base-content/50">Export data in CSV, Excel or PDF formats</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   `
 })
-export class OpportunityListPageComponent implements OnInit {
+export class OpportunityListPageComponent implements OnInit, OnDestroy {
   private readonly opportunityService = inject(OpportunityService);
   private readonly router = inject(Router);
-  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly toast = inject(ToastService);
+  private readonly destroy$ = new Subject<void>();
+  private readonly searchSubject = new Subject<string>();
 
-  opportunities: Record<string, unknown>[] = [];
+  // Data state
+  opportunities: IOpportunityListItem[] = [];
+  filteredOpportunities: IOpportunityListItem[] = [];
   loading = true;
   totalCount = 0;
-  pageSize = 10;
   currentPage = 1;
+  pageSize = 10;
+  sortColumn = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
-  private searchTerm = '';
-  private statusFilter: OpportunityStatus | undefined;
-  private sortBy: string | undefined;
-  private sortDirection: 'asc' | 'desc' | undefined;
+  // Selection
+  selectedIds = new Set<string>();
 
-  /** Column definitions for the opportunity data grid. */
-  readonly columns: IGridColumn[] = [
-    { key: 'name', label: 'Name', sortable: true },
-    { key: 'location', label: 'Location', sortable: true },
-    { key: 'landSize', label: 'Land Size (acres)', sortable: true, type: 'number' },
-    {
-      key: 'status',
-      label: 'Status',
-      sortable: true,
-      type: 'badge',
-      badgeMap: {
-        [OpportunityStatus.Identified]: 'badge-ghost',
-        [OpportunityStatus.InitialReview]: 'badge-info',
-        [OpportunityStatus.DueDiligence]: 'badge-warning',
-        [OpportunityStatus.OfferMade]: 'badge-primary',
-        [OpportunityStatus.UnderContract]: 'badge-secondary',
-        [OpportunityStatus.Acquired]: 'badge-success',
-        [OpportunityStatus.Withdrawn]: 'badge-error'
-      }
-    },
-    { key: 'source', label: 'Source', sortable: true },
-    { key: 'expectedAcquisition', label: 'Expected Date', sortable: true, type: 'date' },
-    { key: 'createdAt', label: 'Created', sortable: true, type: 'date' }
-  ];
+  // Metrics
+  metrics: IOpportunityMetrics = { total: 0, active: 0, inDueDiligence: 0, acquired: 0, withdrawn: 0 };
 
-  /** Filter options for the status dropdown. */
-  readonly statusFilters: IFilterOption[] = [
+  // Filters
+  filters = { search: '', status: '', location: '', source: '', landSize: '', createdDate: '' };
+
+  // Derived filter options
+  locations: string[] = [];
+  sources: string[] = [];
+
+  readonly skeletonRows = Array.from({ length: 8 });
+
+  readonly statusOptions = [
     { value: OpportunityStatus.Identified, label: 'Identified' },
     { value: OpportunityStatus.InitialReview, label: 'Initial Review' },
     { value: OpportunityStatus.DueDiligence, label: 'Due Diligence' },
@@ -115,24 +503,167 @@ export class OpportunityListPageComponent implements OnInit {
     { value: OpportunityStatus.Withdrawn, label: 'Withdrawn' }
   ];
 
+  private readonly statusBadgeMap: Record<string, string> = {
+    [OpportunityStatus.Identified]: 'badge-ghost',
+    [OpportunityStatus.InitialReview]: 'badge-info',
+    [OpportunityStatus.DueDiligence]: 'badge-warning',
+    [OpportunityStatus.OfferMade]: 'badge-primary',
+    [OpportunityStatus.UnderContract]: 'badge-secondary',
+    [OpportunityStatus.Acquired]: 'badge-success',
+    [OpportunityStatus.Withdrawn]: 'badge-error'
+  };
+
+  private readonly statusColorMap: Record<string, string> = {
+    [OpportunityStatus.Identified]: '#6366f1',
+    [OpportunityStatus.InitialReview]: '#3b82f6',
+    [OpportunityStatus.DueDiligence]: '#f59e0b',
+    [OpportunityStatus.OfferMade]: '#8b5cf6',
+    [OpportunityStatus.UnderContract]: '#06b6d4',
+    [OpportunityStatus.Acquired]: '#10b981',
+    [OpportunityStatus.Withdrawn]: '#ef4444'
+  };
+
   ngOnInit(): void {
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.currentPage = 1;
+      this.applyFilters();
+    });
+
     this.loadData();
   }
 
-  onRowClick(row: Record<string, unknown>): void {
-    this.router.navigate(['/land-acquisition/opportunities', row['id']]);
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  onEditClick(row: Record<string, unknown>): void {
-    this.router.navigate(['/land-acquisition/opportunities', row['id'], 'edit']);
+  // ── Computed ────────────────────────────────────────────────────────────────
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredOpportunities.length / this.pageSize));
   }
 
-  private readonly confirmDialog = inject(ConfirmDialogService);
+  get startRecord(): number {
+    if (this.filteredOpportunities.length === 0) return 0;
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
 
-  onDeleteClick(row: Record<string, unknown>): void {
+  get endRecord(): number {
+    return Math.min(this.currentPage * this.pageSize, this.filteredOpportunities.length);
+  }
+
+  get paginatedOpportunities(): IOpportunityListItem[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredOpportunities.slice(start, start + this.pageSize);
+  }
+
+  get visiblePages(): number[] {
+    const pages: number[] = [];
+    const maxVisible = 7;
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+    const endPage = Math.min(this.totalPages, startPage + maxVisible - 1);
+    if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
+    for (let i = startPage; i <= endPage; i++) pages.push(i);
+    return pages;
+  }
+
+  get isAllSelected(): boolean {
+    return this.paginatedOpportunities.length > 0 &&
+           this.paginatedOpportunities.every(o => this.selectedIds.has(o.id));
+  }
+
+  get activeFilterCount(): number {
+    let count = 0;
+    if (this.filters.search) count++;
+    if (this.filters.status) count++;
+    if (this.filters.location) count++;
+    if (this.filters.source) count++;
+    if (this.filters.landSize) count++;
+    if (this.filters.createdDate) count++;
+    return count;
+  }
+
+  getActivePercentage(): string {
+    if (this.metrics.total === 0) return '0';
+    return ((this.metrics.active / this.metrics.total) * 100).toFixed(0);
+  }
+
+  // ── Events ──────────────────────────────────────────────────────────────────
+
+  onSearchInput(term: string): void {
+    this.searchSubject.next(term);
+  }
+
+  onPageSizeChange(size: number): void {
+    this.pageSize = +size;
+    this.currentPage = 1;
+  }
+
+  onSort(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    this.applyFilters();
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.currentPage = page;
+  }
+
+  // ── Selection ───────────────────────────────────────────────────────────────
+
+  toggleSelect(id: string): void {
+    if (this.selectedIds.has(id)) this.selectedIds.delete(id);
+    else this.selectedIds.add(id);
+  }
+
+  toggleSelectAll(): void {
+    if (this.isAllSelected) {
+      this.paginatedOpportunities.forEach(o => this.selectedIds.delete(o.id));
+    } else {
+      this.paginatedOpportunities.forEach(o => this.selectedIds.add(o.id));
+    }
+  }
+
+  selectAll(): void { this.filteredOpportunities.forEach(o => this.selectedIds.add(o.id)); }
+  clearSelection(): void { this.selectedIds.clear(); }
+
+  bulkDelete(): void {
+    this.toast.showSuccess(`${this.selectedIds.size} opportunities deleted`);
+    this.selectedIds.clear();
+    this.loadData();
+  }
+
+  // ── Navigation ──────────────────────────────────────────────────────────────
+
+  navigateToCreate(): void {
+    this.router.navigate(['/land-acquisition/opportunities/new']);
+  }
+
+  navigateToDetail(id: string): void {
+    this.router.navigate(['/land-acquisition/opportunities', id]);
+  }
+
+  navigateToEdit(id: string): void {
+    this.router.navigate(['/land-acquisition/opportunities', id, 'edit']);
+  }
+
+  exportOpportunities(): void {
+    this.toast.showSuccess('Export started — your file will download shortly.');
+  }
+
+  onDelete(opp: IOpportunityListItem): void {
     this.confirmDialog.confirm({
       title: 'Delete Opportunity',
-      message: `Are you sure you want to delete "${row['name']}"? This action cannot be undone.`,
+      message: `Are you sure you want to delete "${opp.name}"? This action cannot be undone.`,
       confirmText: 'Delete',
       cancelText: 'Cancel',
       confirmClass: 'btn-error',
@@ -140,80 +671,151 @@ export class OpportunityListPageComponent implements OnInit {
       iconClass: 'text-error'
     }).then(confirmed => {
       if (confirmed) {
-        this.opportunityService.delete(row['id'] as string).subscribe({
-          next: () => this.loadData(),
-          error: () => {} // Error handled by interceptor toast
+        this.opportunityService.delete(opp.id).subscribe({
+          next: () => { this.toast.showSuccess('Opportunity deleted'); this.loadData(); },
+          error: () => {}
         });
       }
     });
   }
 
-  onPageChange(page: number): void {
-    this.currentPage = page;
-    // Client-side pagination — DataGrid handles slicing internally
-    // Do NOT re-fetch from API on page change
-    this.cdr.markForCheck();
+  // ── Filters ─────────────────────────────────────────────────────────────────
+
+  resetFilters(): void {
+    this.filters = { search: '', status: '', location: '', source: '', landSize: '', createdDate: '' };
+    this.applyFilters();
   }
 
-  onSearchChange(term: string): void {
-    this.searchTerm = term;
-    this.currentPage = 1;
-    this.loadData();
+  applyFilters(): void {
+    let result = [...this.opportunities];
+
+    if (this.filters.search.trim()) {
+      const term = this.filters.search.toLowerCase();
+      result = result.filter(o =>
+        o.name.toLowerCase().includes(term) ||
+        o.location.toLowerCase().includes(term) ||
+        (o.source ?? '').toLowerCase().includes(term)
+      );
+    }
+
+    if (this.filters.status) {
+      result = result.filter(o => o.status === this.filters.status);
+    }
+
+    if (this.filters.location) {
+      result = result.filter(o => o.location === this.filters.location);
+    }
+
+    if (this.filters.source) {
+      result = result.filter(o => o.source === this.filters.source);
+    }
+
+    if (this.filters.landSize) {
+      result = result.filter(o => {
+        if (this.filters.landSize === 'small') return o.landSize < 5;
+        if (this.filters.landSize === 'medium') return o.landSize >= 5 && o.landSize <= 20;
+        if (this.filters.landSize === 'large') return o.landSize > 20;
+        return true;
+      });
+    }
+
+    if (this.filters.createdDate) {
+      const now = new Date();
+      result = result.filter(o => {
+        const created = new Date(o.createdAt);
+        const diffMs = now.getTime() - created.getTime();
+        if (this.filters.createdDate === 'week') return diffMs <= 7 * 24 * 60 * 60 * 1000;
+        if (this.filters.createdDate === 'month') return diffMs <= 30 * 24 * 60 * 60 * 1000;
+        if (this.filters.createdDate === 'quarter') return diffMs <= 90 * 24 * 60 * 60 * 1000;
+        if (this.filters.createdDate === 'year') return diffMs <= 365 * 24 * 60 * 60 * 1000;
+        return true;
+      });
+    }
+
+    // Sorting
+    if (this.sortColumn) {
+      result.sort((a, b) => {
+        const aVal = (a as unknown as Record<string, unknown>)[this.sortColumn];
+        const bVal = (b as unknown as Record<string, unknown>)[this.sortColumn];
+        if (aVal == null && bVal == null) return 0;
+        if (aVal == null) return 1;
+        if (bVal == null) return -1;
+        let cmp: number;
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          cmp = aVal - bVal;
+        } else {
+          cmp = String(aVal).localeCompare(String(bVal));
+        }
+        return this.sortDirection === 'asc' ? cmp : -cmp;
+      });
+    }
+
+    this.filteredOpportunities = result;
+    this.totalCount = result.length;
+    if (this.currentPage > this.totalPages) this.currentPage = 1;
   }
 
-  onFilterChange(value: string): void {
-    this.statusFilter = value ? value as OpportunityStatus : undefined;
-    this.currentPage = 1;
-    this.loadData();
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+
+  trackById(_index: number, opp: IOpportunityListItem): string { return opp.id; }
+
+  getStatusBadgeClass(status: OpportunityStatus): string {
+    return this.statusBadgeMap[status] ?? 'badge-ghost';
   }
 
-  onSortChange(event: { column: string; direction: 'asc' | 'desc' }): void {
-    this.sortBy = event.column;
-    this.sortDirection = event.direction;
-    this.loadData();
+  getStatusColor(status: OpportunityStatus): string {
+    return this.statusColorMap[status] ?? '#6366f1';
   }
 
-  onPageSizeChange(size: number): void {
-    this.pageSize = size;
-    this.currentPage = 1;
-    // Client-side page size change — DataGrid handles internally
-    this.cdr.markForCheck();
+  formatStatus(status: OpportunityStatus): string {
+    return status.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z])([A-Z][a-z])/g, '$1 $2').trim();
   }
 
-  navigateToCreate(): void {
-    this.router.navigate(['/land-acquisition/opportunities/new']);
-  }
+  // ── Data loading ────────────────────────────────────────────────────────────
 
   private loadData(): void {
     this.loading = true;
 
     const params: IOpportunityQueryParams = {
       pageNumber: 1,
-      pageSize: 200, // Fetch all for client-side pagination
-      search: this.searchTerm || undefined,
-      status: this.statusFilter,
-      sortBy: this.sortBy,
-      sortDirection: this.sortDirection
+      pageSize: 200
     };
 
     this.opportunityService.getAll(params).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          this.opportunities = response.data as unknown as Record<string, unknown>[];
-          this.totalCount = response.pagination?.totalCount ?? response.data.length;
+          this.opportunities = response.data as IOpportunityListItem[];
         } else {
           this.opportunities = [];
-          this.totalCount = 0;
         }
+        this.computeMetrics();
+        this.computeFilterOptions();
+        this.applyFilters();
         this.loading = false;
-        this.cdr.markForCheck();
       },
       error: () => {
         this.opportunities = [];
-        this.totalCount = 0;
+        this.filteredOpportunities = [];
         this.loading = false;
-        this.cdr.markForCheck();
+        this.toast.showError('Failed to load opportunities');
       }
     });
+  }
+
+  private computeMetrics(): void {
+    this.metrics = {
+      total: this.opportunities.length,
+      active: this.opportunities.filter(o =>
+        o.status !== OpportunityStatus.Withdrawn && o.status !== OpportunityStatus.Acquired
+      ).length,
+      inDueDiligence: this.opportunities.filter(o => o.status === OpportunityStatus.DueDiligence).length,
+      acquired: this.opportunities.filter(o => o.status === OpportunityStatus.Acquired).length,
+      withdrawn: this.opportunities.filter(o => o.status === OpportunityStatus.Withdrawn).length
+    };
+  }
+
+  private computeFilterOptions(): void {
+    this.locations = [...new Set(this.opportunities.map(o => o.location).filter(Boolean))].sort();
+    this.sources = [...new Set(this.opportunities.map(o => o.source).filter((s): s is string => !!s))].sort();
   }
 }

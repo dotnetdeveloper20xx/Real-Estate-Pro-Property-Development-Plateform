@@ -4,16 +4,19 @@ using BuildEstate.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace BuildEstate.Infrastructure.Migrations
+namespace BuildEstate.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(BuildEstateDbContext))]
-    partial class BuildEstateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260617175945_AddOpportunityExtendedFields")]
+    partial class AddOpportunityExtendedFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

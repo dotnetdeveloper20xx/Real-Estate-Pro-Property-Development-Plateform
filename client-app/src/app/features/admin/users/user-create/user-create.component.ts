@@ -1,276 +1,158 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Subject } from 'rxjs';
 import { ToastService } from '../../../../core/services/toast.service';
 
-/**
- * Role option for the assignment panel.
- */
 interface IRoleOption {
   readonly id: string;
   readonly name: string;
   readonly description: string;
 }
 
-/**
- * Create user form interface with strong typing.
- */
-interface ICreateUserForm {
+interface IUserForm {
   firstName: FormControl<string>;
   lastName: FormControl<string>;
   email: FormControl<string>;
   password: FormControl<string>;
   confirmPassword: FormControl<string>;
+  status: FormControl<string>;
   roles: FormControl<string[]>;
 }
 
-/**
- * Password validation rule for the live checklist.
- */
-interface IPasswordRule {
-  readonly label: string;
-  readonly validator: (value: string) => boolean;
-  met: boolean;
+interface IUserData {
+  readonly id: string;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly email: string;
+  readonly roles: string[];
+  readonly isActive: boolean;
 }
 
-/**
- * User Create Page Component
- *
- * Features:
- * - Form fields: First Name, Last Name, Email, Password (with visibility toggle), Confirm Password
- * - Searchable role assignment panel with checkboxes for all 13 roles
- * - Real-time password policy validation with checkmarks per requirement
- * - Email uniqueness validation (async)
- * - Submit → create user → success notification → navigate to list
- *
- * Requirements: 4.2, 4.3, 4.4, 4.10
- */
 @Component({
   selector: 'app-user-create',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
-    <div class="p-6 max-w-4xl mx-auto space-y-6">
+    <div class="p-6 max-w-5xl mx-auto space-y-6">
       <!-- Page Header -->
-      <div class="flex items-center gap-4">
-        <button class="btn btn-ghost btn-sm btn-square" (click)="navigateBack()" aria-label="Back to users list">
-          <span class="material-symbols-outlined">arrow_back</span>
-        </button>
-        <div>
-          <h1 class="text-2xl font-bold text-base-content">Create New User</h1>
-          <p class="text-sm text-base-content/60 mt-1">
-            Add a new user account and assign roles
-          </p>
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
+          <span class="material-symbols-outlined text-white text-lg">3</span>
+        </div>
+        <h1 class="text-xl font-bold text-base-content uppercase tracking-wide">Create / Edit User</h1>
+      </div>
+
+      <!-- Tabs -->
+      <div class="border-b border-base-200">
+        <div class="flex gap-0">
+          <button type="button" class="px-5 py-2.5 text-sm font-medium border-b-2 transition-colors"
+                  [ngClass]="!isEditMode ? 'border-primary text-primary' : 'border-transparent text-base-content/60 hover:text-base-content'"
+                  (click)="switchToCreate()">Create User</button>
+          <button type="button" class="px-5 py-2.5 text-sm font-medium border-b-2 transition-colors"
+                  [ngClass]="isEditMode ? 'border-primary text-primary' : 'border-transparent text-base-content/60 hover:text-base-content'"
+                  (click)="switchToEdit()">Edit User</button>
         </div>
       </div>
 
-      <!-- Create User Form -->
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
-        <!-- Personal Information Card -->
-        <div class="card bg-base-100 shadow-sm border border-base-200/80">
-          <div class="card-body">
-            <h2 class="card-title text-base">Personal Information</h2>
+      <!-- Loading -->
+      <div *ngIf="loading" class="flex items-center justify-center py-12">
+        <span class="loading loading-spinner loading-lg text-primary"></span>
+      </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <!-- First Name -->
-              <div class="form-control">
-                <label class="label" for="firstName">
-                  <span class="label-text font-medium">First Name <span class="text-error">*</span></span>
-                </label>
-                <input
-                  id="firstName"
-                  type="text"
-                  formControlName="firstName"
-                  placeholder="Enter first name"
-                  class="input input-bordered w-full"
-                  [class.input-error]="isFieldInvalid('firstName')" />
-                <label class="label" *ngIf="isFieldInvalid('firstName')">
-                  <span class="label-text-alt text-error">First name is required</span>
-                </label>
-              </div>
-
-              <!-- Last Name -->
-              <div class="form-control">
-                <label class="label" for="lastName">
-                  <span class="label-text font-medium">Last Name <span class="text-error">*</span></span>
-                </label>
-                <input
-                  id="lastName"
-                  type="text"
-                  formControlName="lastName"
-                  placeholder="Enter last name"
-                  class="input input-bordered w-full"
-                  [class.input-error]="isFieldInvalid('lastName')" />
-                <label class="label" *ngIf="isFieldInvalid('lastName')">
-                  <span class="label-text-alt text-error">Last name is required</span>
-                </label>
-              </div>
+      <!-- Form -->
+      <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Left: Form Fields -->
+          <div class="space-y-5">
+            <div>
+              <label class="text-sm font-semibold text-base-content mb-1.5 block">First Name <span class="text-error">*</span></label>
+              <input type="text" formControlName="firstName" placeholder="John"
+                     class="input input-bordered w-full" [class.input-error]="isFieldInvalid('firstName')" />
+              <p *ngIf="isFieldInvalid('firstName')" class="text-xs text-error mt-1">First name is required</p>
             </div>
 
-            <!-- Email -->
-            <div class="form-control mt-4">
-              <label class="label" for="email">
-                <span class="label-text font-medium">Email Address <span class="text-error">*</span></span>
-              </label>
-              <input
-                id="email"
-                type="email"
-                formControlName="email"
-                placeholder="user&#64;buildestate.co.uk"
-                class="input input-bordered w-full"
-                [class.input-error]="isFieldInvalid('email')" />
-              <label class="label" *ngIf="isFieldInvalid('email')">
-                <span class="label-text-alt text-error">
-                  {{ getEmailError() }}
-                </span>
-              </label>
-              <label class="label" *ngIf="form.controls.email.pending">
-                <span class="label-text-alt text-info">Checking email availability...</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- Password Card -->
-        <div class="card bg-base-100 shadow-sm border border-base-200/80">
-          <div class="card-body">
-            <h2 class="card-title text-base">Password</h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <!-- Password -->
-              <div class="form-control">
-                <label class="label" for="password">
-                  <span class="label-text font-medium">Password <span class="text-error">*</span></span>
-                </label>
-                <div class="relative">
-                  <input
-                    id="password"
-                    [type]="showPassword ? 'text' : 'password'"
-                    formControlName="password"
-                    placeholder="Enter password"
-                    class="input input-bordered w-full pr-10"
-                    [class.input-error]="isFieldInvalid('password')" />
-                  <button
-                    type="button"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 btn btn-ghost btn-xs btn-square"
-                    (click)="showPassword = !showPassword"
-                    [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
-                    <span class="material-symbols-outlined text-sm">
-                      {{ showPassword ? 'visibility_off' : 'visibility' }}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Confirm Password -->
-              <div class="form-control">
-                <label class="label" for="confirmPassword">
-                  <span class="label-text font-medium">Confirm Password <span class="text-error">*</span></span>
-                </label>
-                <div class="relative">
-                  <input
-                    id="confirmPassword"
-                    [type]="showConfirmPassword ? 'text' : 'password'"
-                    formControlName="confirmPassword"
-                    placeholder="Re-enter password"
-                    class="input input-bordered w-full pr-10"
-                    [class.input-error]="isFieldInvalid('confirmPassword')" />
-                  <button
-                    type="button"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 btn btn-ghost btn-xs btn-square"
-                    (click)="showConfirmPassword = !showConfirmPassword"
-                    [attr.aria-label]="showConfirmPassword ? 'Hide password' : 'Show password'">
-                    <span class="material-symbols-outlined text-sm">
-                      {{ showConfirmPassword ? 'visibility_off' : 'visibility' }}
-                    </span>
-                  </button>
-                </div>
-                <label class="label" *ngIf="isFieldInvalid('confirmPassword')">
-                  <span class="label-text-alt text-error">Passwords must match</span>
-                </label>
-              </div>
+            <div>
+              <label class="text-sm font-semibold text-base-content mb-1.5 block">Last Name <span class="text-error">*</span></label>
+              <input type="text" formControlName="lastName" placeholder="Mitchell"
+                     class="input input-bordered w-full" [class.input-error]="isFieldInvalid('lastName')" />
+              <p *ngIf="isFieldInvalid('lastName')" class="text-xs text-error mt-1">Last name is required</p>
             </div>
 
-            <!-- Password Requirements Checklist -->
-            <div class="mt-4 p-3 bg-base-200/50 rounded-lg">
-              <p class="text-xs font-medium text-base-content/60 mb-2">Password Requirements</p>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                <div
-                  *ngFor="let rule of passwordRules"
-                  class="flex items-center gap-2 text-sm">
-                  <span
-                    class="material-symbols-outlined text-sm"
-                    [ngClass]="rule.met ? 'text-success' : 'text-base-content/30'">
-                    {{ rule.met ? 'check_circle' : 'radio_button_unchecked' }}
-                  </span>
-                  <span [ngClass]="rule.met ? 'text-success' : 'text-base-content/60'">
-                    {{ rule.label }}
-                  </span>
-                </div>
-              </div>
+            <div>
+              <label class="text-sm font-semibold text-base-content mb-1.5 block">Email Address <span class="text-error">*</span></label>
+              <input type="email" formControlName="email" placeholder="john.mitchell@buildestate.co.uk"
+                     class="input input-bordered w-full" [class.input-error]="isFieldInvalid('email')" />
+              <p *ngIf="isFieldInvalid('email')" class="text-xs text-error mt-1">{{ getEmailError() }}</p>
             </div>
-          </div>
-        </div>
 
-        <!-- Role Assignment Card -->
-        <div class="card bg-base-100 shadow-sm border border-base-200/80">
-          <div class="card-body">
-            <h2 class="card-title text-base">Role Assignment</h2>
-            <p class="text-sm text-base-content/60">
-              Assign one or more roles to define the user's access permissions
-            </p>
-
-            <!-- Role search -->
-            <div class="form-control mt-3">
+            <div>
+              <label class="text-sm font-semibold text-base-content mb-1.5 block">Password <span class="text-error">*</span></label>
               <div class="relative">
-                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 text-sm">search</span>
-                <input
-                  type="text"
-                  placeholder="Search roles..."
-                  class="input input-bordered input-sm pl-9 w-full max-w-xs"
-                  [(ngModel)]="roleSearchTerm"
-                  [ngModelOptions]="{standalone: true}"
-                  aria-label="Search roles" />
+                <input [type]="showPassword ? 'text' : 'password'" formControlName="password"
+                       placeholder="••••••••" class="input input-bordered w-full pr-10"
+                       [class.input-error]="isFieldInvalid('password')" />
+                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content"
+                        (click)="showPassword = !showPassword">
+                  <span class="material-symbols-outlined text-xl">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+                </button>
               </div>
+              <p *ngIf="isFieldInvalid('password')" class="text-xs text-error mt-1">Password must be at least 8 characters</p>
             </div>
 
-            <!-- Roles Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-3">
-              <label
-                *ngFor="let role of filteredRoles"
-                class="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200/50 cursor-pointer transition-colors">
-                <input
-                  type="checkbox"
-                  class="checkbox checkbox-sm checkbox-primary"
-                  [checked]="isRoleSelected(role.name)"
-                  (change)="toggleRole(role.name)" />
-                <div>
-                  <span class="text-sm font-medium">{{ formatRoleName(role.name) }}</span>
-                  <p class="text-xs text-base-content/50" *ngIf="role.description">{{ role.description }}</p>
-                </div>
+            <div>
+              <label class="text-sm font-semibold text-base-content mb-1.5 block">Confirm Password <span class="text-error">*</span></label>
+              <div class="relative">
+                <input [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword"
+                       placeholder="••••••••" class="input input-bordered w-full pr-10"
+                       [class.input-error]="isFieldInvalid('confirmPassword')" />
+                <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content"
+                        (click)="showConfirmPassword = !showConfirmPassword">
+                  <span class="material-symbols-outlined text-xl">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
+              <p *ngIf="isFieldInvalid('confirmPassword')" class="text-xs text-error mt-1">Passwords must match</p>
+            </div>
+
+            <div>
+              <label class="text-sm font-semibold text-base-content mb-1.5 block">Status</label>
+              <select formControlName="status" class="select select-bordered w-full">
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Right: Role Assignment -->
+          <div>
+            <label class="text-sm font-semibold text-base-content mb-3 block">Assign Roles <span class="text-error">*</span></label>
+            <div class="relative mb-3">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">search</span>
+              <input type="text" placeholder="Search roles..." class="input input-bordered w-full pl-10"
+                     [(ngModel)]="roleSearchTerm" [ngModelOptions]="{standalone: true}" />
+            </div>
+            <div class="border border-base-200 rounded-lg max-h-[400px] overflow-y-auto">
+              <label *ngFor="let role of filteredRoles"
+                     class="flex items-center gap-3 px-4 py-3 border-b border-base-200/50 last:border-b-0 hover:bg-base-200/30 cursor-pointer transition-colors">
+                <input type="checkbox" class="checkbox checkbox-sm checkbox-primary"
+                       [checked]="isRoleSelected(role.name)" (change)="toggleRole(role.name)" />
+                <span class="text-sm font-medium text-base-content">{{ role.name }}</span>
               </label>
             </div>
-
             <p class="text-xs text-base-content/50 mt-2" *ngIf="selectedRolesCount > 0">
               {{ selectedRolesCount }} role(s) selected
             </p>
           </div>
         </div>
 
-        <!-- Form Actions -->
-        <div class="flex items-center justify-end gap-3">
-          <button type="button" class="btn btn-ghost" (click)="navigateBack()">
-            Cancel
-          </button>
-          <button
-            type="submit"
-            class="btn btn-primary"
-            [disabled]="submitting || form.invalid">
+        <!-- Footer Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-base-200">
+          <button type="button" class="btn btn-ghost" (click)="navigateBack()">Cancel</button>
+          <button type="submit" class="btn btn-primary px-6" [disabled]="submitting || form.invalid">
             <span *ngIf="submitting" class="loading loading-spinner loading-sm"></span>
-            Create User
+            {{ isEditMode ? 'Save User' : 'Save User' }}
           </button>
         </div>
       </form>
@@ -280,47 +162,36 @@ interface IPasswordRule {
 export class UserCreateComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
 
-  // UI state
   showPassword = false;
   showConfirmPassword = false;
   submitting = false;
+  loading = false;
   roleSearchTerm = '';
+  isEditMode = false;
+  userId: string | null = null;
+  userData: IUserData | null = null;
 
-  // Available roles
   availableRoles: IRoleOption[] = [];
 
-  // Password validation rules (updated in real-time)
-  passwordRules: IPasswordRule[] = [
-    { label: 'Minimum 8 characters', validator: (v) => v.length >= 8, met: false },
-    { label: 'Maximum 128 characters', validator: (v) => v.length <= 128 && v.length > 0, met: false },
-    { label: 'At least 1 uppercase letter', validator: (v) => /[A-Z]/.test(v), met: false },
-    { label: 'At least 1 number', validator: (v) => /[0-9]/.test(v), met: false },
-    { label: 'At least 1 special character', validator: (v) => /[!@#$%^&*()\-_+=\[\]{}|;:',.<>?/`~]/.test(v), met: false }
-  ];
-
-  /** Reactive form for user creation. */
-  form: FormGroup<ICreateUserForm> = this.fb.nonNullable.group({
+  form: FormGroup<IUserForm> = this.fb.nonNullable.group({
     firstName: ['', [Validators.required, Validators.maxLength(100)]],
     lastName: ['', [Validators.required, Validators.maxLength(100)]],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(128)]],
+    password: ['', [Validators.required, Validators.minLength(8)]],
     confirmPassword: ['', [Validators.required]],
+    status: ['active'],
     roles: [[] as string[]]
-  }, {
-    validators: [this.passwordMatchValidator]
-  });
+  }, { validators: [this.passwordMatchValidator] });
 
   get filteredRoles(): IRoleOption[] {
     if (!this.roleSearchTerm.trim()) return this.availableRoles;
     const term = this.roleSearchTerm.toLowerCase();
-    return this.availableRoles.filter(r =>
-      r.name.toLowerCase().includes(term) ||
-      r.description.toLowerCase().includes(term)
-    );
+    return this.availableRoles.filter(r => r.name.toLowerCase().includes(term));
   }
 
   get selectedRolesCount(): number {
@@ -329,14 +200,13 @@ export class UserCreateComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadRoles();
-
-    // Live password validation checklist (with debounce for performance)
-    this.form.controls.password.valueChanges.pipe(
-      debounceTime(300),
-      takeUntil(this.destroy$)
-    ).subscribe(value => {
-      this.updatePasswordChecklist(value);
-    });
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.isEditMode = true;
+      this.userId = id;
+      this.loading = true;
+      this.loadUser(id);
+    }
   }
 
   ngOnDestroy(): void {
@@ -344,44 +214,44 @@ export class UserCreateComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ── Form submission ─────────────────────────────────────────────────────────
+  switchToCreate(): void {
+    if (this.isEditMode) {
+      this.router.navigate(['/admin/users/create']);
+    }
+  }
+
+  switchToEdit(): void {
+    if (!this.isEditMode) {
+      this.toast.showError('Select a user from the list to edit');
+    }
+  }
 
   onSubmit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.submitting = true;
-    const { firstName, lastName, email, password, roles } = this.form.getRawValue();
+    const { firstName, lastName, email, password, status, roles } = this.form.getRawValue();
 
-    this.http.post('/api/v1/users', {
-      firstName,
-      lastName,
-      email,
-      password,
-      roles
-    }).subscribe({
-      next: () => {
-        this.submitting = false;
-        this.toast.showSuccess('User created successfully');
-        this.router.navigate(['/admin/users']);
-      },
-      error: (err) => {
-        this.submitting = false;
-        const message = err?.error?.errors?.[0] ?? 'Failed to create user. Please try again.';
-        this.toast.showError(message);
-      }
-    });
+    if (this.isEditMode && this.userId) {
+      this.http.put(`/api/v1/users/${this.userId}`, {
+        firstName, lastName, email, isActive: status === 'active'
+      }).subscribe({
+        next: () => {
+          this.http.put(`/api/v1/users/${this.userId}/roles`, { roles }).subscribe({
+            next: () => { this.submitting = false; this.toast.showSuccess('User updated successfully'); this.router.navigate(['/admin/users']); },
+            error: () => { this.submitting = false; this.toast.showSuccess('User updated but roles failed'); this.router.navigate(['/admin/users']); }
+          });
+        },
+        error: (err) => { this.submitting = false; this.toast.showError(err?.error?.errors?.[0] ?? 'Failed to update user'); }
+      });
+    } else {
+      this.http.post('/api/v1/users', { firstName, lastName, email, password, roles }).subscribe({
+        next: () => { this.submitting = false; this.toast.showSuccess('User created successfully'); this.router.navigate(['/admin/users']); },
+        error: (err) => { this.submitting = false; this.toast.showError(err?.error?.errors?.[0] ?? 'Failed to create user'); }
+      });
+    }
   }
 
-  // ── Navigation ──────────────────────────────────────────────────────────────
-
-  navigateBack(): void {
-    this.router.navigate(['/admin/users']);
-  }
-
-  // ── Role management ─────────────────────────────────────────────────────────
+  navigateBack(): void { this.router.navigate(['/admin/users']); }
 
   isRoleSelected(roleName: string): boolean {
     return this.form.controls.roles.value.includes(roleName);
@@ -389,74 +259,79 @@ export class UserCreateComponent implements OnInit, OnDestroy {
 
   toggleRole(roleName: string): void {
     const current = [...this.form.controls.roles.value];
-    const index = current.indexOf(roleName);
-    if (index >= 0) {
-      current.splice(index, 1);
-    } else {
-      current.push(roleName);
-    }
+    const idx = current.indexOf(roleName);
+    if (idx >= 0) current.splice(idx, 1); else current.push(roleName);
     this.form.controls.roles.setValue(current);
   }
 
-  formatRoleName(role: string): string {
-    return role.replace(/([a-z])([A-Z])/g, '$1 $2');
-  }
-
-  // ── Validation helpers ──────────────────────────────────────────────────────
-
-  isFieldInvalid(field: keyof ICreateUserForm): boolean {
+  isFieldInvalid(field: keyof IUserForm): boolean {
     const control = this.form.controls[field];
     return control.invalid && control.touched;
   }
 
   getEmailError(): string {
-    const control = this.form.controls.email;
-    if (control.hasError('required')) return 'Email is required';
-    if (control.hasError('email')) return 'Please enter a valid email address';
-    if (control.hasError('emailTaken')) return 'This email is already in use';
+    const c = this.form.controls.email;
+    if (c.hasError('required')) return 'Email is required';
+    if (c.hasError('email')) return 'Please enter a valid email address';
     return '';
   }
 
-  // ── Private methods ─────────────────────────────────────────────────────────
-
-  private updatePasswordChecklist(value: string): void {
-    this.passwordRules = this.passwordRules.map(rule => ({
-      ...rule,
-      met: rule.validator(value)
-    }));
+  private loadUser(id: string): void {
+    this.http.get<any>(`/api/v1/users/${id}`).subscribe({
+      next: (response) => {
+        const user = response.data ?? response;
+        this.userData = user;
+        this.form.patchValue({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          status: user.isActive ? 'active' : 'inactive',
+          roles: [...user.roles]
+        });
+        // In edit mode, password is optional
+        this.form.controls.password.clearValidators();
+        this.form.controls.password.updateValueAndValidity();
+        this.form.controls.confirmPassword.clearValidators();
+        this.form.controls.confirmPassword.updateValueAndValidity();
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+        this.toast.showError('Failed to load user');
+        this.router.navigate(['/admin/users']);
+      }
+    });
   }
 
   private loadRoles(): void {
-    this.http.get<IRoleOption[]>('/api/v1/roles').subscribe({
-      next: (roles) => {
-        this.availableRoles = roles;
+    this.http.get<any>('/api/v1/roles').subscribe({
+      next: (response) => {
+        this.availableRoles = response.data ?? (Array.isArray(response) ? response : []);
       },
       error: () => {
-        // Provide defaults if API is unavailable
         this.availableRoles = [
           { id: '1', name: 'SuperAdmin', description: 'Full system access' },
-          { id: '2', name: 'AcquisitionManager', description: 'Manages land opportunities' },
-          { id: '3', name: 'LegalOfficer', description: 'Legal & compliance management' },
-          { id: '4', name: 'PlanningManager', description: 'Planning applications & approvals' },
-          { id: '5', name: 'ProjectManager', description: 'Project planning & execution' },
-          { id: '6', name: 'SiteManager', description: 'Construction site management' },
+          { id: '2', name: 'AcquisitionManager', description: 'Land opportunities' },
+          { id: '3', name: 'LegalOfficer', description: 'Legal & compliance' },
+          { id: '4', name: 'PlanningManager', description: 'Planning approvals' },
+          { id: '5', name: 'ProjectManager', description: 'Project execution' },
+          { id: '6', name: 'SiteManager', description: 'Construction sites' },
           { id: '7', name: 'SalesManager', description: 'Sales & marketing' },
-          { id: '8', name: 'CompletionManager', description: 'Handover & completion' },
-          { id: '9', name: 'PropertyManager', description: 'Property operations' },
-          { id: '10', name: 'FinanceDirector', description: 'Financial oversight' },
-          { id: '11', name: 'ValuationAnalyst', description: 'Valuations & feasibility' },
-          { id: '12', name: 'Surveyor', description: 'Technical assessments' },
-          { id: '13', name: 'Admin', description: 'System administration' }
+          { id: '8', name: 'CompletionManager', description: 'Handover' },
+          { id: '9', name: 'PropertyManager', description: 'Property ops' },
+          { id: '10', name: 'FinanceDirector', description: 'Finance' },
+          { id: '11', name: 'ValuationAnalyst', description: 'Valuations' },
+          { id: '12', name: 'Surveyor', description: 'Assessments' },
+          { id: '13', name: 'Admin', description: 'Admin' }
         ];
       }
     });
   }
 
-  /** Cross-field validator: password and confirmPassword must match. */
   private passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
-    const password = group.get('password')?.value;
-    const confirm = group.get('confirmPassword')?.value;
-    if (password && confirm && password !== confirm) {
+    const pw = group.get('password')?.value;
+    const cpw = group.get('confirmPassword')?.value;
+    if (pw && cpw && pw !== cpw) {
       group.get('confirmPassword')?.setErrors({ mismatch: true });
       return { mismatch: true };
     }

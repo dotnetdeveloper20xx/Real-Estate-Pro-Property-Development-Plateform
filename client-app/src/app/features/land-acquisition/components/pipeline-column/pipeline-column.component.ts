@@ -1,16 +1,18 @@
 import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { IOpportunityListItem } from '../../models';
 import { OpportunityCardComponent } from '../opportunity-card/opportunity-card.component';
 
 /**
  * Presentational component that renders a single pipeline column
- * in the Kanban-style board view with status-colored header.
+ * in the Kanban-style board view with status-colored header,
+ * estimated value display, and limited card rendering with "show more" link.
  */
 @Component({
   selector: 'app-pipeline-column',
   standalone: true,
-  imports: [CommonModule, OpportunityCardComponent],
+  imports: [CommonModule, OpportunityCardComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host { display: block; }
@@ -20,14 +22,20 @@ import { OpportunityCardComponent } from '../opportunity-card/opportunity-card.c
     <div class="flex flex-col h-full min-w-[270px] max-w-[300px] rounded-xl border border-base-200/80 bg-base-100/50 column-enter"
          [style.animation-delay.ms]="columnIndex * 60">
       <!-- Column Header with status color -->
-      <div class="flex items-center gap-2 px-4 py-3 rounded-t-xl"
+      <div class="px-4 py-3 rounded-t-xl"
            [style.border-bottom]="'3px solid ' + statusColor">
-        <div class="w-2.5 h-2.5 rounded-full" [style.background-color]="statusColor"></div>
-        <h2 class="text-sm font-semibold text-base-content flex-1">{{ status }}</h2>
-        <span class="min-w-[24px] h-6 flex items-center justify-center rounded-full text-xs font-bold text-white px-1.5"
-              [style.background-color]="statusColor">
-          {{ count }}
-        </span>
+        <div class="flex items-center gap-2">
+          <div class="w-2.5 h-2.5 rounded-full" [style.background-color]="statusColor"></div>
+          <h2 class="text-sm font-semibold text-base-content flex-1">{{ status }}</h2>
+          <span class="min-w-[24px] h-6 flex items-center justify-center rounded-full text-xs font-bold text-white px-1.5"
+                [style.background-color]="statusColor">
+            {{ count }}
+          </span>
+        </div>
+        <div class="mt-1 ml-[18px] text-xs text-base-content/50">
+          <span class="font-medium text-base-content/70">{{ formatValue(totalValue) }}</span>
+          <span class="ml-1">Est. Value</span>
+        </div>
       </div>
 
       <!-- Cards List -->
@@ -40,7 +48,7 @@ import { OpportunityCardComponent } from '../opportunity-card/opportunity-card.c
             <p class="text-xs text-base-content/40">No opportunities</p>
           </div>
         } @else {
-          @for (opportunity of opportunities; track opportunity.id; let i = $index) {
+          @for (opportunity of visibleOpportunities; track opportunity.id; let i = $index) {
             <div role="listitem" class="card-animate" [style.animation-delay.ms]="i * 50">
               <app-opportunity-card
                 [opportunity]="opportunity"
@@ -48,6 +56,16 @@ import { OpportunityCardComponent } from '../opportunity-card/opportunity-card.c
                 (cardClick)="onCardClick($event)"
               />
             </div>
+          }
+          @if (remainingCount > 0) {
+            <a [routerLink]="['/land-acquisition/opportunities']"
+               [queryParams]="{ status: status }"
+               class="flex items-center justify-center gap-1 py-2.5 px-3 rounded-lg
+                      text-xs font-medium text-primary bg-primary/5
+                      hover:bg-primary/10 transition-colors cursor-pointer">
+              <span class="material-symbols-outlined text-sm">expand_more</span>
+              + {{ remainingCount }} more {{ remainingCount === 1 ? 'opportunity' : 'opportunities' }}
+            </a>
           }
         }
       </div>
@@ -60,7 +78,30 @@ export class PipelineColumnComponent {
   @Input({ required: true }) opportunities!: IOpportunityListItem[];
   @Input() statusColor = '#6366f1';
   @Input() columnIndex = 0;
+  @Input() totalValue: number = 0;
+  @Input() showLimit: number = 2;
   @Output() cardClick = new EventEmitter<IOpportunityListItem>();
+
+  /** Returns only the visible subset of opportunities based on showLimit. */
+  get visibleOpportunities(): IOpportunityListItem[] {
+    return this.opportunities.slice(0, this.showLimit);
+  }
+
+  /** Returns how many opportunities are hidden. */
+  get remainingCount(): number {
+    return Math.max(0, this.opportunities.length - this.showLimit);
+  }
+
+  /** Formats a monetary value for display. */
+  formatValue(value: number): string {
+    if (value >= 1_000_000) {
+      return `£${(value / 1_000_000).toFixed(2)}M`;
+    }
+    if (value >= 1_000) {
+      return `£${(value / 1_000).toFixed(0)}K`;
+    }
+    return `£${value.toFixed(0)}`;
+  }
 
   onCardClick(opportunity: IOpportunityListItem): void {
     this.cardClick.emit(opportunity);

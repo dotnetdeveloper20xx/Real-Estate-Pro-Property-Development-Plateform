@@ -28,5 +28,15 @@ public sealed class CreateOpportunityCommandValidator : AbstractValidator<Create
         RuleFor(x => x.LandSize)
             .GreaterThan(0)
             .WithMessage("Land size must be greater than zero.");
+
+        RuleFor(x => x.Description)
+            .MaximumLength(500)
+            .WithMessage("Description must not exceed 500 characters.")
+            .When(x => !string.IsNullOrEmpty(x.Description));
+
+        RuleFor(x => x.County)
+            .MaximumLength(100)
+            .WithMessage("County must not exceed 100 characters.")
+            .When(x => !string.IsNullOrEmpty(x.County));
     }
 }

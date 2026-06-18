@@ -6,17 +6,25 @@ import { HttpClient } from '@angular/common/http';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ToastService } from '../../../../core/services/toast.service';
 
-/**
- * Role List Page Component
- *
- * Features:
- * - Paginated data table: Role Name, Description, Users count, Actions
- * - Search by name/description with 300ms debounce
- * - "+ New Role" button
- * - Click row → open details side panel
- *
- * Requirements: 8.1, 8.5
- */
+interface IRoleListItem {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly userCount: number;
+  readonly isBuiltIn: boolean;
+}
+
+interface IRoleDetail extends IRoleListItem {
+  readonly permissions: readonly IPermissionItem[];
+}
+
+interface IPermissionItem {
+  readonly id: string;
+  readonly name: string;
+  readonly displayName: string;
+  readonly domainArea: string;
+}
+
 @Component({
   selector: 'app-role-list',
   standalone: true,
@@ -24,286 +32,158 @@ import { ToastService } from '../../../../core/services/toast.service';
   template: `
     <div class="p-6 space-y-6">
       <!-- Page Header -->
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-base-content">Role Management</h1>
-          <p class="text-sm text-base-content/60 mt-1">
-            Define and manage system roles, permissions, and access control
-          </p>
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
+          <span class="text-white text-sm font-bold">5</span>
         </div>
-        <div class="flex items-center gap-3">
-          <button class="btn btn-outline btn-sm gap-2" (click)="navigateToPermissionMatrix()">
-            <span class="material-symbols-outlined text-lg">grid_view</span>
-            Permission Matrix
-          </button>
-          <button class="btn btn-primary gap-2" (click)="navigateToCreate()">
-            <span class="material-symbols-outlined text-lg">add_circle</span>
-            + New Role
-          </button>
-        </div>
+        <h1 class="text-xl font-bold text-base-content uppercase tracking-wide">Role Management</h1>
       </div>
 
-      <!-- Filters and Search Bar -->
-      <div class="card bg-base-100 shadow-sm border border-base-200/80">
-        <div class="px-4 py-3 flex flex-wrap items-center gap-3">
-          <!-- Search input with debounce -->
-          <div class="relative flex-1 min-w-[250px]">
-            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 text-sm">search</span>
-            <input
-              type="text"
-              placeholder="Search by role name or description..."
-              class="input input-bordered input-sm pl-9 w-full"
-              [(ngModel)]="searchTerm"
-              (ngModelChange)="onSearchInput($event)"
-              aria-label="Search roles by name or description" />
+      <!-- Main 2-Panel Layout -->
+      <div class="flex gap-6">
+        <!-- Left: Role List -->
+        <div class="flex-1 min-w-0">
+          <div class="card bg-base-100 shadow-sm border border-base-200 overflow-hidden">
+            <!-- Search + New Role -->
+            <div class="flex items-center gap-3 p-4 border-b border-base-200">
+              <div class="relative flex-1">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">search</span>
+                <input type="text" placeholder="Search roles..." class="input input-bordered w-full pl-10"
+                       [(ngModel)]="searchTerm" (ngModelChange)="onSearchInput($event)" />
+              </div>
+              <button class="btn btn-primary gap-1.5" (click)="navigateToCreate()">
+                <span class="material-symbols-outlined text-sm">add</span> New Role
+              </button>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+              <table class="table">
+                <thead>
+                  <tr class="bg-base-200/30">
+                    <th class="text-xs font-bold text-base-content uppercase">Role Name</th>
+                    <th class="text-xs font-bold text-base-content uppercase">Description</th>
+                    <th class="text-xs font-bold text-base-content uppercase text-center w-20">Users</th>
+                    <th class="text-xs font-bold text-base-content uppercase text-center w-24">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ng-container *ngIf="loading">
+                    <tr *ngFor="let r of [1,2,3,4,5]" class="animate-pulse">
+                      <td><div class="h-4 bg-base-300 rounded w-28"></div></td>
+                      <td><div class="h-4 bg-base-300 rounded w-44"></div></td>
+                      <td><div class="h-4 bg-base-300 rounded w-8 mx-auto"></div></td>
+                      <td><div class="h-4 bg-base-300 rounded w-12 mx-auto"></div></td>
+                    </tr>
+                  </ng-container>
+
+                  <tr *ngIf="!loading && filteredRoles.length === 0">
+                    <td colspan="4" class="text-center py-8 text-base-content/50">No roles found</td>
+                  </tr>
+
+                  <ng-container *ngIf="!loading && filteredRoles.length > 0">
+                    <tr *ngFor="let role of paginatedRoles; trackBy: trackById"
+                        class="hover:bg-primary/5 cursor-pointer transition-colors"
+                        [class.bg-primary/10]="selectedRole?.id === role.id"
+                        (click)="selectRole(role)">
+                      <td class="text-sm font-medium">{{ role.name }}</td>
+                      <td class="text-sm text-base-content/70">{{ role.description }}</td>
+                      <td class="text-center text-sm font-medium">{{ role.userCount }}</td>
+                      <td class="text-center" (click)="$event.stopPropagation()">
+                        <div class="flex items-center justify-center gap-1">
+                          <button class="btn btn-ghost btn-xs btn-square text-primary" (click)="navigateToEdit(role.id)" aria-label="Edit">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                          </button>
+                          <button *ngIf="!role.isBuiltIn" class="btn btn-ghost btn-xs btn-square text-error" (click)="confirmDeleteRole(role)" aria-label="Delete">
+                            <span class="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </ng-container>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            <div *ngIf="!loading && filteredRoles.length > 0" class="flex items-center justify-between px-4 py-3 border-t border-base-200">
+              <span class="text-sm text-base-content/60">Showing {{ startRecord }} to {{ endRecord }} of {{ filteredRoles.length }} roles</span>
+              <div class="flex items-center gap-1">
+                <button class="btn btn-ghost btn-sm btn-square" (click)="goToPage(currentPage-1)" [disabled]="currentPage===1">
+                  <span class="material-symbols-outlined text-sm">chevron_left</span>
+                </button>
+                <ng-container *ngFor="let page of visiblePages">
+                  <button class="btn btn-sm btn-square" [ngClass]="page===currentPage?'btn-primary text-white':'btn-ghost'" (click)="goToPage(page)">{{ page }}</button>
+                </ng-container>
+                <button class="btn btn-ghost btn-sm btn-square" (click)="goToPage(currentPage+1)" [disabled]="currentPage===totalPages">
+                  <span class="material-symbols-outlined text-sm">chevron_right</span>
+                </button>
+              </div>
+            </div>
           </div>
-
-          <!-- Page size selector -->
-          <select
-            class="select select-bordered select-sm"
-            [(ngModel)]="pageSize"
-            (ngModelChange)="onPageSizeChange($event)"
-            aria-label="Page size">
-            <option [ngValue]="10">10 per page</option>
-            <option [ngValue]="25">25 per page</option>
-            <option [ngValue]="50">50 per page</option>
-          </select>
         </div>
-      </div>
 
-      <!-- Data Table -->
-      <div class="card bg-base-100 shadow-sm border border-base-200/80 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="table table-sm" role="grid" aria-label="Roles table">
-            <thead>
-              <tr class="bg-base-200/50">
-                <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Role Name</th>
-                <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Description</th>
-                <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 w-24">Users</th>
-                <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 w-20">Type</th>
-                <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 w-24">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Loading skeleton -->
-              <ng-container *ngIf="loading">
-                <tr *ngFor="let row of skeletonRows" class="animate-pulse">
-                  <td><div class="h-4 bg-base-300 rounded w-32"></div></td>
-                  <td><div class="h-4 bg-base-300 rounded w-48"></div></td>
-                  <td><div class="h-4 bg-base-300 rounded w-12"></div></td>
-                  <td><div class="h-4 bg-base-300 rounded w-16"></div></td>
-                  <td><div class="h-4 bg-base-300 rounded w-16"></div></td>
-                </tr>
-              </ng-container>
+        <!-- Right: Role Details Panel -->
+        <div class="w-80 shrink-0 hidden lg:block">
+          <div class="card bg-base-100 shadow-sm border border-base-200 sticky top-6">
+            <div class="card-body p-5">
+              <ng-container *ngIf="selectedRole; else noSelection">
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="text-base font-bold text-base-content">Role Details</h2>
+                </div>
 
-              <!-- Empty state -->
-              <tr *ngIf="!loading && filteredRoles.length === 0">
-                <td colspan="5">
-                  <div class="flex flex-col items-center justify-center py-12 text-base-content/50">
-                    <span class="material-symbols-outlined text-5xl mb-3">admin_panel_settings</span>
-                    <p class="text-base font-medium">No roles found</p>
-                    <p class="text-sm mt-1">Try adjusting your search or create a new role</p>
+                <div class="space-y-4">
+                  <!-- Role Name + Edit -->
+                  <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-base-content">{{ selectedRole.name }}</h3>
+                    <button class="text-sm text-primary hover:underline" (click)="navigateToEdit(selectedRole.id)">Edit Role</button>
                   </div>
-                </td>
-              </tr>
 
-              <!-- Data rows -->
-              <ng-container *ngIf="!loading && filteredRoles.length > 0">
-                <tr
-                  *ngFor="let role of paginatedRoles; trackBy: trackById"
-                  class="hover:bg-base-200/30 transition-colors cursor-pointer"
-                  (click)="openDetailPanel(role)">
-                  <td>
-                    <div class="flex items-center gap-2">
-                      <span class="material-symbols-outlined text-primary text-lg">shield</span>
-                      <span class="font-medium text-sm">{{ formatRoleName(role.name) }}</span>
+                  <!-- Description -->
+                  <div>
+                    <p class="text-xs text-base-content/50 mb-1">Description</p>
+                    <p class="text-sm text-base-content/80">{{ selectedRole.description || 'No description provided' }}</p>
+                  </div>
+
+                  <!-- Total Users -->
+                  <div>
+                    <p class="text-xs text-base-content/50 mb-1">Total Users</p>
+                    <p class="text-2xl font-bold text-base-content">{{ selectedRole.userCount }}</p>
+                  </div>
+
+                  <!-- Permissions -->
+                  <div *ngIf="selectedRoleDetail">
+                    <p class="text-xs font-bold text-base-content mb-2">Permissions ({{ selectedRoleDetail.permissions.length }})</p>
+                    <div class="space-y-1.5 max-h-48 overflow-y-auto">
+                      <div *ngFor="let perm of selectedRoleDetail.permissions.slice(0, 6)"
+                           class="flex items-center gap-2 text-sm">
+                        <span class="material-symbols-outlined text-success text-base">check_circle</span>
+                        <span class="text-primary font-medium">{{ perm.displayName }}</span>
+                      </div>
                     </div>
-                  </td>
-                  <td class="text-sm text-base-content/70 max-w-xs truncate">{{ role.description }}</td>
-                  <td>
-                    <span class="badge badge-sm badge-ghost font-medium">{{ role.userCount }}</span>
-                  </td>
-                  <td>
-                    <span
-                      class="badge badge-sm"
-                      [ngClass]="role.isBuiltIn ? 'badge-info' : 'badge-accent'">
-                      {{ role.isBuiltIn ? 'Built-in' : 'Custom' }}
-                    </span>
-                  </td>
-                  <td (click)="$event.stopPropagation()">
-                    <div class="flex items-center gap-1">
-                      <button
-                        class="btn btn-ghost btn-xs btn-square"
-                        aria-label="View role details"
-                        (click)="openDetailPanel(role)">
-                        <span class="material-symbols-outlined text-sm">visibility</span>
-                      </button>
-                      <button
-                        *ngIf="!role.isBuiltIn"
-                        class="btn btn-ghost btn-xs btn-square"
-                        aria-label="Edit role"
-                        (click)="navigateToEdit(role.id)">
-                        <span class="material-symbols-outlined text-sm">edit</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                    <p *ngIf="selectedRoleDetail.permissions.length > 6" class="text-xs text-base-content/50 mt-2">
+                      + {{ selectedRoleDetail.permissions.length - 6 }} more permissions
+                    </p>
+                    <button class="text-sm text-primary hover:underline mt-2" (click)="navigateToPermissionMatrix()">View All Permissions</button>
+                  </div>
+
+                  <div *ngIf="!selectedRoleDetail" class="flex justify-center py-4">
+                    <span class="loading loading-spinner loading-sm text-primary"></span>
+                  </div>
+                </div>
               </ng-container>
-            </tbody>
-          </table>
-        </div>
 
-        <!-- Pagination footer -->
-        <div
-          class="flex flex-wrap items-center justify-between px-4 py-3 border-t border-base-200/80 bg-base-100/50 gap-2"
-          *ngIf="!loading && filteredRoles.length > 0">
-          <span class="text-sm text-base-content/60">
-            {{ startRecord }} to {{ endRecord }} of {{ filteredRoles.length }} roles
-          </span>
-          <div class="join">
-            <button
-              class="join-item btn btn-sm"
-              [disabled]="currentPage === 1"
-              (click)="goToPage(currentPage - 1)"
-              aria-label="Previous page">
-              <span class="material-symbols-outlined text-sm">chevron_left</span>
-            </button>
-            <ng-container *ngFor="let page of visiblePages">
-              <button
-                class="join-item btn btn-sm"
-                [class.btn-active]="page === currentPage"
-                (click)="goToPage(page)">
-                {{ page }}
-              </button>
-            </ng-container>
-            <button
-              class="join-item btn btn-sm"
-              [disabled]="currentPage === totalPages"
-              (click)="goToPage(currentPage + 1)"
-              aria-label="Next page">
-              <span class="material-symbols-outlined text-sm">chevron_right</span>
-            </button>
+              <ng-template #noSelection>
+                <div class="text-center py-8 text-base-content/40">
+                  <span class="material-symbols-outlined text-4xl mb-2">shield</span>
+                  <p class="text-sm">Select a role to view details</p>
+                </div>
+              </ng-template>
+            </div>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Role Detail Side Panel (Fixed Overlay) -->
-    <div
-      *ngIf="showDetailPanel"
-      class="fixed inset-0 z-50 flex justify-end"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Role details panel">
-      <!-- Backdrop -->
-      <div
-        class="absolute inset-0 bg-black/40 transition-opacity"
-        (click)="closeDetailPanel()"></div>
-      <!-- Panel -->
-      <div class="relative bg-base-100 w-96 max-w-full h-full overflow-y-auto p-6 shadow-2xl border-l border-base-200 space-y-6 animate-[slide-in-right_0.25s_ease-out]">
-        <ng-container *ngIf="selectedRole">
-          <!-- Panel Header -->
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-bold text-base-content">Role Details</h2>
-            <button class="btn btn-ghost btn-sm btn-square" (click)="closeDetailPanel()">
-              <span class="material-symbols-outlined">close</span>
-            </button>
-          </div>
-
-          <!-- Role Info -->
-          <div class="space-y-4">
-            <div>
-              <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Role Name</p>
-              <p class="text-base font-semibold">{{ formatRoleName(selectedRole.name) }}</p>
-            </div>
-            <div>
-              <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Description</p>
-              <p class="text-sm text-base-content/80">{{ selectedRole.description || 'No description' }}</p>
-            </div>
-            <div class="flex items-center gap-4">
-              <div>
-                <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Users</p>
-                <span class="badge badge-ghost">{{ selectedRole.userCount }} assigned</span>
-              </div>
-              <div>
-                <p class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Type</p>
-                <span class="badge badge-sm" [ngClass]="selectedRole.isBuiltIn ? 'badge-info' : 'badge-accent'">
-                  {{ selectedRole.isBuiltIn ? 'Built-in' : 'Custom' }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Permissions Summary -->
-          <div *ngIf="selectedRoleDetail">
-            <div class="flex items-center justify-between mb-2">
-              <p class="text-xs text-base-content/50 uppercase tracking-wider">
-                Permissions ({{ selectedRoleDetail.permissions.length }})
-              </p>
-              <button class="btn btn-ghost btn-xs gap-1" (click)="navigateToPermissionMatrix()">
-                View All
-                <span class="material-symbols-outlined text-xs">open_in_new</span>
-              </button>
-            </div>
-            <div class="space-y-1 max-h-48 overflow-y-auto">
-              <div
-                *ngFor="let perm of selectedRoleDetail.permissions"
-                class="flex items-center gap-2 py-1 px-2 rounded bg-base-200/50 text-sm">
-                <span class="material-symbols-outlined text-success text-sm">check_circle</span>
-                <span>{{ perm.displayName }}</span>
-              </div>
-              <p *ngIf="selectedRoleDetail.permissions.length === 0" class="text-sm text-base-content/50 italic">
-                No permissions assigned
-              </p>
-            </div>
-          </div>
-
-          <!-- Actions -->
-          <div class="pt-4 border-t border-base-200 space-y-2">
-            <button
-              *ngIf="!selectedRole.isBuiltIn"
-              class="btn btn-outline btn-sm w-full gap-2"
-              (click)="navigateToEdit(selectedRole.id)">
-              <span class="material-symbols-outlined text-sm">edit</span>
-              Edit Role
-            </button>
-            <button
-              *ngIf="!selectedRole.isBuiltIn"
-              class="btn btn-error btn-outline btn-sm w-full gap-2"
-              (click)="openDeleteConfirm()">
-              <span class="material-symbols-outlined text-sm">delete</span>
-              Delete Role
-            </button>
-          </div>
-        </ng-container>
-      </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <dialog class="modal" [class.modal-open]="showDeleteModal">
-      <div class="modal-box w-full max-w-sm">
-        <h3 class="text-lg font-bold text-error">Delete Role</h3>
-        <p class="py-4 text-sm text-base-content/70">
-          Are you sure you want to delete the role
-          <span class="font-semibold">"{{ selectedRole?.name }}"</span>?
-          This action cannot be undone.
-        </p>
-        <div *ngIf="selectedRole && selectedRole.userCount > 0" class="alert alert-warning text-sm mb-4">
-          <span class="material-symbols-outlined text-lg">warning</span>
-          <span>This role is assigned to {{ selectedRole.userCount }} user(s). They will lose this role's permissions.</span>
-        </div>
-        <div class="modal-action">
-          <button class="btn btn-ghost" (click)="showDeleteModal = false">Cancel</button>
-          <button class="btn btn-error" (click)="confirmDelete()" [disabled]="deleting">
-            <span *ngIf="deleting" class="loading loading-spinner loading-sm"></span>
-            Delete Role
-          </button>
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop">
-        <button (click)="showDeleteModal = false">close</button>
-      </form>
-    </dialog>
   `
 })
 export class RoleListComponent implements OnInit, OnDestroy {
@@ -313,227 +193,71 @@ export class RoleListComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private readonly searchSubject = new Subject<string>();
 
-  // Table state
   roles: IRoleListItem[] = [];
   filteredRoles: IRoleListItem[] = [];
   loading = false;
   currentPage = 1;
-  pageSize = 10;
+  pageSize = 8;
   searchTerm = '';
-
-  // Side panel state
-  showDetailPanel = false;
   selectedRole: IRoleListItem | null = null;
   selectedRoleDetail: IRoleDetail | null = null;
 
-  // Delete state
-  showDeleteModal = false;
-  deleting = false;
-
-  readonly skeletonRows = Array.from({ length: 5 });
-
   ngOnInit(): void {
-    this.searchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    ).subscribe(term => {
-      this.searchTerm = term;
-      this.currentPage = 1;
-      this.applyFilter();
-    });
-
+    this.searchSubject.pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(term => { this.searchTerm = term; this.currentPage = 1; this.applyFilter(); });
     this.loadRoles();
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
-  // ── Computed properties ─────────────────────────────────────────────────────
-
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.filteredRoles.length / this.pageSize));
-  }
-
-  get startRecord(): number {
-    if (this.filteredRoles.length === 0) return 0;
-    return (this.currentPage - 1) * this.pageSize + 1;
-  }
-
-  get endRecord(): number {
-    return Math.min(this.currentPage * this.pageSize, this.filteredRoles.length);
-  }
-
-  get paginatedRoles(): IRoleListItem[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.filteredRoles.slice(start, start + this.pageSize);
-  }
-
+  get totalPages(): number { return Math.max(1, Math.ceil(this.filteredRoles.length / this.pageSize)); }
+  get startRecord(): number { return this.filteredRoles.length === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1; }
+  get endRecord(): number { return Math.min(this.currentPage * this.pageSize, this.filteredRoles.length); }
+  get paginatedRoles(): IRoleListItem[] { const s = (this.currentPage - 1) * this.pageSize; return this.filteredRoles.slice(s, s + this.pageSize); }
   get visiblePages(): number[] {
     const pages: number[] = [];
-    const maxVisible = 5;
-    let startPage = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
-    const endPage = Math.min(this.totalPages, startPage + maxVisible - 1);
-
-    if (endPage - startPage < maxVisible - 1) {
-      startPage = Math.max(1, endPage - maxVisible + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
+    for (let i = 1; i <= this.totalPages; i++) pages.push(i);
     return pages;
   }
 
-  // ── Event handlers ──────────────────────────────────────────────────────────
+  onSearchInput(term: string): void { this.searchSubject.next(term); }
+  goToPage(page: number): void { if (page >= 1 && page <= this.totalPages) this.currentPage = page; }
+  trackById(_i: number, role: IRoleListItem): string { return role.id; }
+  navigateToCreate(): void { this.router.navigate(['/admin/roles/create']); }
+  navigateToEdit(id: string): void { this.router.navigate(['/admin/roles/create'], { queryParams: { edit: id } }); }
+  navigateToPermissionMatrix(): void { this.router.navigate(['/admin/permissions']); }
 
-  onSearchInput(term: string): void {
-    this.searchSubject.next(term);
-  }
-
-  onPageSizeChange(size: number): void {
-    this.pageSize = +size;
-    this.currentPage = 1;
-    this.applyFilter();
-  }
-
-  goToPage(page: number): void {
-    if (page < 1 || page > this.totalPages) return;
-    this.currentPage = page;
-  }
-
-  // ── Navigation ──────────────────────────────────────────────────────────────
-
-  navigateToCreate(): void {
-    this.router.navigate(['/admin/roles/create']);
-  }
-
-  navigateToEdit(roleId: string): void {
-    this.router.navigate(['/admin/roles/create'], { queryParams: { edit: roleId } });
-  }
-
-  navigateToPermissionMatrix(): void {
-    this.router.navigate(['/admin/permissions']);
-  }
-
-  // ── Side Panel ──────────────────────────────────────────────────────────────
-
-  openDetailPanel(role: IRoleListItem): void {
+  selectRole(role: IRoleListItem): void {
     this.selectedRole = role;
     this.selectedRoleDetail = null;
-    this.showDetailPanel = true;
     this.loadRoleDetail(role.id);
   }
 
-  closeDetailPanel(): void {
-    this.showDetailPanel = false;
-    this.selectedRole = null;
-    this.selectedRoleDetail = null;
-  }
-
-  // ── Delete ──────────────────────────────────────────────────────────────────
-
-  openDeleteConfirm(): void {
-    this.showDeleteModal = true;
-  }
-
-  confirmDelete(): void {
-    if (!this.selectedRole) return;
-    this.deleting = true;
-
-    this.http.delete(`/api/v1/roles/${this.selectedRole.id}`).subscribe({
-      next: () => {
-        this.deleting = false;
-        this.showDeleteModal = false;
-        this.closeDetailPanel();
-        this.toast.showSuccess('Role deleted successfully');
-        this.loadRoles();
-      },
-      error: () => {
-        this.deleting = false;
-        this.toast.showError('Failed to delete role. Built-in roles cannot be deleted.');
-      }
-    });
-  }
-
-  // ── Helpers ─────────────────────────────────────────────────────────────────
-
-  trackById(_index: number, role: IRoleListItem): string {
-    return role.id;
-  }
-
-  formatRoleName(name: string): string {
-    return name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/-/g, ' ');
-  }
-
-  // ── Data loading ────────────────────────────────────────────────────────────
-
-  private loadRoles(): void {
-    this.loading = true;
-
-    this.http.get<{ data: IRoleListItem[]; success: boolean }>('/api/v1/roles').subscribe({
-      next: (response) => {
-        this.roles = (response as any).data ?? (Array.isArray(response) ? response : []);
-        this.applyFilter();
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-        this.toast.showError('Failed to load roles. Please try again.');
-      }
-    });
-  }
-
-  private loadRoleDetail(roleId: string): void {
-    this.http.get<{ data: IRoleDetail; success: boolean }>(`/api/v1/roles/${roleId}`).subscribe({
-      next: (response) => {
-        this.selectedRoleDetail = (response as any).data ?? response;
-      },
-      error: () => {
-        this.toast.showError('Failed to load role details.');
-      }
+  confirmDeleteRole(role: IRoleListItem): void {
+    this.http.delete(`/api/v1/roles/${role.id}`).subscribe({
+      next: () => { this.toast.showSuccess('Role deleted'); this.loadRoles(); if (this.selectedRole?.id === role.id) this.selectedRole = null; },
+      error: () => { this.toast.showError('Cannot delete built-in role'); }
     });
   }
 
   private applyFilter(): void {
-    if (!this.searchTerm) {
-      this.filteredRoles = [...this.roles];
-    } else {
-      const term = this.searchTerm.toLowerCase();
-      this.filteredRoles = this.roles.filter(r =>
-        r.name.toLowerCase().includes(term) ||
-        r.description.toLowerCase().includes(term)
-      );
-    }
+    if (!this.searchTerm) { this.filteredRoles = [...this.roles]; return; }
+    const t = this.searchTerm.toLowerCase();
+    this.filteredRoles = this.roles.filter(r => r.name.toLowerCase().includes(t) || r.description.toLowerCase().includes(t));
   }
-}
 
-/**
- * Role list item interface (local, mirrors the model).
- */
-interface IRoleListItem {
-  readonly id: string;
-  readonly name: string;
-  readonly description: string;
-  readonly userCount: number;
-  readonly isBuiltIn: boolean;
-}
+  private loadRoles(): void {
+    this.loading = true;
+    this.http.get<any>('/api/v1/roles').subscribe({
+      next: (res) => { this.roles = res?.data ?? (Array.isArray(res) ? res : []); this.applyFilter(); this.loading = false; if (this.roles.length > 0 && !this.selectedRole) this.selectRole(this.roles[0]); },
+      error: () => { this.loading = false; this.toast.showError('Failed to load roles'); }
+    });
+  }
 
-/**
- * Detailed role with permissions.
- */
-interface IRoleDetail extends IRoleListItem {
-  readonly permissions: readonly IPermissionItem[];
-}
-
-/**
- * Permission item.
- */
-interface IPermissionItem {
-  readonly id: string;
-  readonly name: string;
-  readonly displayName: string;
-  readonly domainArea: string;
+  private loadRoleDetail(roleId: string): void {
+    this.http.get<any>(`/api/v1/roles/${roleId}`).subscribe({
+      next: (res) => { this.selectedRoleDetail = res?.data ?? res; },
+      error: () => { this.selectedRoleDetail = { ...this.selectedRole!, permissions: [] }; }
+    });
+  }
 }

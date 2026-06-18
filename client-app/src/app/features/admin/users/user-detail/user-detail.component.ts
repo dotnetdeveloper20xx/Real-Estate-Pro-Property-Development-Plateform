@@ -45,14 +45,15 @@ interface IUserDetail {
               <h1 class="text-2xl font-bold text-base-content">{{user.firstName}} {{user.lastName}}</h1>
               <span class="badge badge-sm" [ngClass]="user.isActive ? 'badge-success' : 'badge-error'">{{user.isActive ? 'Active' : 'Inactive'}}</span>
             </div>
-            <p class="text-sm text-base-content/60 mt-0.5">{{user.email}}</p>
-            <span *ngIf="user.roles.length" class="badge badge-sm badge-primary mt-1">{{formatRoleName(user.roles[0])}}</span>
+            <p class="text-sm text-base-content/60 mt-0.5" *ngIf="user.roles.length">{{formatRoleName(user.roles[0])}}</p>
+            <p class="text-sm text-base-content/50">{{user.email}}</p>
+            <p class="text-xs text-base-content/40 mt-0.5">Last Login: {{user.lastLoginAt?(user.lastLoginAt|date:'dd MMM yyyy, hh:mm a'):'Never'}}</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <button class="btn btn-outline btn-sm" (click)="navigateToEdit()"><span class="material-symbols-outlined text-sm">edit</span> Edit User</button>
+          <button class="btn btn-outline btn-sm gap-1.5" (click)="navigateToEdit()"><span class="material-symbols-outlined text-sm">edit</span> Edit User</button>
           <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-square"><span class="material-symbols-outlined">more_vert</span></div>
+            <div tabindex="0" role="button" class="btn btn-outline btn-sm gap-1.5">More Actions <span class="material-symbols-outlined text-sm">expand_more</span></div>
             <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-2 shadow-lg border border-base-200">
               <li><button (click)="showDeactivateDialog=true" class="text-warning"><span class="material-symbols-outlined text-sm">block</span>{{user.isActive?'Deactivate':'Reactivate'}}</button></li>
               <li><button (click)="showPasswordResetDialog=true"><span class="material-symbols-outlined text-sm">lock_reset</span>Reset Password</button></li>
@@ -60,13 +61,6 @@ interface IUserDetail {
             </ul>
           </div>
         </div>
-      </div>
-      <!-- Quick Actions -->
-      <div class="flex flex-wrap gap-2">
-        <button class="btn btn-outline btn-sm gap-1" (click)="showPasswordResetDialog=true"><span class="material-symbols-outlined text-sm">lock_reset</span>Reset Password</button>
-        <button class="btn btn-outline btn-sm gap-1" (click)="showDeactivateDialog=true"><span class="material-symbols-outlined text-sm">block</span>{{user.isActive?'Deactivate':'Reactivate'}}</button>
-        <button class="btn btn-outline btn-sm gap-1" (click)="activeTab='sessions'"><span class="material-symbols-outlined text-sm">devices</span>View Sessions</button>
-        <button class="btn btn-outline btn-sm gap-1" (click)="activeTab='activity'"><span class="material-symbols-outlined text-sm">history</span>View Activity</button>
       </div>
       <!-- Tabs -->
       <div role="tablist" class="tabs tabs-bordered">
@@ -77,32 +71,58 @@ interface IUserDetail {
         <button role="tab" class="tab" [class.tab-active]="activeTab==='activity'" (click)="activeTab='activity'">Activity</button>
       </div>
       <!-- Overview Tab -->
-      <div *ngIf="activeTab==='overview'" class="space-y-4">
-        <div class="card bg-base-100 shadow-sm border border-base-200/80"><div class="card-body">
-          <h3 class="card-title text-base">User Information</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-            <div><p class="text-xs text-base-content/50 uppercase">Full Name</p><p class="text-sm font-medium">{{user.firstName}} {{user.lastName}}</p></div>
-            <div><p class="text-xs text-base-content/50 uppercase">Email</p><p class="text-sm font-medium">{{user.email}}</p></div>
-            <div><p class="text-xs text-base-content/50 uppercase">Status</p><span class="badge badge-sm" [ngClass]="user.isActive?'badge-success':'badge-error'">{{user.isActive?'Active':'Inactive'}}</span></div>
-            <div><p class="text-xs text-base-content/50 uppercase">Last Login</p><p class="text-sm">{{user.lastLoginAt?(user.lastLoginAt|date:'dd MMM yyyy, HH:mm'):'Never'}}</p></div>
-            <div><p class="text-xs text-base-content/50 uppercase">Created</p><p class="text-sm">{{user.createdAt|date:'dd MMM yyyy'}}</p></div>
+      <div *ngIf="activeTab==='overview'">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          <!-- User Information -->
+          <div class="card bg-base-100 shadow-sm border border-base-200/80"><div class="card-body p-5">
+            <h3 class="text-sm font-bold text-primary mb-3">User Information</h3>
+            <div class="space-y-2.5 text-sm">
+              <div class="flex justify-between"><span class="text-base-content/50">First Name</span><span class="font-medium">{{user.firstName}}</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Last Name</span><span class="font-medium">{{user.lastName}}</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Email</span><span class="font-medium text-xs">{{user.email}}</span></div>
+              <div class="flex justify-between items-center"><span class="text-base-content/50">Status</span><span class="badge badge-sm" [ngClass]="user.isActive?'badge-success':'badge-error'">{{user.isActive?'Active':'Inactive'}}</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Created At</span><span>{{user.createdAt|date:'dd MMM yyyy, hh:mm a'}}</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Created By</span><span>admin&#64;buildestate.co.uk</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Updated At</span><span>{{user.lastLoginAt?(user.lastLoginAt|date:'dd MMM yyyy, hh:mm a'):'—'}}</span></div>
+            </div>
+          </div></div>
+          <!-- Assigned Roles -->
+          <div class="card bg-base-100 shadow-sm border border-base-200/80"><div class="card-body p-5">
+            <h3 class="text-sm font-bold text-primary mb-3">Assigned Roles</h3>
+            <div class="flex flex-wrap gap-2">
+              <span *ngFor="let role of user.roles" class="badge badge-outline" [ngClass]="getRoleBadgeClass(role)">{{role}}</span>
+              <span *ngIf="!user.roles.length" class="text-sm text-base-content/50">No roles assigned</span>
+            </div>
+          </div></div>
+          <!-- Security Summary -->
+          <div class="card bg-base-100 shadow-sm border border-base-200/80"><div class="card-body p-5">
+            <h3 class="text-sm font-bold text-primary mb-3">Security Summary</h3>
+            <div class="space-y-2.5 text-sm">
+              <div class="flex justify-between"><span class="text-base-content/50">Password Last Changed</span><span>{{user.passwordLastChangedAt?(user.passwordLastChangedAt|date:'dd MMM yyyy, hh:mm a'):'Never'}}</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Failed Login Attempts</span><span [ngClass]="user.failedLoginAttempts>0?'text-warning font-bold':''">{{user.failedLoginAttempts}}</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Account Locked</span><span>No</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Two Factor Auth</span><span>Not Enabled</span></div>
+            </div>
+          </div></div>
+        </div>
+        <!-- Quick Actions -->
+        <div>
+          <h3 class="text-sm font-bold text-base-content mb-3">Quick Actions</h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <button class="btn btn-outline btn-sm gap-2 justify-start" (click)="showPasswordResetDialog=true">
+              <span class="material-symbols-outlined text-primary text-lg">lock_reset</span> Reset Password
+            </button>
+            <button class="btn btn-outline btn-sm gap-2 justify-start" (click)="showDeactivateDialog=true">
+              <span class="material-symbols-outlined text-error text-lg">block</span> {{user.isActive?'Deactivate User':'Activate User'}}
+            </button>
+            <button class="btn btn-outline btn-sm gap-2 justify-start" (click)="activeTab='sessions'">
+              <span class="material-symbols-outlined text-purple-500 text-lg">devices</span> View Sessions
+            </button>
+            <button class="btn btn-outline btn-sm gap-2 justify-start" (click)="activeTab='activity'">
+              <span class="material-symbols-outlined text-blue-500 text-lg">history</span> View Activity
+            </button>
           </div>
-        </div></div>
-        <div class="card bg-base-100 shadow-sm border border-base-200/80"><div class="card-body">
-          <h3 class="card-title text-base">Assigned Roles</h3>
-          <div class="flex flex-wrap gap-2 mt-2">
-            <span *ngFor="let role of user.roles" class="badge badge-sm" [ngClass]="getRoleBadgeClass(role)">{{formatRoleName(role)}}</span>
-            <span *ngIf="!user.roles.length" class="text-sm text-base-content/50">No roles assigned</span>
-          </div>
-        </div></div>
-        <div class="card bg-base-100 shadow-sm border border-base-200/80"><div class="card-body">
-          <h3 class="card-title text-base">Security Summary</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-            <div><p class="text-xs text-base-content/50 uppercase">Password Changed</p><p class="text-sm">{{user.passwordLastChangedAt?(user.passwordLastChangedAt|date:'dd MMM yyyy'):'Never'}}</p></div>
-            <div><p class="text-xs text-base-content/50 uppercase">Failed Attempts</p><p class="text-sm" [ngClass]="user.failedLoginAttempts>0?'text-warning font-medium':''">{{user.failedLoginAttempts}}</p></div>
-            <div><p class="text-xs text-base-content/50 uppercase">Last Activity</p><p class="text-sm">{{user.lastAuditActivity?(user.lastAuditActivity|date:'dd MMM yyyy, HH:mm'):'None'}}</p></div>
-          </div>
-        </div></div>
+        </div>
       </div>
       <!-- Roles Tab -->
       <div *ngIf="activeTab==='roles'" class="card bg-base-100 shadow-sm border border-base-200/80"><div class="card-body">
@@ -135,35 +155,97 @@ interface IUserDetail {
     </div>
     <!-- Deactivation Dialog -->
     <dialog class="modal" [class.modal-open]="showDeactivateDialog">
-      <div class="modal-box w-full max-w-md">
-        <h3 class="text-lg font-bold">{{user?.isActive?'Deactivate':'Reactivate'}} User</h3>
-        <p class="py-4 text-sm text-base-content/70">
-          Are you sure you want to {{user?.isActive?'deactivate':'reactivate'}} <span class="font-semibold">{{user?.firstName}} {{user?.lastName}}</span>?
-        </p>
-        <div *ngIf="user?.isActive" class="alert alert-warning text-sm mb-4">
-          <span class="material-symbols-outlined text-sm">info</span>
-          <span>The user will be immediately signed out and this action can be undone.</span>
+      <div class="modal-box w-full max-w-lg p-0 overflow-hidden">
+        <!-- Header -->
+        <div class="flex items-center gap-3 px-6 pt-6 pb-4">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <span class="text-white text-xs font-bold">9</span>
+          </div>
+          <h3 class="text-lg font-bold text-base-content uppercase tracking-wide">Deactivate User</h3>
         </div>
-        <div class="modal-action">
-          <button class="btn btn-ghost" (click)="showDeactivateDialog=false">Cancel</button>
-          <button class="btn btn-warning" (click)="confirmDeactivation()">{{user?.isActive?'Deactivate':'Reactivate'}}</button>
+        <div class="px-6 pb-6 space-y-4">
+          <p class="text-sm font-semibold text-base-content">Deactivate User</p>
+          <!-- Warning -->
+          <div class="flex items-start gap-3 bg-warning/10 border border-warning/20 rounded-lg p-3">
+            <span class="material-symbols-outlined text-warning text-xl mt-0.5">warning</span>
+            <p class="text-sm text-base-content">Are you sure you want to deactivate <span class="font-bold">{{user?.firstName}} {{user?.lastName}}</span>?</p>
+          </div>
+          <p class="text-sm text-base-content/70">The user will be immediately signed out and cannot log in until reactivated.</p>
+          <!-- Info box -->
+          <div class="bg-amber-50 border border-amber-200/60 rounded-lg px-4 py-2.5">
+            <p class="text-sm text-base-content/70 italic">This action can be undone.</p>
+          </div>
+          <!-- Reason dropdown -->
+          <div>
+            <label class="text-sm font-medium text-base-content mb-1.5 block">Reason (Optional)</label>
+            <select class="select select-bordered w-full" [(ngModel)]="deactivateReason">
+              <option value="">Select reason...</option>
+              <option value="no_longer_with_company">User no longer with company</option>
+              <option value="role_change">Role change</option>
+              <option value="security_concern">Security concern</option>
+              <option value="temporary_leave">Temporary leave</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <!-- Actions -->
+          <div class="flex items-center justify-end gap-3 pt-2 border-t border-base-200">
+            <button class="btn btn-ghost" (click)="showDeactivateDialog=false">Cancel</button>
+            <button class="btn btn-error px-5" (click)="confirmDeactivation()">Deactivate User</button>
+          </div>
         </div>
       </div>
       <form method="dialog" class="modal-backdrop"><button (click)="showDeactivateDialog=false">close</button></form>
     </dialog>
     <!-- Password Reset Dialog -->
     <dialog class="modal" [class.modal-open]="showPasswordResetDialog">
-      <div class="modal-box w-full max-w-md">
-        <h3 class="text-lg font-bold">Reset Password</h3>
-        <p class="py-2 text-sm text-base-content/70">Set a new password for <span class="font-semibold">{{user?.firstName}} {{user?.lastName}}</span>.</p>
-        <div class="form-control mt-2">
-          <label class="label"><span class="label-text font-medium">New Password</span></label>
-          <input [type]="showResetPw?'text':'password'" class="input input-bordered w-full" [(ngModel)]="resetPasswordValue" placeholder="Enter new password" />
+      <div class="modal-box w-full max-w-lg p-0 overflow-hidden">
+        <!-- Header -->
+        <div class="flex items-center gap-3 px-6 pt-6 pb-4">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <span class="text-white text-xs font-bold">8</span>
+          </div>
+          <h3 class="text-lg font-bold text-base-content uppercase tracking-wide">Reset Password</h3>
         </div>
-        <p class="text-xs text-base-content/50 mt-2"><span class="material-symbols-outlined text-xs align-middle">info</span> Password is not shared with anyone</p>
-        <div class="modal-action">
-          <button class="btn btn-ghost" (click)="showPasswordResetDialog=false">Cancel</button>
-          <button class="btn btn-primary" (click)="confirmPasswordReset()" [disabled]="!resetPasswordValue">Reset Password</button>
+        <div class="px-6 pb-6 space-y-4">
+          <!-- User info -->
+          <div>
+            <p class="text-xs text-base-content/50 mb-2">Reset Password for:</p>
+            <div class="flex items-center gap-3">
+              <div class="avatar placeholder">
+                <div class="bg-primary text-white rounded-full w-10 h-10"><span class="text-sm font-bold">{{getInitials()}}</span></div>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-base-content">{{user?.firstName}} {{user?.lastName}}</p>
+                <p class="text-xs text-base-content/60">{{user?.email}}</p>
+              </div>
+            </div>
+          </div>
+          <!-- Password input -->
+          <div>
+            <label class="text-sm font-semibold text-base-content mb-1.5 block">Enter new password</label>
+            <div class="relative">
+              <input [type]="showResetPw?'text':'password'" class="input input-bordered w-full pr-10"
+                     [(ngModel)]="resetPasswordValue" placeholder="••••••••••" (ngModelChange)="updatePasswordRules()" />
+              <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content"
+                      (click)="showResetPw=!showResetPw">
+                <span class="material-symbols-outlined text-xl">{{showResetPw?'visibility_off':'visibility'}}</span>
+              </button>
+            </div>
+          </div>
+          <!-- Password rules -->
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2 text-sm" *ngFor="let rule of passwordRules">
+              <span class="material-symbols-outlined text-base" [ngClass]="rule.met ? 'text-success' : 'text-base-content/30'">
+                {{rule.met ? 'check_circle' : 'radio_button_unchecked'}}
+              </span>
+              <span [ngClass]="rule.met ? 'text-success' : 'text-base-content/60'">{{rule.label}}</span>
+            </div>
+          </div>
+          <!-- Actions -->
+          <div class="flex items-center justify-end gap-3 pt-2 border-t border-base-200">
+            <button class="btn btn-ghost" (click)="showPasswordResetDialog=false">Cancel</button>
+            <button class="btn btn-primary px-5" (click)="confirmPasswordReset()" [disabled]="!isPasswordValid">Reset Password</button>
+          </div>
         </div>
       </div>
       <form method="dialog" class="modal-backdrop"><button (click)="showPasswordResetDialog=false">close</button></form>
@@ -184,6 +266,28 @@ export class UserDetailComponent implements OnInit {
   showPasswordResetDialog = false;
   showResetPw = false;
   resetPasswordValue = '';
+  deactivateReason = '';
+
+  passwordRules = [
+    { label: 'Minimum 8 characters', met: false },
+    { label: 'At least 1 uppercase letter', met: false },
+    { label: 'At least 1 number', met: false },
+    { label: 'At least 1 special character', met: false }
+  ];
+
+  get isPasswordValid(): boolean {
+    return this.passwordRules.every(r => r.met);
+  }
+
+  updatePasswordRules(): void {
+    const v = this.resetPasswordValue;
+    this.passwordRules = [
+      { label: 'Minimum 8 characters', met: v.length >= 8 },
+      { label: 'At least 1 uppercase letter', met: /[A-Z]/.test(v) },
+      { label: 'At least 1 number', met: /[0-9]/.test(v) },
+      { label: 'At least 1 special character', met: /[!@#$%^&*()\-_+=\[\]{}|;:',.<>?/`~]/.test(v) }
+    ];
+  }
 
   private readonly roleBadgeClasses: Record<string, string> = {
     'SuperAdmin': 'badge-primary', 'Admin': 'badge-secondary', 'ProjectManager': 'badge-accent',

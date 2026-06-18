@@ -71,7 +71,12 @@ export interface IOpportunityListItem {
 export interface ICreateOpportunity {
   readonly name: string;
   readonly location: string;
+  readonly county?: string | null;
   readonly landSize: number;
+  readonly siteType?: string | null;
+  readonly currentUse?: string | null;
+  readonly tenure?: string | null;
+  readonly description?: string | null;
   readonly source?: string | null;
   readonly expectedAcquisition?: string | null;
 }
@@ -82,7 +87,12 @@ export interface ICreateOpportunity {
 export interface IUpdateOpportunity {
   readonly name: string;
   readonly location: string;
+  readonly county?: string | null;
   readonly landSize: number;
+  readonly siteType?: string | null;
+  readonly currentUse?: string | null;
+  readonly tenure?: string | null;
+  readonly description?: string | null;
   readonly source?: string | null;
   readonly expectedAcquisition?: string | null;
 }

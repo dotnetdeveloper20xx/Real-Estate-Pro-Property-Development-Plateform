@@ -73,18 +73,11 @@ interface IPermissionGroup {
   template: `
     <div class="p-6 space-y-6">
       <!-- Page Header -->
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <button class="btn btn-ghost btn-sm btn-square" (click)="navigateBack()" aria-label="Go back">
-            <span class="material-symbols-outlined">arrow_back</span>
-          </button>
-          <div>
-            <h1 class="text-2xl font-bold text-base-content">Permission Matrix</h1>
-            <p class="text-sm text-base-content/60 mt-1">
-              View and manage permission assignments across all roles
-            </p>
-          </div>
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
+          <span class="text-white text-xs font-bold">10</span>
         </div>
+        <h1 class="text-xl font-bold text-base-content uppercase tracking-wide">Permission Matrix</h1>
       </div>
 
       <!-- Search and Info -->
@@ -117,17 +110,14 @@ interface IPermissionGroup {
         <div class="overflow-x-auto">
           <table class="table table-xs table-pin-rows" role="grid" aria-label="Permission matrix">
             <thead>
-              <tr class="bg-base-200/70">
-                <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 sticky left-0 bg-base-200/70 z-10 min-w-[200px]">
+              <tr class="bg-base-200/40">
+                <th class="text-xs font-bold uppercase text-base-content sticky left-0 bg-base-200/40 z-10 min-w-[180px]">
                   Permission
                 </th>
                 <th
                   *ngFor="let role of matrix.roles; trackBy: trackByRoleId"
-                  class="text-xs font-semibold text-center text-base-content/60 min-w-[100px] max-w-[120px]">
-                  <div class="writing-mode-normal">
-                    <span class="block truncate" [title]="role.name">{{ formatRoleName(role.name) }}</span>
-                    <span class="text-[10px] text-base-content/40 font-normal">({{ role.userCount }})</span>
-                  </div>
+                  class="text-xs font-bold text-center text-primary min-w-[110px] max-w-[130px]">
+                  <span class="block">{{ formatRoleName(role.name) }}</span>
                 </th>
               </tr>
             </thead>
@@ -153,18 +143,16 @@ interface IPermissionGroup {
                   <tr *ngFor="let perm of group.permissions; trackBy: trackByPermId"
                     class="hover:bg-base-200/20 transition-colors">
                     <td class="sticky left-0 bg-base-100 z-10 border-r border-base-200/50">
-                      <span class="text-sm text-base-content/80 pl-6">{{ perm.displayName }}</span>
+                      <span class="text-sm text-base-content italic pl-6">{{ perm.displayName }}</span>
                     </td>
                     <td *ngFor="let role of matrix.roles; trackBy: trackByRoleId" class="text-center">
                       <button
                         class="btn btn-ghost btn-xs btn-square"
-                        [class.text-success]="isGranted(role.id, perm.id)"
-                        [class.text-base-content\/20]="!isGranted(role.id, perm.id)"
                         (click)="onToggleClick(role, perm)"
                         [attr.aria-label]="(isGranted(role.id, perm.id) ? 'Revoke' : 'Grant') + ' ' + perm.displayName + ' for ' + role.name">
-                        <span class="material-symbols-outlined text-lg">
-                          {{ isGranted(role.id, perm.id) ? 'check_circle' : 'radio_button_unchecked' }}
-                        </span>
+                        <span *ngIf="isGranted(role.id, perm.id)" class="material-symbols-outlined text-lg text-success">check_circle</span>
+                        <span *ngIf="isDenied(role.id, perm.id)" class="material-symbols-outlined text-lg text-error">cancel</span>
+                        <span *ngIf="isNeutral(role.id, perm.id)" class="material-symbols-outlined text-lg text-base-content/30">do_not_disturb_on</span>
                       </button>
                     </td>
                   </tr>
@@ -291,7 +279,17 @@ export class PermissionMatrixComponent implements OnInit, OnDestroy {
   // ── Matrix Helpers ──────────────────────────────────────────────────────────
 
   isGranted(roleId: string, permissionId: string): boolean {
-    return this.assignmentMap.get(`${roleId}:${permissionId}`) ?? false;
+    return this.assignmentMap.get(`${roleId}:${permissionId}`) === true;
+  }
+
+  isDenied(roleId: string, permissionId: string): boolean {
+    const key = `${roleId}:${permissionId}`;
+    return this.assignmentMap.has(key) && this.assignmentMap.get(key) === false;
+  }
+
+  isNeutral(roleId: string, permissionId: string): boolean {
+    const key = `${roleId}:${permissionId}`;
+    return !this.assignmentMap.has(key);
   }
 
   trackByRoleId(_index: number, role: IRoleItem): string {

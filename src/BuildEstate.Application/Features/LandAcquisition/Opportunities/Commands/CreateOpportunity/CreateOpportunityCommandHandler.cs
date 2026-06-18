@@ -51,7 +51,12 @@ public sealed class CreateOpportunityCommandHandler : IRequestHandler<CreateOppo
         {
             Name = request.Name,
             Location = request.Location,
+            County = request.County,
             LandSize = request.LandSize,
+            SiteType = request.SiteType,
+            CurrentUse = request.CurrentUse,
+            Tenure = request.Tenure,
+            Description = request.Description,
             Status = OpportunityStatus.Identified,
             Source = request.Source,
             ExpectedAcquisition = request.ExpectedAcquisition,

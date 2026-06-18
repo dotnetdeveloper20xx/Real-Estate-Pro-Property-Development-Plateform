@@ -262,6 +262,7 @@ export class OpportunityEditPageComponent implements OnInit, HasUnsavedChanges {
         Validators.maxLength(200)
       ]
     }),
+    source: this.fb.control('', { nonNullable: true }),
     location: this.fb.control('', {
       nonNullable: true,
       validators: [
@@ -270,13 +271,17 @@ export class OpportunityEditPageComponent implements OnInit, HasUnsavedChanges {
         Validators.maxLength(500)
       ]
     }),
+    county: this.fb.control('', { nonNullable: true }),
     landSize: this.fb.control<number | null>(null, {
       validators: [
         Validators.required,
         Validators.min(0.01)
       ]
     }),
-    source: this.fb.control('', { nonNullable: true }),
+    siteType: this.fb.control('', { nonNullable: true }),
+    currentUse: this.fb.control('', { nonNullable: true }),
+    tenure: this.fb.control('', { nonNullable: true }),
+    description: this.fb.control('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
     expectedAcquisition: this.fb.control('', { nonNullable: true })
   });
 
@@ -476,9 +481,14 @@ export class OpportunityEditPageComponent implements OnInit, HasUnsavedChanges {
   private getRequiredMessage(fieldName: keyof IOpportunityForm): string {
     const messages: Record<keyof IOpportunityForm, string> = {
       name: 'Please enter the opportunity name.',
-      location: 'Please enter the land location.',
-      landSize: 'Please enter the land size in acres.',
       source: 'Please enter the source.',
+      location: 'Please enter the land location.',
+      county: 'Please select a county.',
+      landSize: 'Please enter the land size in acres.',
+      siteType: 'Please select a site type.',
+      currentUse: 'Please select current use.',
+      tenure: 'Please select tenure type.',
+      description: 'Please enter a description.',
       expectedAcquisition: 'Please enter an expected acquisition date.'
     };
     return messages[fieldName];
