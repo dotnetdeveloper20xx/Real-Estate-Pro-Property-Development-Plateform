@@ -49,7 +49,7 @@ public class PlanningConditionsController : BaseApiController
     /// Restricted to Legal_Compliance_Officer and Admin_Support roles.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "LegalComplianceOfficer,AdminSupport")]
+    [Authorize(Policy = "planning.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
@@ -70,7 +70,7 @@ public class PlanningConditionsController : BaseApiController
     /// Restricted to Legal_Compliance_Officer and Admin_Support roles.
     /// </summary>
     [HttpPut("/api/v1/planning-conditions/{conditionId:guid}/status")]
-    [Authorize(Roles = "LegalComplianceOfficer,AdminSupport")]
+    [Authorize(Policy = "planning.approve")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

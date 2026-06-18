@@ -82,6 +82,24 @@ public class AuthController : ControllerBase
         var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(
             user, roles, request.RememberMe, deviceInfo, ipAddress);
 
+        // Extract permissions from the generated JWT token payload directly
+        var tokenParts = accessToken.Split('.');
+        var payloadBytes = Convert.FromBase64String(PadBase64(tokenParts[1]));
+        var payload = System.Text.Json.JsonDocument.Parse(payloadBytes);
+        var permissions = new List<string>();
+        if (payload.RootElement.TryGetProperty("permission", out var permProp))
+        {
+            if (permProp.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                foreach (var p in permProp.EnumerateArray())
+                    permissions.Add(p.GetString()!);
+            }
+            else if (permProp.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                permissions.Add(permProp.GetString()!);
+            }
+        }
+
         // Create session record so SessionValidationMiddleware won't reject subsequent requests
         await _sessionService.CreateSessionAsync(user.Id, ipAddress, deviceInfo);
 
@@ -110,7 +128,8 @@ public class AuthController : ControllerBase
                 email = user.Email,
                 firstName = user.FirstName,
                 lastName = user.LastName,
-                roles = roles
+                roles = roles,
+                permissions = permissions
             }
         });
     }
@@ -180,6 +199,12 @@ public class AuthController : ControllerBase
 
         var roles = await _userManager.GetRolesAsync(user);
 
+        // Extract permissions from JWT claims (included by TokenService)
+        var permissions = User.FindAll("permission")
+            .Select(c => c.Value)
+            .Distinct()
+            .ToList();
+
         return Ok(new
         {
             id = user.Id,
@@ -187,7 +212,8 @@ public class AuthController : ControllerBase
             firstName = user.FirstName,
             lastName = user.LastName,
             isActive = user.IsActive,
-            roles = roles
+            roles = roles,
+            permissions = permissions
         });
     }
 
@@ -223,6 +249,17 @@ public class AuthController : ControllerBase
         _logger.LogInformation("User {UserId} changed password successfully", userId);
 
         return Ok(new { message = "Password changed successfully." });
+    }
+
+    private static string PadBase64(string base64)
+    {
+        var s = base64.Replace('-', '+').Replace('_', '/');
+        switch (s.Length % 4)
+        {
+            case 2: s += "=="; break;
+            case 3: s += "="; break;
+        }
+        return s;
     }
 }
 

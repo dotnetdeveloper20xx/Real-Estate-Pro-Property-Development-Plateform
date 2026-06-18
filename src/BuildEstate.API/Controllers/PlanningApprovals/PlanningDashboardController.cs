@@ -9,7 +9,7 @@ namespace BuildEstate.API.Controllers.PlanningApprovals;
 /// Restricted to PlanningManager role for strategic oversight of planning performance.
 /// </summary>
 [Route("api/v1/planning-dashboard")]
-[Authorize(Roles = "PlanningManager")]
+[Authorize(Policy = "planning.read")]
 public class PlanningDashboardController : BaseApiController
 {
     /// <summary>

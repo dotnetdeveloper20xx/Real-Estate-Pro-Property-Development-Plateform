@@ -50,7 +50,7 @@ public class PlanningDocumentsController : BaseApiController
     /// Restricted to Admin_Support and Planning_Manager roles.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "AdminSupport,PlanningManager")]
+    [Authorize(Policy = "planning.create")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -103,7 +103,7 @@ public class PlanningDocumentsController : BaseApiController
     /// Restricted to Admin_Support and Planning_Manager roles.
     /// </summary>
     [HttpDelete("/api/v1/planning-documents/{documentId:guid}")]
-    [Authorize(Roles = "AdminSupport,PlanningManager")]
+    [Authorize(Policy = "planning.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(

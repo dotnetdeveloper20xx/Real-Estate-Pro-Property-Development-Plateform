@@ -24,7 +24,7 @@ export const authReducer = createReducer(
     isLoading: false,
     error: null,
     roles: response.user.roles,
-    permissions: []
+    permissions: response.user.permissions ?? []
   })),
 
   on(AuthActions.loginFailure, (state, { error }): AuthState => ({
@@ -79,7 +79,7 @@ export const authReducer = createReducer(
     isLoading: false,
     error: null,
     roles: user.roles,
-    permissions: []
+    permissions: user.permissions ?? []
   })),
 
   on(AuthActions.loadCurrentUserFailure, (state, { error }): AuthState => ({

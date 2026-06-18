@@ -72,7 +72,7 @@ public class PlanningFeesController : BaseApiController
     /// Restricted to Planning_Manager role.
     /// </summary>
     [HttpPost("/api/v1/planning-applications/{applicationId:guid}/fees")]
-    [Authorize(Roles = "PlanningManager")]
+    [Authorize(Policy = "planning.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
@@ -94,7 +94,7 @@ public class PlanningFeesController : BaseApiController
     /// Restricted to Planning_Manager role.
     /// </summary>
     [HttpPut("/api/v1/planning-fees/{feeId:guid}/status")]
-    [Authorize(Roles = "PlanningManager")]
+    [Authorize(Policy = "planning.update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -116,7 +116,7 @@ public class PlanningFeesController : BaseApiController
     /// Restricted to Finance_Director role only.
     /// </summary>
     [HttpPut("/api/v1/planning-fees/{feeId:guid}/approve")]
-    [Authorize(Roles = "FinanceDirector")]
+    [Authorize(Policy = "finance.approve")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

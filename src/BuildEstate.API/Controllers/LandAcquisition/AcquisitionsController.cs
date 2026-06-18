@@ -18,7 +18,7 @@ public class AcquisitionsController : BaseApiController
     /// The record is created with status Completed.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,AcquisitionManager,Admin")]
+    [Authorize(Policy = "opportunities.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -41,7 +41,7 @@ public class AcquisitionsController : BaseApiController
     /// When transitioning to Registered, the parent opportunity is cascaded to Acquired status.
     /// </summary>
     [HttpPatch("{acqId:guid}/status")]
-    [Authorize(Roles = "SuperAdmin,AcquisitionManager,Admin")]
+    [Authorize(Policy = "opportunities.approve")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

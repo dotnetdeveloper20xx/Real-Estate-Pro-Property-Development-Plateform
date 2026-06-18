@@ -24,7 +24,7 @@ public class LegalDocumentsController : BaseApiController
     /// Validates file size (max 50 MB) and allowed content types (PDF, DOCX, XLSX, PNG, JPG, TIFF).
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Legal_Compliance_Officer,Finance_Director,Acquisition_Manager,Admin_Support")]
+    [Authorize(Policy = "legal.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Upload(
@@ -42,7 +42,7 @@ public class LegalDocumentsController : BaseApiController
     /// the Legal_Compliance_Officer role.
     /// </summary>
     [HttpGet("case/{caseId:guid}")]
-    [Authorize(Roles = "Legal_Compliance_Officer,Finance_Director,Acquisition_Manager,Admin_Support")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetForCase(
         Guid caseId,
@@ -61,7 +61,7 @@ public class LegalDocumentsController : BaseApiController
     /// the Legal_Compliance_Officer role.
     /// </summary>
     [HttpGet("contract/{contractId:guid}")]
-    [Authorize(Roles = "Legal_Compliance_Officer,Finance_Director,Acquisition_Manager,Admin_Support")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetForContract(
         Guid contractId,
@@ -79,7 +79,7 @@ public class LegalDocumentsController : BaseApiController
     /// Records the upload in the audit trail.
     /// </summary>
     [HttpPost("{id:guid}/version")]
-    [Authorize(Roles = "Legal_Compliance_Officer,Finance_Director,Acquisition_Manager,Admin_Support")]
+    [Authorize(Policy = "legal.update")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -102,7 +102,7 @@ public class LegalDocumentsController : BaseApiController
     /// from all subsequent queries via the global query filter.
     /// </summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Legal_Compliance_Officer")]
+    [Authorize(Policy = "legal.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)

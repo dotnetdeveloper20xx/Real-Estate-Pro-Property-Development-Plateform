@@ -36,7 +36,7 @@ public class ApprovalsController : BaseApiController
     /// Restricted to the Finance Director role.
     /// </summary>
     [HttpPatch("{id:guid}")]
-    [Authorize(Roles = "FinanceDirector")]
+    [Authorize(Policy = "opportunities.approve")]
     [ProducesResponseType(typeof(ApprovalRequestDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -56,7 +56,7 @@ public class ApprovalsController : BaseApiController
     /// Retrieves all pending approval requests awaiting Finance Director review.
     /// </summary>
     [HttpGet("pending")]
-    [Authorize(Roles = "FinanceDirector")]
+    [Authorize(Policy = "opportunities.read")]
     [ProducesResponseType(typeof(List<ApprovalRequestDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPending(CancellationToken cancellationToken)
     {

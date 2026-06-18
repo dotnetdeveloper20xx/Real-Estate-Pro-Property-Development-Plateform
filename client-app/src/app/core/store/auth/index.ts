@@ -13,5 +13,7 @@ export {
   selectAccessToken,
   selectHasRole,
   selectHasAnyRole,
-  selectIsSuperAdmin
+  selectIsSuperAdmin,
+  selectHasPermission,
+  selectHasAnyPermission
 } from './auth.selectors';

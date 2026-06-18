@@ -87,3 +87,25 @@ export const selectIsSuperAdmin = createSelector(
   selectUserRoles,
   (roles): boolean => roles.includes('SuperAdmin')
 );
+
+/**
+ * Select whether the user has a specific permission.
+ */
+export const selectHasPermission = (permission: string) =>
+  createSelector(
+    selectUserPermissions,
+    selectUserRoles,
+    (permissions, roles): boolean =>
+      roles.includes('SuperAdmin') || permissions.includes(permission)
+  );
+
+/**
+ * Select whether the user has any of the specified permissions.
+ */
+export const selectHasAnyPermission = (requiredPermissions: readonly string[]) =>
+  createSelector(
+    selectUserPermissions,
+    selectUserRoles,
+    (permissions, roles): boolean =>
+      roles.includes('SuperAdmin') || requiredPermissions.some(p => permissions.includes(p))
+  );

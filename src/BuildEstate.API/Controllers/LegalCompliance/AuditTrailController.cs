@@ -19,7 +19,7 @@ public class AuditTrailController : BaseApiController
     /// user ID, entity ID, and date range.
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Legal_Compliance_Officer")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -36,7 +36,7 @@ public class AuditTrailController : BaseApiController
     /// The response is a downloadable file with content type text/csv suitable for compliance reviews.
     /// </summary>
     [HttpGet("export")]
-    [Authorize(Roles = "Legal_Compliance_Officer")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

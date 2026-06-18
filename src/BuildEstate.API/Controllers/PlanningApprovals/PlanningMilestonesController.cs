@@ -44,7 +44,7 @@ public class PlanningMilestonesController : BaseApiController
     /// Restricted to PlanningManager role.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "PlanningManager")]
+    [Authorize(Policy = "planning.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -67,7 +67,7 @@ public class PlanningMilestonesController : BaseApiController
     /// Restricted to PlanningManager role.
     /// </summary>
     [HttpPut("/api/v1/planning-milestones/{milestoneId:guid}/complete")]
-    [Authorize(Roles = "PlanningManager")]
+    [Authorize(Policy = "planning.update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

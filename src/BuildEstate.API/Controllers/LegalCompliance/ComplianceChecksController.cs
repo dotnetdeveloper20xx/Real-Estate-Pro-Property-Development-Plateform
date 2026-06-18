@@ -20,7 +20,7 @@ public class ComplianceChecksController : BaseApiController
     /// Restricted to Legal_Compliance_Officer and Admin_Support roles.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "LegalComplianceOfficer,AdminSupport")]
+    [Authorize(Policy = "legal.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -42,7 +42,7 @@ public class ComplianceChecksController : BaseApiController
     /// Accessible by all legal roles.
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "LegalComplianceOfficer,AdminSupport,AcquisitionManager,FinanceDirector")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetByRequirement(
         [FromQuery] Guid requirementId,

@@ -12,7 +12,7 @@ namespace BuildEstate.API.Controllers.PlanningApprovals;
 /// Restricted to the PlanningManager role.
 /// </summary>
 [Route("api/v1/planning-applications/{applicationId:guid}/council-contact")]
-[Authorize(Roles = "PlanningManager")]
+[Authorize(Policy = "planning.update")]
 public class CouncilContactController : BaseApiController
 {
     /// <summary>

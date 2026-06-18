@@ -37,7 +37,7 @@ public class OffersController : BaseApiController
     /// Restricted to AcquisitionManager and Admin roles.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "AcquisitionManager,Admin")]
+    [Authorize(Policy = "opportunities.create")]
     public async Task<IActionResult> Create(
         [FromRoute] Guid opportunityId,
         [FromBody] CreateOfferCommand command,
@@ -55,7 +55,7 @@ public class OffersController : BaseApiController
     /// Restricted to AcquisitionManager and Admin roles.
     /// </summary>
     [HttpPatch("{offerId:guid}/status")]
-    [Authorize(Roles = "AcquisitionManager,Admin")]
+    [Authorize(Policy = "opportunities.approve")]
     public async Task<IActionResult> TransitionStatus(
         [FromRoute] Guid opportunityId,
         [FromRoute] Guid offerId,

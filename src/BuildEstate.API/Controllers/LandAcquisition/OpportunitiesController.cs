@@ -21,7 +21,7 @@ public class OpportunitiesController : BaseApiController
     /// Creates a new land opportunity in the pipeline with status Identified.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "AcquisitionManager,Admin")]
+    [Authorize(Policy = "opportunities.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -65,7 +65,7 @@ public class OpportunitiesController : BaseApiController
     /// Uses optimistic concurrency via RowVersion.
     /// </summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "AcquisitionManager,Admin")]
+    [Authorize(Policy = "opportunities.update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -85,7 +85,7 @@ public class OpportunitiesController : BaseApiController
     /// Soft-deletes a land opportunity by setting IsDeleted to true.
     /// </summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "AcquisitionManager,Admin")]
+    [Authorize(Policy = "opportunities.delete")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
@@ -99,7 +99,7 @@ public class OpportunitiesController : BaseApiController
     /// due diligence completion gates, and approval checks.
     /// </summary>
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Roles = "AcquisitionManager,Admin")]
+    [Authorize(Policy = "opportunities.approve")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -259,7 +259,7 @@ public sealed class TokenService : IInfrastructureTokenService
     }
 
     /// <summary>
-    /// Generates a JWT access token containing user ID, email, name, and roles claims
+    /// Generates a JWT access token containing user ID, email, name, roles, and permission claims
     /// with a 60-minute expiration window.
     /// </summary>
     private string GenerateAccessToken(string userId, string email, string firstName, string lastName, IList<string> roles)
@@ -280,6 +280,18 @@ public sealed class TokenService : IInfrastructureTokenService
         var now = DateTime.UtcNow;
         var expires = now.AddMinutes(AccessTokenExpiryMinutes);
 
+        // Load all distinct permission names for the user's roles
+        var roleIds = _dbContext.Roles
+            .Where(r => roles.Contains(r.Name!))
+            .Select(r => r.Id)
+            .ToList();
+
+        var permissions = _dbContext.RolePermissions
+            .Where(rp => roleIds.Contains(rp.RoleId))
+            .Select(rp => rp.Permission.Name)
+            .Distinct()
+            .ToList();
+
         // Use Claims dictionary exclusively for full control over JWT payload
         // The JwtSecurityTokenHandler v7+ drops custom claims from Subject/ClaimsIdentity
         var tokenDescriptor = new SecurityTokenDescriptor
@@ -290,7 +302,8 @@ public sealed class TokenService : IInfrastructureTokenService
                 [JwtRegisteredClaimNames.Jti] = Guid.NewGuid().ToString(),
                 [JwtRegisteredClaimNames.Email] = email,
                 ["full_name"] = $"{firstName} {lastName}".Trim(),
-                ["role"] = roles.ToArray()
+                ["role"] = roles.ToArray(),
+                ["permission"] = permissions.ToArray()
             },
             Expires = expires,
             NotBefore = now,

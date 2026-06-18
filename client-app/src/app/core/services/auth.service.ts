@@ -12,6 +12,7 @@ export interface ICurrentUser {
   readonly firstName: string;
   readonly lastName: string;
   readonly roles: string[];
+  readonly permissions: string[];
 }
 
 /**

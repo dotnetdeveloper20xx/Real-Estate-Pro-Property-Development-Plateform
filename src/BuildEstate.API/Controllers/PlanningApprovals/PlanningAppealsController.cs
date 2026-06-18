@@ -43,7 +43,7 @@ public class PlanningAppealsController : BaseApiController
     /// Restricted to LegalComplianceOfficer role.
     /// </summary>
     [HttpPost("/api/v1/planning-applications/{applicationId:guid}/appeals")]
-    [Authorize(Roles = "LegalComplianceOfficer")]
+    [Authorize(Policy = "planning.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -67,7 +67,7 @@ public class PlanningAppealsController : BaseApiController
     /// Restricted to LegalComplianceOfficer role.
     /// </summary>
     [HttpPut("/api/v1/planning-appeals/{appealId:guid}/status")]
-    [Authorize(Roles = "LegalComplianceOfficer")]
+    [Authorize(Policy = "planning.approve")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -33,7 +33,8 @@ The platform is structured around **14 interconnected modules** that cover every
 
 | Module | Purpose |
 |--------|---------|
-| [**User Management**](developer-notes/user-management-feature/README.md) | Authentication, authorization, RBAC (13 roles), session management, audit logging, dark theme |
+| [**User Management**](developer-notes/user-management-feature/README.md) | Authentication, authorization, RBAC (13 roles), session management, audit logging |
+| [**Security & Authorization**](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md) | JWT + 43 permissions, policy-based access control, real-time enforcement |
 
 The platform provides a centralized dashboard showing portfolio-level metrics: total projects (12), total units (1,248), project value (£520.6M), with real-time visibility into project progress, budget vs actual, construction progress, sales status, and upcoming milestones.
 
@@ -62,7 +63,7 @@ Each of the 14 modules provides comprehensive capabilities:
 - **Documents & Knowledge** — Centralized repository (2,500 documents) with version control, approval workflows, and search
 - **Reports & Dashboards** — Real-time dashboards, custom report builder with £520.6M total value and £68.4M profit tracking
 
-**Cross-Cutting Capabilities:** [Role-based access control (13 roles, full RBAC with permission matrix)](developer-notes/user-management-feature/README.md), audit logs & activity tracking, notifications & alerts, workflow & approvals, data security & backups, multi-currency & multi-language, mobile & cloud ready.
+**Cross-Cutting Capabilities:** [Role-based access control (13 roles, 43 permissions, full RBAC with policy-based authorization)](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md), [user administration & session management](developer-notes/user-management-feature/README.md), audit logs & activity tracking, notifications & alerts, workflow & approvals, data security & backups, multi-currency & multi-language, mobile & cloud ready.
 
 **Built for International Standards:** ISO 9001, ISO 27001, GDPR, IFRS, AML, RICS, CSCS, Local Government Compliance.
 
@@ -342,9 +343,80 @@ The platform is being built incrementally, starting with Module 1 (Land Acquisit
 
 | Module | Status | Details |
 |--------|--------|---------|
-| ✅ [**User Management**](developer-notes/user-management-feature/README.md) | Complete | JWT auth, 13 RBAC roles, session management, audit logging, dark theme, 891 backend tests |
+| ✅ [**User Management**](developer-notes/user-management-feature/README.md) | Complete | Enterprise user administration — create, edit, deactivate users, role assignment, bulk operations, session management, immutable audit trail. 13 built-in roles, modal-based workflows, advanced filtering, KPI dashboards. |
+| ✅ [**Security & Authorization**](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md) | Complete | Military-grade authentication & authorization — JWT + refresh tokens, 43 granular permissions across 8 business domains, policy-based access control on every API endpoint, real-time permission enforcement via session revocation, full audit trail, account lockout protection. |
 
-![User Management Feature](developer-notes/user-management-feature/user-management-design-pages.png)
+---
+
+## 🔐 Security & Authorization — Enterprise-Grade Access Control
+
+> *"Zero-trust architecture. Every request verified. Every action logged. Every permission enforced."*
+
+![Security Feature](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-feature.png)
+
+BuildEstate Pro implements a **three-layer security architecture** that would satisfy the most demanding enterprise security audits:
+
+| Layer | What It Does | How It Works |
+|-------|-------------|--------------|
+| 🔑 **Authentication** | Verifies identity | JWT tokens (60 min) + refresh token rotation (7 days) + session tracking |
+| 🛡️ **Role-Based Access** | Controls admin areas | 13 built-in roles map to organizational responsibilities |
+| 🎯 **Permission-Based Access** | Controls every action | 43 granular permissions enforced on individual API endpoints |
+
+**What makes this special:**
+
+- **Real-time enforcement** — Toggle a permission in the admin UI → user sessions are immediately revoked → next login gets updated access. No waiting. No stale tokens.
+- **SuperAdmin bypass** — Full system access regardless of permission matrix. Can't accidentally lock yourself out.
+- **JWT with embedded permissions** — Zero database lookups on API calls. Permissions are baked into the token for maximum performance.
+- **Complete audit trail** — Who changed what permission, for which role, when, and from which IP address. Immutable and exportable.
+- **Frontend integration** — `*appHasPermission` directive dynamically shows/hides UI elements. No broken buttons. No confusing "access denied" screens.
+
+**The 43 permissions span 8 business domains:**
+
+```
+Opportunities: create, read, update, delete, approve
+Projects:      create, read, update, delete, approve
+Finance:       create, read, update, delete, approve
+Construction:  create, read, update, delete, approve
+Sales:         create, read, update, delete, approve
+Legal:         create, read, update, delete, approve
+Planning:      create, read, update, delete, approve
+Reports:       view, export, create
+Administration: users, roles, audit, settings
+```
+
+📖 **[Full Technical Deep Dive →](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md)**
+
+---
+
+## 👥 User Management — The Command Centre for Your Team
+
+> *"Right people. Right access. Right now. Complete visibility into who can do what."*
+
+![User Management](developer-notes/user-management-feature/user-management-listing-page.png)
+
+The User Management system is not just a CRUD screen — it's a **full enterprise identity management console** inspired by Microsoft Entra ID and AWS IAM:
+
+| Feature | What It Delivers |
+|---------|-----------------|
+| 📊 **Dashboard KPIs** | Total users, active/inactive breakdown, locked accounts, new registrations at a glance |
+| 🔍 **Advanced Filtering** | Search by name/email/role, filter by status/department/last login/creation date |
+| ✏️ **Modal-Based CRUD** | Create and edit users without leaving the list — tabbed modal with role assignment |
+| 🎭 **Role Management** | 2-panel layout with inline detail — click a role to see permissions, users, and description |
+| 🔐 **Password Reset** | Real-time validation checklist (8+ chars, uppercase, number, special char) |
+| 🚫 **Deactivation Flow** | Warning dialogs, reason selection, immediate session revocation |
+| 📱 **Session Control** | View active sessions (device, location, IP, status), revoke individually or all |
+| 📋 **Activity Logs** | Filterable audit trail — who did what, when, with pagination |
+| 🎯 **Permission Matrix** | Enterprise-grade permission management with toggle switches, domain tabs, role cards, progress indicators |
+
+**Design highlights:**
+- Polished enterprise SaaS aesthetic (soft blue background, white cards, rounded panels)
+- Consistent with Microsoft/Salesforce/Atlassian admin experiences
+- Responsive — works on desktop, tablet, and mobile
+- No page reloads — modals and in-place editing throughout
+
+📖 **[Full Feature Documentation →](developer-notes/user-management-feature/README.md)**
+
+![Create/Edit User](developer-notes/user-management-feature/create-new-user-form.png)
 
 ---
 

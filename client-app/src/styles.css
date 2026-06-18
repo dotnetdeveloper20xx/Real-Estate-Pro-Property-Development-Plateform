@@ -123,19 +123,12 @@ html, body {
 
 /* Enhanced card styles */
 .card {
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-.card:hover {
-  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.15), 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease;
 }
 
 /* Smooth button transitions */
 .btn {
-  transition: all 0.2s ease;
-}
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px -2px rgba(99, 54, 255, 0.35);
+  transition: all 0.15s ease;
 }
 
 /* Enhanced inputs */
@@ -143,7 +136,7 @@ html, body {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .input:focus, .select:focus, .textarea:focus {
-  box-shadow: 0 0 0 3px rgba(99, 54, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
 }
 
 /* Table row hover */
@@ -178,9 +171,9 @@ html, body {
   background: rgba(128, 128, 128, 0.5);
 }
 
-/* Form card with subtle left accent */
+/* Form card styling */
 form.card {
-  border-left: 3px solid oklch(var(--p));
+  border-left: none;
 }
 
 /* Form section headers */

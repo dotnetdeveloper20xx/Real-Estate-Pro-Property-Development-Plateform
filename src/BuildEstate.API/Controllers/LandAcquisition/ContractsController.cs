@@ -18,7 +18,7 @@ public class ContractsController : BaseApiController
     /// The contract is created with status Draft.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,AcquisitionManager,LegalOfficer,Admin")]
+    [Authorize(Policy = "opportunities.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -39,7 +39,7 @@ public class ContractsController : BaseApiController
     /// When transitioning to Exchanged status, a deposit amount must be provided.
     /// </summary>
     [HttpPatch("{contractId:guid}/status")]
-    [Authorize(Roles = "SuperAdmin,AcquisitionManager,LegalOfficer,Admin")]
+    [Authorize(Policy = "opportunities.approve")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

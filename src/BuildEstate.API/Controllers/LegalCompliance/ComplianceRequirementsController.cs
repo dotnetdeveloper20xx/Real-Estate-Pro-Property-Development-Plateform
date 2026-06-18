@@ -23,7 +23,7 @@ public class ComplianceRequirementsController : BaseApiController
     /// The requirement is initialised with Status = Active.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "LegalComplianceOfficer")]
+    [Authorize(Policy = "legal.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
@@ -39,7 +39,7 @@ public class ComplianceRequirementsController : BaseApiController
     /// Supports filtering by Category, Status, Frequency, ResponsibleRole, and free-text search.
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "LegalComplianceOfficer,AcquisitionManager,FinanceDirector,AdminSupport")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] GetComplianceRequirementsQuery query,
@@ -54,7 +54,7 @@ public class ComplianceRequirementsController : BaseApiController
     /// Only non-null fields are applied (partial update pattern).
     /// </summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "LegalComplianceOfficer")]
+    [Authorize(Policy = "legal.update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -75,7 +75,7 @@ public class ComplianceRequirementsController : BaseApiController
     /// Sets the requirement status to Retired or Superseded with a reason.
     /// </summary>
     [HttpPost("{id:guid}/retire")]
-    [Authorize(Roles = "LegalComplianceOfficer")]
+    [Authorize(Policy = "legal.delete")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -96,7 +96,7 @@ public class ComplianceRequirementsController : BaseApiController
     /// last check, next due date, and a color-coded status indicator (green, amber, red, grey).
     /// </summary>
     [HttpGet("checklist")]
-    [Authorize(Roles = "LegalComplianceOfficer")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetChecklist(CancellationToken cancellationToken)
     {
@@ -109,7 +109,7 @@ public class ComplianceRequirementsController : BaseApiController
     /// Includes total requirements, compliant count, non-compliant count, and overdue count per category.
     /// </summary>
     [HttpGet("summary")]
-    [Authorize(Roles = "LegalComplianceOfficer")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSummary(CancellationToken cancellationToken)
     {

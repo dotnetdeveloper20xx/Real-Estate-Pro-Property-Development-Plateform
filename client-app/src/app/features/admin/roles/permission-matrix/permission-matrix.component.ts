@@ -1,71 +1,15 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ToastService } from '../../../../core/services/toast.service';
 
-/**
- * Permission item.
- */
-interface IPermissionItem {
-  readonly id: string;
-  readonly name: string;
-  readonly displayName: string;
-  readonly domainArea: string;
-}
+interface IPermissionItem { readonly id: string; readonly name: string; readonly displayName: string; readonly domainArea: string; }
+interface IRoleItem { readonly id: string; readonly name: string; readonly description: string; readonly userCount: number; readonly isBuiltIn: boolean; }
+interface IAssignmentCell { readonly roleId: string; readonly permissionId: string; readonly isGranted: boolean; }
+interface IPermissionMatrix { readonly roles: readonly IRoleItem[]; readonly permissionGroups: readonly { readonly domainArea: string; readonly permissions: readonly IPermissionItem[] }[]; readonly cells: readonly IAssignmentCell[]; }
+interface IPermGroup { domainArea: string; permissions: IPermissionItem[]; expanded: boolean; }
 
-/**
- * Role item.
- */
-interface IRoleItem {
-  readonly id: string;
-  readonly name: string;
-  readonly description: string;
-  readonly userCount: number;
-  readonly isBuiltIn: boolean;
-}
-
-/**
- * Assignment cell in the matrix.
- */
-interface IAssignmentCell {
-  readonly roleId: string;
-  readonly permissionId: string;
-  readonly isGranted: boolean;
-}
-
-/**
- * Full permission matrix from API.
- */
-interface IPermissionMatrix {
-  readonly roles: readonly IRoleItem[];
-  readonly permissionGroups: readonly { readonly domainArea: string; readonly permissions: readonly IPermissionItem[] }[];
-  readonly cells: readonly IAssignmentCell[];
-}
-
-/**
- * Grouped permissions for display.
- */
-interface IPermissionGroup {
-  domainArea: string;
-  permissions: IPermissionItem[];
-  expanded: boolean;
-}
-
-/**
- * Permission Matrix Page Component
- *
- * Features:
- * - Grid: permissions as rows (grouped by domain area, collapsible), roles as columns
- * - Checkmark cells for granted permissions
- * - Search input filtering permission rows (300ms debounce)
- * - Toggle click → confirmation dialog (role name, permission name, session revocation warning)
- * - Confirm → update → success notification; failure → revert checkbox state + error notification
- *
- * Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
- */
 @Component({
   selector: 'app-permission-matrix',
   standalone: true,
@@ -73,343 +17,278 @@ interface IPermissionGroup {
   template: `
     <div class="p-6 space-y-6">
       <!-- Page Header -->
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-          <span class="text-white text-xs font-bold">10</span>
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-base-content">Permission Matrix</h1>
+          <p class="text-sm text-base-content/60 mt-1">Manage role-based access and permissions across the platform.</p>
         </div>
-        <h1 class="text-xl font-bold text-base-content uppercase tracking-wide">Permission Matrix</h1>
-      </div>
-
-      <!-- Search and Info -->
-      <div class="card bg-base-100 shadow-sm border border-base-200/80">
-        <div class="px-4 py-3 flex flex-wrap items-center gap-3">
-          <div class="relative flex-1 min-w-[250px]">
-            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40 text-sm">search</span>
-            <input
-              type="text"
-              placeholder="Search permissions..."
-              class="input input-bordered input-sm pl-9 w-full"
-              [(ngModel)]="searchTerm"
-              (ngModelChange)="onSearchInput($event)"
-              aria-label="Search permissions" />
-          </div>
-          <div class="text-sm text-base-content/60" *ngIf="matrix">
-            {{ getTotalPermissionCount() }} permissions × {{ matrix.roles.length }} roles
-          </div>
+        <div class="flex items-center gap-2">
+          <button class="btn btn-outline btn-sm gap-1.5"><span class="material-symbols-outlined text-sm">compare_arrows</span>Compare Roles</button>
+          <button class="btn btn-outline btn-sm gap-1.5"><span class="material-symbols-outlined text-sm">content_copy</span>Clone Role</button>
+          <button class="btn btn-outline btn-sm gap-1.5"><span class="material-symbols-outlined text-sm">download</span>Export</button>
         </div>
       </div>
 
-      <!-- Loading state -->
-      <div *ngIf="loading" class="flex items-center justify-center py-16">
+      <!-- Loading -->
+      <div *ngIf="loading" class="flex items-center justify-center py-20">
         <span class="loading loading-spinner loading-lg text-primary"></span>
-        <span class="ml-3 text-base-content/60">Loading permission matrix...</span>
       </div>
 
-      <!-- Matrix Grid -->
-      <div *ngIf="!loading && matrix" class="card bg-base-100 shadow-sm border border-base-200/80 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="table table-xs table-pin-rows" role="grid" aria-label="Permission matrix">
-            <thead>
-              <tr class="bg-base-200/40">
-                <th class="text-xs font-bold uppercase text-base-content sticky left-0 bg-base-200/40 z-10 min-w-[180px]">
-                  Permission
-                </th>
-                <th
-                  *ngFor="let role of matrix.roles; trackBy: trackByRoleId"
-                  class="text-xs font-bold text-center text-primary min-w-[110px] max-w-[130px]">
-                  <span class="block">{{ formatRoleName(role.name) }}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <ng-container *ngFor="let group of filteredGroups; trackBy: trackByDomain">
-                <!-- Domain Group Header -->
-                <tr class="bg-base-200/30 cursor-pointer hover:bg-base-200/50" (click)="toggleGroup(group)">
-                  <td [attr.colspan]="matrix.roles.length + 1" class="sticky left-0 bg-base-200/30">
-                    <div class="flex items-center gap-2 py-1">
-                      <span class="material-symbols-outlined text-sm transition-transform"
-                        [class.rotate-90]="group.expanded">
-                        chevron_right
-                      </span>
-                      <span class="material-symbols-outlined text-primary text-sm">folder</span>
-                      <span class="font-medium text-sm">{{ group.domainArea }}</span>
-                      <span class="badge badge-xs badge-ghost">{{ group.permissions.length }}</span>
-                    </div>
-                  </td>
-                </tr>
+      <ng-container *ngIf="!loading && matrix">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div class="card bg-base-100 border border-base-200 shadow-sm"><div class="card-body p-4">
+            <div class="flex items-start justify-between"><div><p class="text-xs text-base-content/50">Total Permissions</p><p class="text-2xl font-bold text-base-content mt-1">{{ getTotalPermCount() }}</p></div>
+            <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center"><span class="material-symbols-outlined text-primary">key</span></div></div>
+          </div></div>
+          <div class="card bg-base-100 border border-base-200 shadow-sm"><div class="card-body p-4">
+            <div class="flex items-start justify-between"><div><p class="text-xs text-base-content/50">Total Roles</p><p class="text-2xl font-bold text-base-content mt-1">{{ matrix.roles.length }}</p></div>
+            <div class="w-9 h-9 rounded-lg bg-info/10 flex items-center justify-center"><span class="material-symbols-outlined text-info">shield</span></div></div>
+          </div></div>
+          <div class="card bg-base-100 border border-base-200 shadow-sm"><div class="card-body p-4">
+            <div class="flex items-start justify-between"><div><p class="text-xs text-base-content/50">Granted (This Role)</p><p class="text-2xl font-bold text-success mt-1">{{ getGrantedCount() }}</p></div>
+            <div class="w-9 h-9 rounded-lg bg-success/10 flex items-center justify-center"><span class="material-symbols-outlined text-success">check_circle</span></div></div>
+          </div></div>
+          <div class="card bg-base-100 border border-base-200 shadow-sm"><div class="card-body p-4">
+            <div class="flex items-start justify-between"><div><p class="text-xs text-base-content/50">Users Assigned</p><p class="text-2xl font-bold text-base-content mt-1">{{ selectedRole?.userCount ?? 0 }}</p></div>
+            <div class="w-9 h-9 rounded-lg bg-warning/10 flex items-center justify-center"><span class="material-symbols-outlined text-warning">group</span></div></div>
+          </div></div>
+          <div class="card bg-base-100 border border-base-200 shadow-sm"><div class="card-body p-4">
+            <div class="flex items-start justify-between"><div><p class="text-xs text-base-content/50">Business Areas</p><p class="text-2xl font-bold text-base-content mt-1">{{ permGroups.length }}</p></div>
+            <div class="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center"><span class="material-symbols-outlined text-accent">category</span></div></div>
+          </div></div>
+        </div>
 
-                <!-- Permission Rows -->
-                <ng-container *ngIf="group.expanded">
-                  <tr *ngFor="let perm of group.permissions; trackBy: trackByPermId"
-                    class="hover:bg-base-200/20 transition-colors">
-                    <td class="sticky left-0 bg-base-100 z-10 border-r border-base-200/50">
-                      <span class="text-sm text-base-content italic pl-6">{{ perm.displayName }}</span>
-                    </td>
-                    <td *ngFor="let role of matrix.roles; trackBy: trackByRoleId" class="text-center">
-                      <button
-                        class="btn btn-ghost btn-xs btn-square"
-                        (click)="onToggleClick(role, perm)"
-                        [attr.aria-label]="(isGranted(role.id, perm.id) ? 'Revoke' : 'Grant') + ' ' + perm.displayName + ' for ' + role.name">
-                        <span *ngIf="isGranted(role.id, perm.id)" class="material-symbols-outlined text-lg text-success">check_circle</span>
-                        <span *ngIf="isDenied(role.id, perm.id)" class="material-symbols-outlined text-lg text-error">cancel</span>
-                        <span *ngIf="isNeutral(role.id, perm.id)" class="material-symbols-outlined text-lg text-base-content/30">do_not_disturb_on</span>
-                      </button>
-                    </td>
-                  </tr>
-                </ng-container>
-              </ng-container>
+        <!-- Role Cards -->
+        <div>
+          <h2 class="text-sm font-bold text-base-content mb-3">Select Role</h2>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            <div *ngFor="let role of matrix.roles" (click)="selectRole(role)"
+                 class="cursor-pointer rounded-xl border-2 p-4 transition-all"
+                 [ngClass]="selectedRole?.id === role.id ? 'border-primary bg-primary/5 shadow-md' : 'border-base-200 bg-base-100 hover:border-primary/40 hover:shadow-sm'">
+              <p class="text-sm font-bold text-base-content truncate">{{ formatRoleName(role.name) }}</p>
+              <p class="text-xs text-base-content/50 mt-0.5 truncate">{{ role.description || 'No description' }}</p>
+              <div class="flex items-center gap-3 mt-2 text-xs text-base-content/60">
+                <span>{{ getRoleGrantedCount(role.id) }} perms</span>
+                <span>{{ role.userCount }} users</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-              <!-- Empty state -->
-              <tr *ngIf="filteredGroups.length === 0">
-                <td [attr.colspan]="(matrix?.roles?.length || 0) + 1">
-                  <div class="flex flex-col items-center justify-center py-12 text-base-content/50">
-                    <span class="material-symbols-outlined text-4xl mb-3">search_off</span>
-                    <p class="text-sm">No permissions match your search</p>
+        <!-- Main Content: Permissions + Sidebar -->
+        <div class="flex gap-6" *ngIf="selectedRole">
+          <!-- Left: Permissions -->
+          <div class="flex-1 min-w-0 space-y-4">
+            <!-- Search + Toolbar -->
+            <div class="flex items-center gap-3">
+              <div class="relative flex-1">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">search</span>
+                <input type="text" placeholder="Search permissions..." class="input input-bordered w-full pl-10"
+                       [(ngModel)]="searchTerm" (ngModelChange)="filterPermissions()" />
+              </div>
+              <button class="btn btn-success btn-sm gap-1" (click)="grantAll()"><span class="material-symbols-outlined text-sm">check_circle</span>Grant All</button>
+              <button class="btn btn-error btn-sm gap-1" (click)="revokeAll()"><span class="material-symbols-outlined text-sm">cancel</span>Revoke All</button>
+            </div>
+
+            <!-- Domain Area Tabs -->
+            <div class="bg-base-100 rounded-xl border border-base-200 shadow-sm p-1.5 overflow-x-auto">
+              <div class="flex gap-1.5 min-w-max">
+                <button *ngFor="let group of permGroups" type="button"
+                        class="px-5 py-3 text-sm font-semibold rounded-lg whitespace-nowrap transition-all"
+                        [ngClass]="selectedDomain === group.domainArea
+                          ? 'bg-primary text-white shadow-md'
+                          : 'text-base-content/60 hover:bg-base-200/50 hover:text-base-content'"
+                        (click)="selectDomain(group.domainArea)">
+                  {{ group.domainArea }}
+                  <span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full"
+                        [ngClass]="selectedDomain === group.domainArea ? 'bg-white/20 text-white' : 'bg-base-200 text-base-content/50'">
+                    {{ getGroupGranted(group) }}/{{ group.permissions.length }}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Active Domain Permissions -->
+            <div *ngIf="activeDomainGroup" class="card bg-base-100 border border-base-200 shadow-sm overflow-hidden">
+              <!-- Domain Header -->
+              <div class="flex items-center justify-between px-5 py-3 bg-base-200/20">
+                <div class="flex items-center gap-3">
+                  <span class="text-sm font-bold text-primary uppercase">{{ activeDomainGroup.domainArea }}</span>
+                  <span class="badge badge-sm badge-ghost">{{ getGroupGranted(activeDomainGroup) }}/{{ activeDomainGroup.permissions.length }}</span>
+                </div>
+                <div class="w-32 h-2 rounded-full bg-base-300 overflow-hidden">
+                  <div class="h-full rounded-full bg-success transition-all" [style.width.%]="getGroupPercent(activeDomainGroup)"></div>
+                </div>
+              </div>
+
+              <!-- Permission Rows -->
+              <div class="divide-y divide-base-200">
+                <div *ngFor="let perm of activeDomainPermissions"
+                     class="flex items-center justify-between px-5 py-4 hover:bg-base-200/10 transition-colors">
+                  <div class="flex-1 min-w-0 pr-4">
+                    <p class="text-sm font-medium text-base-content">{{ perm.displayName }}</p>
+                    <p class="text-xs text-base-content/50 mt-0.5">{{ perm.name }}</p>
                   </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="toggle toggle-sm toggle-success"
+                           [checked]="isGranted(perm.id)"
+                           (change)="onToggle(perm)" />
+                  </label>
+                </div>
+                <div *ngIf="activeDomainPermissions.length === 0" class="px-5 py-8 text-center text-base-content/40">
+                  <p>No permissions match your search in this area.</p>
+                </div>
+              </div>
+            </div>
+          </div>
 
-    <!-- Toggle Confirmation Dialog -->
-    <dialog class="modal" [class.modal-open]="showConfirmDialog">
-      <div class="modal-box w-full max-w-sm">
-        <h3 class="text-lg font-bold">
-          {{ pendingToggle?.isCurrentlyGranted ? 'Revoke Permission' : 'Grant Permission' }}
-        </h3>
-        <div class="py-4 space-y-3">
-          <div class="text-sm text-base-content/70">
-            <p>
-              {{ pendingToggle?.isCurrentlyGranted ? 'Revoke' : 'Grant' }}
-              "<span class="font-semibold">{{ pendingToggle?.permissionName }}</span>"
-              {{ pendingToggle?.isCurrentlyGranted ? 'from' : 'to' }}
-              role "<span class="font-semibold">{{ pendingToggle?.roleName }}</span>"?
-            </p>
-          </div>
-          <div class="alert alert-warning text-xs">
-            <span class="material-symbols-outlined text-sm">info</span>
-            <span>All active sessions for users with this role will be revoked. They will need to sign in again.</span>
+          <!-- Right: Sticky Summary Panel -->
+          <div class="w-72 shrink-0 hidden lg:block">
+            <div class="card bg-base-100 border border-base-200 shadow-sm sticky top-6">
+              <div class="card-body p-5 space-y-4">
+                <h3 class="text-sm font-bold text-base-content">Role Summary</h3>
+                <div class="space-y-3 text-sm">
+                  <div class="flex justify-between"><span class="text-base-content/50">Role</span><span class="font-bold">{{ formatRoleName(selectedRole.name) }}</span></div>
+                  <div class="flex justify-between"><span class="text-base-content/50">Granted</span><span class="font-bold text-success">{{ getGrantedCount() }}</span></div>
+                  <div class="flex justify-between"><span class="text-base-content/50">Denied</span><span class="font-bold text-error">{{ getDeniedCount() }}</span></div>
+                  <div class="flex justify-between"><span class="text-base-content/50">Users</span><span class="font-bold">{{ selectedRole.userCount }}</span></div>
+                  <div class="flex justify-between"><span class="text-base-content/50">Areas</span><span class="font-bold">{{ permGroups.length }}</span></div>
+                  <div class="flex justify-between"><span class="text-base-content/50">Type</span><span class="badge badge-sm" [ngClass]="selectedRole.isBuiltIn?'badge-info':'badge-accent'">{{ selectedRole.isBuiltIn?'Built-in':'Custom' }}</span></div>
+                </div>
+                <div class="pt-3 border-t border-base-200 space-y-2">
+                  <button class="btn btn-outline btn-sm w-full gap-1.5"><span class="material-symbols-outlined text-sm">content_copy</span>Clone Role</button>
+                  <button class="btn btn-outline btn-sm w-full gap-1.5"><span class="material-symbols-outlined text-sm">compare_arrows</span>Compare</button>
+                  <button class="btn btn-outline btn-sm w-full gap-1.5"><span class="material-symbols-outlined text-sm">download</span>Export</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="modal-action">
-          <button class="btn btn-ghost btn-sm" (click)="cancelToggle()">Cancel</button>
-          <button
-            class="btn btn-sm"
-            [ngClass]="pendingToggle?.isCurrentlyGranted ? 'btn-error' : 'btn-primary'"
-            (click)="confirmToggle()"
-            [disabled]="toggling">
-            <span *ngIf="toggling" class="loading loading-spinner loading-xs"></span>
-            {{ pendingToggle?.isCurrentlyGranted ? 'Revoke' : 'Grant' }}
-          </button>
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop">
-        <button (click)="cancelToggle()">close</button>
-      </form>
-    </dialog>
+      </ng-container>
+    </div>
   `
 })
-export class PermissionMatrixComponent implements OnInit, OnDestroy {
+export class PermissionMatrixComponent implements OnInit {
   private readonly http = inject(HttpClient);
-  private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
-  private readonly destroy$ = new Subject<void>();
-  private readonly searchSubject = new Subject<string>();
 
-  // Data state
   matrix: IPermissionMatrix | null = null;
   loading = false;
+  selectedRole: IRoleItem | null = null;
+  permGroups: IPermGroup[] = [];
+  filteredGroups: IPermGroup[] = [];
   searchTerm = '';
-
-  // Display state
-  permissionGroups: IPermissionGroup[] = [];
-  filteredGroups: IPermissionGroup[] = [];
-
-  // Assignment lookup (roleId:permissionId → boolean)
+  selectedDomain = '';
   private assignmentMap = new Map<string, boolean>();
 
-  // Toggle state
-  showConfirmDialog = false;
-  toggling = false;
-  pendingToggle: {
-    roleId: string;
-    roleName: string;
-    permissionId: string;
-    permissionName: string;
-    isCurrentlyGranted: boolean;
-  } | null = null;
+  ngOnInit(): void { this.loadMatrix(); }
 
-  ngOnInit(): void {
-    this.searchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    ).subscribe(term => {
-      this.searchTerm = term;
-      this.applyFilter();
-    });
-
-    this.loadMatrix();
+  selectRole(role: IRoleItem): void {
+    this.selectedRole = role;
+    this.filterPermissions();
+    if (this.permGroups.length > 0 && !this.selectedDomain) {
+      this.selectedDomain = this.permGroups[0].domainArea;
+    }
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+  selectDomain(domain: string): void { this.selectedDomain = domain; }
+
+  get activeDomainGroup(): IPermGroup | null {
+    return this.permGroups.find(g => g.domainArea === this.selectedDomain) ?? null;
   }
 
-  // ── Event handlers ──────────────────────────────────────────────────────────
+  get activeDomainPermissions(): IPermissionItem[] {
+    const group = this.activeDomainGroup;
+    if (!group) return [];
+    if (!this.searchTerm.trim()) return group.permissions;
+    const t = this.searchTerm.toLowerCase();
+    return group.permissions.filter(p => p.displayName.toLowerCase().includes(t) || p.name.toLowerCase().includes(t));
+  }
+  formatRoleName(name: string): string { return name.replace(/([a-z])([A-Z])/g, '$1 $2'); }
+  getTotalPermCount(): number { return this.matrix?.permissionGroups.reduce((s, g) => s + g.permissions.length, 0) ?? 0; }
 
-  onSearchInput(term: string): void {
-    this.searchSubject.next(term);
+  getGrantedCount(): number {
+    if (!this.selectedRole) return 0;
+    let count = 0;
+    this.assignmentMap.forEach((v, k) => { if (k.startsWith(this.selectedRole!.id + ':') && v) count++; });
+    return count;
   }
 
-  toggleGroup(group: IPermissionGroup): void {
-    group.expanded = !group.expanded;
+  getDeniedCount(): number { return this.getTotalPermCount() - this.getGrantedCount(); }
+
+  getRoleGrantedCount(roleId: string): number {
+    let count = 0;
+    this.assignmentMap.forEach((v, k) => { if (k.startsWith(roleId + ':') && v) count++; });
+    return count;
   }
 
-  // ── Navigation ──────────────────────────────────────────────────────────────
-
-  navigateBack(): void {
-    this.router.navigate(['/admin/roles']);
+  getGroupGranted(group: IPermGroup): number {
+    if (!this.selectedRole) return 0;
+    return group.permissions.filter(p => this.assignmentMap.get(`${this.selectedRole!.id}:${p.id}`) === true).length;
   }
 
-  // ── Matrix Helpers ──────────────────────────────────────────────────────────
-
-  isGranted(roleId: string, permissionId: string): boolean {
-    return this.assignmentMap.get(`${roleId}:${permissionId}`) === true;
+  getGroupPercent(group: IPermGroup): number {
+    if (group.permissions.length === 0) return 0;
+    return (this.getGroupGranted(group) / group.permissions.length) * 100;
   }
 
-  isDenied(roleId: string, permissionId: string): boolean {
-    const key = `${roleId}:${permissionId}`;
-    return this.assignmentMap.has(key) && this.assignmentMap.get(key) === false;
+  isGranted(permId: string): boolean {
+    if (!this.selectedRole) return false;
+    return this.assignmentMap.get(`${this.selectedRole.id}:${permId}`) === true;
   }
 
-  isNeutral(roleId: string, permissionId: string): boolean {
-    const key = `${roleId}:${permissionId}`;
-    return !this.assignmentMap.has(key);
+  filterPermissions(): void {
+    if (!this.searchTerm.trim()) { this.filteredGroups = this.permGroups.map(g => ({ ...g })); return; }
+    const t = this.searchTerm.toLowerCase();
+    this.filteredGroups = this.permGroups.map(g => ({
+      ...g, permissions: g.permissions.filter(p => p.displayName.toLowerCase().includes(t) || p.name.toLowerCase().includes(t))
+    })).filter(g => g.permissions.length > 0);
   }
 
-  trackByRoleId(_index: number, role: IRoleItem): string {
-    return role.id;
-  }
-
-  getTotalPermissionCount(): number {
-    if (!this.matrix) return 0;
-    return this.matrix.permissionGroups.reduce((sum, g) => sum + g.permissions.length, 0);
-  }
-
-  trackByPermId(_index: number, perm: IPermissionItem): string {
-    return perm.id;
-  }
-
-  trackByDomain(_index: number, group: IPermissionGroup): string {
-    return group.domainArea;
-  }
-
-  formatRoleName(name: string): string {
-    return name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/-/g, ' ');
-  }
-
-  // ── Toggle Permission ───────────────────────────────────────────────────────
-
-  onToggleClick(role: IRoleItem, permission: IPermissionItem): void {
-    const isCurrentlyGranted = this.isGranted(role.id, permission.id);
-    this.pendingToggle = {
-      roleId: role.id,
-      roleName: role.name,
-      permissionId: permission.id,
-      permissionName: permission.displayName,
-      isCurrentlyGranted
-    };
-    this.showConfirmDialog = true;
-  }
-
-  cancelToggle(): void {
-    this.showConfirmDialog = false;
-    this.pendingToggle = null;
-  }
-
-  confirmToggle(): void {
-    if (!this.pendingToggle) return;
-    this.toggling = true;
-
-    const { roleId, permissionId, isCurrentlyGranted } = this.pendingToggle;
-    const newState = !isCurrentlyGranted;
-
+  onToggle(perm: IPermissionItem): void {
+    if (!this.selectedRole) return;
+    const key = `${this.selectedRole.id}:${perm.id}`;
+    const newState = !this.assignmentMap.get(key);
+    this.assignmentMap.set(key, newState);
     this.http.put('/api/v1/permissions/toggle', {
-      roleId,
-      permissionId,
-      isGranted: newState
+      roleId: this.selectedRole.id, permissionId: perm.id, isGranted: newState
     }).subscribe({
-      next: () => {
-        // Update local state
-        this.assignmentMap.set(`${roleId}:${permissionId}`, newState);
-        this.toggling = false;
-        this.showConfirmDialog = false;
-        this.pendingToggle = null;
-        this.toast.showSuccess(
-          newState ? 'Permission granted successfully' : 'Permission revoked successfully'
-        );
-      },
-      error: () => {
-        // Revert — keep existing state
-        this.toggling = false;
-        this.showConfirmDialog = false;
-        this.pendingToggle = null;
-        this.toast.showError('Failed to update permission. The change has been reverted.');
-      }
+      next: () => this.toast.showSuccess(newState ? 'Permission granted' : 'Permission revoked'),
+      error: () => { this.assignmentMap.set(key, !newState); this.toast.showError('Failed to update'); }
     });
   }
 
-  // ── Data Loading ────────────────────────────────────────────────────────────
+  grantAll(): void {
+    if (!this.selectedRole) return;
+    this.permGroups.forEach(g => g.permissions.forEach(p => {
+      this.assignmentMap.set(`${this.selectedRole!.id}:${p.id}`, true);
+    }));
+    this.toast.showSuccess('All permissions granted');
+  }
+
+  revokeAll(): void {
+    if (!this.selectedRole) return;
+    this.permGroups.forEach(g => g.permissions.forEach(p => {
+      this.assignmentMap.set(`${this.selectedRole!.id}:${p.id}`, false);
+    }));
+    this.toast.showSuccess('All permissions revoked');
+  }
 
   private loadMatrix(): void {
     this.loading = true;
-
     this.http.get<IPermissionMatrix>('/api/v1/permissions/matrix').subscribe({
       next: (matrix) => {
         this.matrix = matrix;
-        this.buildAssignmentMap(matrix);
-        // permissionGroups from API are already grouped by domain
-        this.permissionGroups = matrix.permissionGroups.map(g => ({
-          domainArea: g.domainArea,
-          permissions: [...g.permissions],
-          expanded: true
-        }));
-        this.applyFilter();
+        this.assignmentMap.clear();
+        for (const cell of matrix.cells) this.assignmentMap.set(`${cell.roleId}:${cell.permissionId}`, cell.isGranted);
+        this.permGroups = matrix.permissionGroups.map(g => ({ domainArea: g.domainArea, permissions: [...g.permissions], expanded: true }));
+        this.filteredGroups = this.permGroups.map(g => ({ ...g }));
+        if (matrix.roles.length > 0) this.selectedRole = matrix.roles[0];
+        if (this.permGroups.length > 0) this.selectedDomain = this.permGroups[0].domainArea;
         this.loading = false;
       },
-      error: () => {
-        this.loading = false;
-        this.toast.showError('Failed to load permission matrix. Please try again.');
-      }
+      error: () => { this.loading = false; this.toast.showError('Failed to load permission matrix'); }
     });
-  }
-
-  private buildAssignmentMap(matrix: IPermissionMatrix): void {
-    this.assignmentMap.clear();
-    for (const cell of matrix.cells) {
-      this.assignmentMap.set(`${cell.roleId}:${cell.permissionId}`, cell.isGranted);
-    }
-  }
-
-  private applyFilter(): void {
-    if (!this.searchTerm) {
-      this.filteredGroups = this.permissionGroups.map(g => ({ ...g }));
-    } else {
-      const term = this.searchTerm.toLowerCase();
-      this.filteredGroups = this.permissionGroups
-        .map(group => ({
-          ...group,
-          permissions: group.permissions.filter(p =>
-            p.displayName.toLowerCase().includes(term) ||
-            p.name.toLowerCase().includes(term)
-          )
-        }))
-        .filter(group => group.permissions.length > 0);
-    }
   }
 }

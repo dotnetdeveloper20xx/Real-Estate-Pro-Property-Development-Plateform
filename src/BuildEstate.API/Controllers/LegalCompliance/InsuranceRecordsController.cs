@@ -25,7 +25,7 @@ public class InsuranceRecordsController : BaseApiController
     /// Optionally links to a land opportunity or legal case.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Legal_Compliance_Officer,Admin_Support")]
+    [Authorize(Policy = "legal.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
@@ -42,7 +42,7 @@ public class InsuranceRecordsController : BaseApiController
     /// and free-text search across PolicyNumber and Insurer fields.
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Legal_Compliance_Officer,Finance_Director,Acquisition_Manager,Admin_Support")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] GetInsuranceRecordsQuery query,
@@ -57,7 +57,7 @@ public class InsuranceRecordsController : BaseApiController
     /// calculated days until expiry, and permitted status transitions from the state machine.
     /// </summary>
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Legal_Compliance_Officer,Finance_Director,Acquisition_Manager,Admin_Support")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
@@ -74,7 +74,7 @@ public class InsuranceRecordsController : BaseApiController
     /// Uses optimistic concurrency via RowVersion.
     /// </summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Legal_Compliance_Officer,Admin_Support")]
+    [Authorize(Policy = "legal.update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -98,7 +98,7 @@ public class InsuranceRecordsController : BaseApiController
     /// Raises InsuranceExpiringEvent for ExpiringSoon/Expired transitions.
     /// </summary>
     [HttpPost("{id:guid}/transition")]
-    [Authorize(Roles = "Legal_Compliance_Officer")]
+    [Authorize(Policy = "legal.approve")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -121,7 +121,7 @@ public class InsuranceRecordsController : BaseApiController
     /// The original policy transitions to Renewed status.
     /// </summary>
     [HttpPost("{id:guid}/renew")]
-    [Authorize(Roles = "Legal_Compliance_Officer")]
+    [Authorize(Policy = "legal.approve")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

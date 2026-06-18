@@ -35,33 +35,44 @@ interface IUserDetail {
     <div *ngIf="loading" class="p-6"><div class="animate-pulse flex items-center gap-4"><div class="w-16 h-16 bg-base-300 rounded-full"></div><div class="space-y-2"><div class="h-6 bg-base-300 rounded w-48"></div><div class="h-4 bg-base-300 rounded w-32"></div></div></div></div>
     <!-- Content -->
     <div *ngIf="!loading && !notFound && user" class="p-6 space-y-6">
-      <!-- Header -->
-      <div class="flex items-start justify-between flex-wrap gap-4">
-        <div class="flex items-center gap-4">
-          <button class="btn btn-ghost btn-sm btn-square" (click)="navigateToList()" aria-label="Back"><span class="material-symbols-outlined">arrow_back</span></button>
-          <div class="avatar placeholder"><div class="bg-primary text-primary-content rounded-full w-14 h-14"><span class="text-xl font-bold">{{getInitials()}}</span></div></div>
-          <div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <h1 class="text-2xl font-bold text-base-content">{{user.firstName}} {{user.lastName}}</h1>
-              <span class="badge badge-sm" [ngClass]="user.isActive ? 'badge-success' : 'badge-error'">{{user.isActive ? 'Active' : 'Inactive'}}</span>
-            </div>
-            <p class="text-sm text-base-content/60 mt-0.5" *ngIf="user.roles.length">{{formatRoleName(user.roles[0])}}</p>
-            <p class="text-sm text-base-content/50">{{user.email}}</p>
-            <p class="text-xs text-base-content/40 mt-0.5">Last Login: {{user.lastLoginAt?(user.lastLoginAt|date:'dd MMM yyyy, hh:mm a'):'Never'}}</p>
-          </div>
+      <!-- Page Header with number -->
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
+          <span class="text-white text-sm font-bold">4</span>
         </div>
-        <div class="flex items-center gap-2">
-          <button class="btn btn-outline btn-sm gap-1.5" (click)="navigateToEdit()"><span class="material-symbols-outlined text-sm">edit</span> Edit User</button>
-          <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-outline btn-sm gap-1.5">More Actions <span class="material-symbols-outlined text-sm">expand_more</span></div>
-            <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-2 shadow-lg border border-base-200">
-              <li><button (click)="showDeactivateDialog=true" class="text-warning"><span class="material-symbols-outlined text-sm">block</span>{{user.isActive?'Deactivate':'Reactivate'}}</button></li>
-              <li><button (click)="showPasswordResetDialog=true"><span class="material-symbols-outlined text-sm">lock_reset</span>Reset Password</button></li>
-              <li><button (click)="revokeAllSessions()" class="text-error"><span class="material-symbols-outlined text-sm">logout</span>Revoke All Sessions</button></li>
-            </ul>
+        <h1 class="text-xl font-bold text-base-content uppercase tracking-wide">User Details View</h1>
+      </div>
+
+      <!-- User Header Card -->
+      <div class="rounded-2xl bg-white/70 border border-blue-100/40 p-6">
+        <div class="flex items-start justify-between flex-wrap gap-4">
+          <div class="flex items-center gap-4">
+            <button class="btn btn-ghost btn-sm btn-square" (click)="navigateToList()" aria-label="Back"><span class="material-symbols-outlined">arrow_back</span></button>
+            <div class="avatar placeholder"><div class="bg-primary text-primary-content rounded-full w-14 h-14"><span class="text-xl font-bold">{{getInitials()}}</span></div></div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 class="text-xl font-bold text-base-content">{{user.firstName}} {{user.lastName}}</h2>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-success text-success bg-success/5">{{user.isActive ? 'Active' : 'Inactive'}}</span>
+              </div>
+              <p class="text-sm text-base-content/60 mt-0.5" *ngIf="user.roles.length">{{formatRoleName(user.roles[0])}}</p>
+              <p class="text-sm text-base-content/50">{{user.email}}</p>
+              <p class="text-xs text-base-content/40 mt-0.5">Last Login: {{user.lastLoginAt?(user.lastLoginAt|date:'dd MMM yyyy, hh:mm a'):'Never'}}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="btn btn-outline btn-sm gap-1.5" (click)="navigateToEdit()"><span class="material-symbols-outlined text-sm">edit</span> Edit User</button>
+            <div class="dropdown dropdown-end">
+              <div tabindex="0" role="button" class="btn btn-outline btn-sm gap-1.5">More Actions <span class="material-symbols-outlined text-sm">expand_more</span></div>
+              <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-2 shadow-lg border border-base-200">
+                <li><button (click)="showDeactivateDialog=true" class="text-warning"><span class="material-symbols-outlined text-sm">block</span>{{user.isActive?'Deactivate':'Reactivate'}}</button></li>
+                <li><button (click)="showPasswordResetDialog=true"><span class="material-symbols-outlined text-sm">lock_reset</span>Reset Password</button></li>
+                <li><button (click)="revokeAllSessions()" class="text-error"><span class="material-symbols-outlined text-sm">logout</span>Revoke All Sessions</button></li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
+
       <!-- Tabs -->
       <div role="tablist" class="tabs tabs-bordered">
         <button role="tab" class="tab" [class.tab-active]="activeTab==='overview'" (click)="activeTab='overview'">Overview</button>
@@ -70,56 +81,61 @@ interface IUserDetail {
         <button role="tab" class="tab" [class.tab-active]="activeTab==='sessions'" (click)="activeTab='sessions'">Sessions</button>
         <button role="tab" class="tab" [class.tab-active]="activeTab==='activity'" (click)="activeTab='activity'">Activity</button>
       </div>
+
       <!-- Overview Tab -->
       <div *ngIf="activeTab==='overview'">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
           <!-- User Information -->
-          <div class="card bg-base-100 shadow-sm border border-base-200/80"><div class="card-body p-5">
-            <h3 class="text-sm font-bold text-primary mb-3">User Information</h3>
-            <div class="space-y-2.5 text-sm">
-              <div class="flex justify-between"><span class="text-base-content/50">First Name</span><span class="font-medium">{{user.firstName}}</span></div>
-              <div class="flex justify-between"><span class="text-base-content/50">Last Name</span><span class="font-medium">{{user.lastName}}</span></div>
-              <div class="flex justify-between"><span class="text-base-content/50">Email</span><span class="font-medium text-xs">{{user.email}}</span></div>
-              <div class="flex justify-between items-center"><span class="text-base-content/50">Status</span><span class="badge badge-sm" [ngClass]="user.isActive?'badge-success':'badge-error'">{{user.isActive?'Active':'Inactive'}}</span></div>
-              <div class="flex justify-between"><span class="text-base-content/50">Created At</span><span>{{user.createdAt|date:'dd MMM yyyy, hh:mm a'}}</span></div>
-              <div class="flex justify-between"><span class="text-base-content/50">Created By</span><span>admin&#64;buildestate.co.uk</span></div>
-              <div class="flex justify-between"><span class="text-base-content/50">Updated At</span><span>{{user.lastLoginAt?(user.lastLoginAt|date:'dd MMM yyyy, hh:mm a'):'—'}}</span></div>
+          <div class="rounded-xl bg-white border border-blue-100/60 shadow-sm p-5">
+            <h3 class="text-sm font-bold text-primary mb-4">User Information</h3>
+            <div class="space-y-3 text-sm">
+              <div class="flex justify-between"><span class="text-base-content/50">First Name</span><span class="font-medium text-base-content">{{user.firstName}}</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Last Name</span><span class="font-medium text-base-content">{{user.lastName}}</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Email</span><span class="font-medium text-base-content text-xs">{{user.email}}</span></div>
+              <div class="flex justify-between items-center"><span class="text-base-content/50">Status</span><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-success text-success">{{user.isActive?'Active':'Inactive'}}</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Created At</span><span class="text-base-content">{{user.createdAt|date:'dd MMM yyyy, hh:mm a'}}</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Created By</span><span class="text-base-content">admin&#64;buildestate.co.uk</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Updated At</span><span class="text-base-content">{{user.lastLoginAt?(user.lastLoginAt|date:'dd MMM yyyy, hh:mm a'):'—'}}</span></div>
             </div>
-          </div></div>
+          </div>
           <!-- Assigned Roles -->
-          <div class="card bg-base-100 shadow-sm border border-base-200/80"><div class="card-body p-5">
-            <h3 class="text-sm font-bold text-primary mb-3">Assigned Roles</h3>
+          <div class="rounded-xl bg-white border border-blue-100/60 shadow-sm p-5">
+            <h3 class="text-sm font-bold text-primary mb-4">Assigned Roles</h3>
             <div class="flex flex-wrap gap-2">
-              <span *ngFor="let role of user.roles" class="badge badge-outline" [ngClass]="getRoleBadgeClass(role)">{{role}}</span>
+              <span *ngFor="let role of user.roles" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border" [ngClass]="getRoleBadgeClass(role)">{{role}}</span>
               <span *ngIf="!user.roles.length" class="text-sm text-base-content/50">No roles assigned</span>
             </div>
-          </div></div>
+          </div>
           <!-- Security Summary -->
-          <div class="card bg-base-100 shadow-sm border border-base-200/80"><div class="card-body p-5">
-            <h3 class="text-sm font-bold text-primary mb-3">Security Summary</h3>
-            <div class="space-y-2.5 text-sm">
-              <div class="flex justify-between"><span class="text-base-content/50">Password Last Changed</span><span>{{user.passwordLastChangedAt?(user.passwordLastChangedAt|date:'dd MMM yyyy, hh:mm a'):'Never'}}</span></div>
-              <div class="flex justify-between"><span class="text-base-content/50">Failed Login Attempts</span><span [ngClass]="user.failedLoginAttempts>0?'text-warning font-bold':''">{{user.failedLoginAttempts}}</span></div>
-              <div class="flex justify-between"><span class="text-base-content/50">Account Locked</span><span>No</span></div>
-              <div class="flex justify-between"><span class="text-base-content/50">Two Factor Auth</span><span>Not Enabled</span></div>
+          <div class="rounded-xl bg-white border border-blue-100/60 shadow-sm p-5">
+            <h3 class="text-sm font-bold text-primary mb-4">Security Summary</h3>
+            <div class="space-y-3 text-sm">
+              <div class="flex justify-between"><span class="text-base-content/50">Password Last Changed</span><span class="text-base-content">{{user.passwordLastChangedAt?(user.passwordLastChangedAt|date:'dd MMM yyyy, hh:mm a'):'Never'}}</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Failed Login Attempts</span><span class="text-base-content" [class.text-warning]="user.failedLoginAttempts>0" [class.font-bold]="user.failedLoginAttempts>0">{{user.failedLoginAttempts}}</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Account Locked</span><span class="text-base-content">No</span></div>
+              <div class="flex justify-between"><span class="text-base-content/50">Two Factor Auth</span><span class="text-base-content">Not Enabled</span></div>
             </div>
-          </div></div>
+          </div>
         </div>
         <!-- Quick Actions -->
         <div>
           <h3 class="text-sm font-bold text-base-content mb-3">Quick Actions</h3>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <button class="btn btn-outline btn-sm gap-2 justify-start" (click)="showPasswordResetDialog=true">
-              <span class="material-symbols-outlined text-primary text-lg">lock_reset</span> Reset Password
+            <button class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-200 bg-white hover:bg-base-200/30 transition-colors" (click)="showPasswordResetDialog=true">
+              <span class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center"><span class="material-symbols-outlined text-amber-600 text-lg">lock_reset</span></span>
+              <span class="text-sm font-medium text-base-content">Reset Password</span>
             </button>
-            <button class="btn btn-outline btn-sm gap-2 justify-start" (click)="showDeactivateDialog=true">
-              <span class="material-symbols-outlined text-error text-lg">block</span> {{user.isActive?'Deactivate User':'Activate User'}}
+            <button class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-200 bg-white hover:bg-base-200/30 transition-colors" (click)="showDeactivateDialog=true">
+              <span class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center"><span class="material-symbols-outlined text-red-600 text-lg">block</span></span>
+              <span class="text-sm font-medium text-base-content">{{user.isActive?'Deactivate User':'Activate User'}}</span>
             </button>
-            <button class="btn btn-outline btn-sm gap-2 justify-start" (click)="activeTab='sessions'">
-              <span class="material-symbols-outlined text-purple-500 text-lg">devices</span> View Sessions
+            <button class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-200 bg-white hover:bg-base-200/30 transition-colors" (click)="activeTab='sessions'">
+              <span class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center"><span class="material-symbols-outlined text-purple-600 text-lg">devices</span></span>
+              <span class="text-sm font-medium text-base-content">View Sessions</span>
             </button>
-            <button class="btn btn-outline btn-sm gap-2 justify-start" (click)="activeTab='activity'">
-              <span class="material-symbols-outlined text-blue-500 text-lg">history</span> View Activity
+            <button class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-200 bg-white hover:bg-base-200/30 transition-colors" (click)="activeTab='activity'">
+              <span class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center"><span class="material-symbols-outlined text-blue-600 text-lg">history</span></span>
+              <span class="text-sm font-medium text-base-content">View Activity</span>
             </button>
           </div>
         </div>
@@ -250,6 +266,87 @@ interface IUserDetail {
       </div>
       <form method="dialog" class="modal-backdrop"><button (click)="showPasswordResetDialog=false">close</button></form>
     </dialog>
+
+    <!-- Edit User Modal -->
+    <dialog class="modal" [class.modal-open]="showEditModal">
+      <div class="modal-box w-full max-w-4xl p-0 overflow-hidden">
+        <div class="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-base-200">
+          <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+            <span class="text-white text-xs font-bold">3</span>
+          </div>
+          <h3 class="text-lg font-bold text-base-content uppercase tracking-wide">Create / Edit User</h3>
+        </div>
+        <div class="px-6 pt-3 border-b border-base-200">
+          <div class="flex gap-0">
+            <button type="button" class="px-5 py-2.5 text-sm font-medium border-b-2 border-transparent text-base-content/60">Create User</button>
+            <button type="button" class="px-5 py-2.5 text-sm font-medium border-b-2 border-primary text-primary">Edit User</button>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="space-y-4">
+              <div>
+                <label class="text-sm font-bold text-base-content mb-1.5 block">First Name <span class="text-error">*</span></label>
+                <input type="text" class="input input-bordered w-full" [(ngModel)]="editForm.firstName" />
+              </div>
+              <div>
+                <label class="text-sm font-bold text-base-content mb-1.5 block">Last Name <span class="text-error">*</span></label>
+                <input type="text" class="input input-bordered w-full" [(ngModel)]="editForm.lastName" />
+              </div>
+              <div>
+                <label class="text-sm font-bold text-base-content mb-1.5 block">Email Address <span class="text-error">*</span></label>
+                <input type="email" class="input input-bordered w-full" [(ngModel)]="editForm.email" />
+              </div>
+              <div>
+                <label class="text-sm font-bold text-base-content mb-1.5 block">Password <span class="text-error">*</span></label>
+                <div class="relative">
+                  <input [type]="showEditPw?'text':'password'" class="input input-bordered w-full pr-10" [(ngModel)]="editForm.password" placeholder="••••••••" />
+                  <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content" (click)="showEditPw=!showEditPw">
+                    <span class="material-symbols-outlined text-xl">{{showEditPw?'visibility_off':'visibility'}}</span>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="text-sm font-bold text-base-content mb-1.5 block">Confirm Password <span class="text-error">*</span></label>
+                <div class="relative">
+                  <input [type]="showEditCpw?'text':'password'" class="input input-bordered w-full pr-10" [(ngModel)]="editForm.confirmPassword" placeholder="••••••••" />
+                  <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content" (click)="showEditCpw=!showEditCpw">
+                    <span class="material-symbols-outlined text-xl">{{showEditCpw?'visibility_off':'visibility'}}</span>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="text-sm font-bold text-base-content mb-1.5 block">Status</label>
+                <select class="select select-bordered w-full" [(ngModel)]="editForm.status">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="text-sm font-bold text-base-content mb-3 block">Assign Roles <span class="text-error">*</span></label>
+              <div class="relative mb-3">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">search</span>
+                <input type="text" placeholder="Search roles..." class="input input-bordered w-full pl-10" [(ngModel)]="editRoleSearch" />
+              </div>
+              <div class="border border-base-200 rounded-lg max-h-[380px] overflow-y-auto">
+                <label *ngFor="let role of filteredEditRoles" class="flex items-center gap-3 px-4 py-3 border-b border-base-200/50 last:border-b-0 hover:bg-base-200/30 cursor-pointer transition-colors">
+                  <input type="checkbox" class="checkbox checkbox-sm checkbox-primary" [checked]="editForm.roles.includes(role)" (change)="toggleEditRole(role)" />
+                  <span class="text-sm font-medium text-base-content">{{role}}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-3 pt-5 mt-5 border-t border-base-200">
+            <button class="btn btn-ghost" (click)="showEditModal=false">Cancel</button>
+            <button class="btn btn-primary px-6" (click)="saveEditUser()" [disabled]="savingEdit">
+              <span *ngIf="savingEdit" class="loading loading-spinner loading-sm"></span> Save User
+            </button>
+          </div>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button (click)="showEditModal=false">close</button></form>
+    </dialog>
   `
 })
 export class UserDetailComponent implements OnInit {
@@ -267,6 +364,47 @@ export class UserDetailComponent implements OnInit {
   showResetPw = false;
   resetPasswordValue = '';
   deactivateReason = '';
+  showEditModal = false;
+  showEditPw = false;
+  showEditCpw = false;
+  savingEdit = false;
+  editRoleSearch = '';
+  editForm = { firstName: '', lastName: '', email: '', password: '', confirmPassword: '', status: 'active', roles: [] as string[] };
+
+  readonly allRoles = [
+    'SuperAdmin', 'AcquisitionManager', 'LegalOfficer', 'PlanningManager',
+    'ProjectManager', 'SiteManager', 'SalesManager', 'CompletionManager',
+    'PropertyManager', 'FinanceDirector', 'ValuationAnalyst', 'Surveyor', 'Admin'
+  ];
+
+  get filteredEditRoles(): string[] {
+    if (!this.editRoleSearch.trim()) return this.allRoles;
+    const t = this.editRoleSearch.toLowerCase();
+    return this.allRoles.filter(r => r.toLowerCase().includes(t));
+  }
+
+  toggleEditRole(role: string): void {
+    const idx = this.editForm.roles.indexOf(role);
+    if (idx >= 0) this.editForm.roles.splice(idx, 1);
+    else this.editForm.roles.push(role);
+  }
+
+  saveEditUser(): void {
+    if (!this.user || !this.editForm.firstName || !this.editForm.lastName || !this.editForm.email) return;
+    this.savingEdit = true;
+    this.http.put(`/api/v1/users/${this.user.id}`, {
+      firstName: this.editForm.firstName, lastName: this.editForm.lastName,
+      email: this.editForm.email, isActive: this.editForm.status === 'active'
+    }).subscribe({
+      next: () => {
+        this.http.put(`/api/v1/users/${this.user!.id}/roles`, { roles: this.editForm.roles }).subscribe({
+          next: () => { this.savingEdit = false; this.showEditModal = false; this.toast.showSuccess('User updated'); this.loadUser(this.user!.id); },
+          error: () => { this.savingEdit = false; this.showEditModal = false; this.toast.showSuccess('User updated'); this.loadUser(this.user!.id); }
+        });
+      },
+      error: () => { this.savingEdit = false; this.toast.showError('Failed to update user'); }
+    });
+  }
 
   passwordRules = [
     { label: 'Minimum 8 characters', met: false },
@@ -303,7 +441,16 @@ export class UserDetailComponent implements OnInit {
   }
 
   navigateToList(): void { this.router.navigate(['/admin/users']); }
-  navigateToEdit(): void { if (this.user) this.router.navigate(['/admin/users', this.user.id, 'edit']); }
+  navigateToEdit(): void {
+    if (!this.user) return;
+    this.editForm = {
+      firstName: this.user.firstName, lastName: this.user.lastName,
+      email: this.user.email, password: '', confirmPassword: '',
+      status: this.user.isActive ? 'active' : 'inactive',
+      roles: [...this.user.roles]
+    };
+    this.showEditModal = true;
+  }
   getInitials(): string { return this.user ? `${this.user.firstName.charAt(0)}${this.user.lastName.charAt(0)}`.toUpperCase() : ''; }
   getRoleBadgeClass(role: string): string { return this.roleBadgeClasses[role] ?? 'badge-ghost'; }
   formatRoleName(role: string): string { return role.replace(/([a-z])([A-Z])/g, '$1 $2'); }

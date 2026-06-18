@@ -26,7 +26,7 @@ public class LegalCasesController : BaseApiController
     /// The case is initialised with status Open and a unique reference (LC-YYYY-NNNNN).
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Legal_Compliance_Officer,Admin_Support")]
+    [Authorize(Policy = "legal.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
@@ -43,7 +43,7 @@ public class LegalCasesController : BaseApiController
     /// across Title, CaseReference, and AssignedSolicitor.
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Legal_Compliance_Officer,Finance_Director,Acquisition_Manager,Admin_Support")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] GetLegalCasesQuery query,
@@ -58,7 +58,7 @@ public class LegalCasesController : BaseApiController
     /// insurance records, and permitted status transitions from the state machine.
     /// </summary>
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Legal_Compliance_Officer,Finance_Director,Acquisition_Manager,Admin_Support")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
@@ -76,7 +76,7 @@ public class LegalCasesController : BaseApiController
     /// Uses optimistic concurrency via RowVersion.
     /// </summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Legal_Compliance_Officer,Admin_Support")]
+    [Authorize(Policy = "legal.update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -101,7 +101,7 @@ public class LegalCasesController : BaseApiController
     /// - All linked contracts in terminal state for Closed
     /// </summary>
     [HttpPost("{id:guid}/transition")]
-    [Authorize(Roles = "Legal_Compliance_Officer,Admin_Support")]
+    [Authorize(Policy = "legal.approve")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -123,7 +123,7 @@ public class LegalCasesController : BaseApiController
     /// Restricted to Legal_Compliance_Officer role.
     /// </summary>
     [HttpGet("pipeline")]
-    [Authorize(Roles = "Legal_Compliance_Officer")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPipeline(CancellationToken cancellationToken)
     {
@@ -136,7 +136,7 @@ public class LegalCasesController : BaseApiController
     /// Provides a lightweight view for cross-module integration with Land Acquisition.
     /// </summary>
     [HttpGet("summary/opportunity/{opportunityId:guid}")]
-    [Authorize(Roles = "Legal_Compliance_Officer,Finance_Director,Acquisition_Manager,Admin_Support")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSummaryForOpportunity(
         Guid opportunityId,
@@ -153,7 +153,7 @@ public class LegalCasesController : BaseApiController
     /// Provides a lightweight view for cross-module integration with Planning &amp; Approvals.
     /// </summary>
     [HttpGet("summary/planning/{planningApplicationId:guid}")]
-    [Authorize(Roles = "Legal_Compliance_Officer,Finance_Director,Acquisition_Manager,Admin_Support")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSummaryForPlanning(
         Guid planningApplicationId,

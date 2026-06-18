@@ -301,7 +301,7 @@ interface INavItem {
         </header>
 
         <!-- Page Content -->
-        <main class="flex-1 overflow-y-auto bg-base-200">
+        <main class="flex-1 overflow-y-auto" style="background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 50%, #f5f7ff 100%);">
           <router-outlet></router-outlet>
         </main>
       </div>

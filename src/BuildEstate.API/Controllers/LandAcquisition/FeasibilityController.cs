@@ -19,7 +19,7 @@ public class FeasibilityController : BaseApiController
     /// If an assessment already exists for the opportunity, it will be updated.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,ValuationAnalyst,FinanceDirector")]
+    [Authorize(Policy = "opportunities.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

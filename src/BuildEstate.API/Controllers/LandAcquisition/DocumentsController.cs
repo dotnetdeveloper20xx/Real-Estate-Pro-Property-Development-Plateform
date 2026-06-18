@@ -90,7 +90,7 @@ public class DocumentsController : BaseApiController
     /// Records the deletion in the audit trail.
     /// </summary>
     [HttpDelete("{docId:guid}")]
-    [Authorize(Roles = "SuperAdmin,AcquisitionManager,Admin")]
+    [Authorize(Policy = "opportunities.delete")]
     public async Task<IActionResult> Delete(
         [FromRoute] Guid opportunityId,
         [FromRoute] Guid docId,

@@ -25,7 +25,7 @@ public class LegalDashboardController : BaseApiController
     /// - Risk summary (High/Critical priority cases and audit records)
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Legal_Compliance_Officer")]
+    [Authorize(Policy = "legal.read")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

@@ -65,6 +65,35 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // ──────────────────────────────────────────────────────────────────
+// Permission-Based Authorization — register handler and policies
+// ──────────────────────────────────────────────────────────────────
+builder.Services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationHandler,
+    BuildEstate.Application.Authorization.PermissionAuthorizationHandler>();
+
+builder.Services.AddAuthorization(options =>
+{
+    // Register a named policy for each permission
+    var permissionNames = new[]
+    {
+        "opportunities.create", "opportunities.read", "opportunities.update", "opportunities.delete", "opportunities.approve",
+        "projects.create", "projects.read", "projects.update", "projects.delete", "projects.approve",
+        "finance.create", "finance.read", "finance.update", "finance.delete", "finance.approve",
+        "construction.create", "construction.read", "construction.update", "construction.delete", "construction.approve",
+        "sales.create", "sales.read", "sales.update", "sales.delete", "sales.approve",
+        "legal.create", "legal.read", "legal.update", "legal.delete", "legal.approve",
+        "planning.create", "planning.read", "planning.update", "planning.delete", "planning.approve",
+        "reports.view", "reports.export", "reports.create",
+        "administration.users", "administration.roles", "administration.audit", "administration.settings"
+    };
+
+    foreach (var permission in permissionNames)
+    {
+        options.AddPolicy(permission, policy =>
+            policy.Requirements.Add(new BuildEstate.Application.Authorization.PermissionRequirement(permission)));
+    }
+});
+
+// ──────────────────────────────────────────────────────────────────
 // Development Auth Bypass — override DefaultPolicy to allow anonymous
 // ──────────────────────────────────────────────────────────────────
 if (builder.Environment.IsDevelopment())

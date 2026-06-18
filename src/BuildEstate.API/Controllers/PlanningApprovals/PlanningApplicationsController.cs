@@ -22,7 +22,7 @@ public class PlanningApplicationsController : BaseApiController
     /// The application is initialised with status Pre-Application.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "PlanningManager,AdminSupport")]
+    [Authorize(Policy = "planning.create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -72,7 +72,7 @@ public class PlanningApplicationsController : BaseApiController
     /// Uses optimistic concurrency via RowVersion.
     /// </summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "PlanningManager,AdminSupport")]
+    [Authorize(Policy = "planning.update")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -96,7 +96,7 @@ public class PlanningApplicationsController : BaseApiController
     /// - WithdrawalReason (10+ chars) when transitioning to Withdrawn
     /// </summary>
     [HttpPut("{id:guid}/status")]
-    [Authorize(Roles = "PlanningManager,AdminSupport")]
+    [Authorize(Policy = "planning.approve")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

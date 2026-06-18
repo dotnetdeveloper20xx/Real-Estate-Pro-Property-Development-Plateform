@@ -42,7 +42,7 @@ public class DueDiligenceController : BaseApiController
     /// Accessible by AcquisitionManager, LegalOfficer, SuperAdmin, and Admin roles.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "SuperAdmin,AcquisitionManager,LegalOfficer,Admin")]
+    [Authorize(Policy = "opportunities.create")]
     public async Task<IActionResult> Create(
         [FromRoute] Guid opportunityId,
         [FromBody] CreateDueDiligenceCommand command,
@@ -60,7 +60,7 @@ public class DueDiligenceController : BaseApiController
     /// Accessible by AcquisitionManager, LegalOfficer, SuperAdmin, and Admin roles.
     /// </summary>
     [HttpPatch("{ddId:guid}/status")]
-    [Authorize(Roles = "SuperAdmin,AcquisitionManager,LegalOfficer,Admin")]
+    [Authorize(Policy = "opportunities.approve")]
     public async Task<IActionResult> TransitionStatus(
         [FromRoute] Guid opportunityId,
         [FromRoute] Guid ddId,
