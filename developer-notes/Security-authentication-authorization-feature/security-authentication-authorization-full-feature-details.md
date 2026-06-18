@@ -2,6 +2,8 @@
 
 ## Technical Deep Dive
 
+![Security Authentication & Authorization Feature](security-authentication-authorization-feature.png)
+
 ---
 
 ## 1. Architecture Overview
