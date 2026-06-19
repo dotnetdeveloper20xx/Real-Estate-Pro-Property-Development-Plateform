@@ -6,21 +6,21 @@ using Microsoft.Extensions.Logging;
 namespace BuildEstate.Application.Features.PlanningApprovals.EventHandlers;
 
 /// <summary>
-/// Handles the MilestoneOverdueDomainEvent by sending a notification to the
-/// Planning_Manager role informing them that a milestone has become overdue.
+/// Handles the MilestoneOverdueDomainEvent by emitting a notification event.
+/// The engine resolves recipients from configured rules.
 ///
 /// Validates: Requirements 9.6, 12.5
 /// </summary>
 public sealed class MilestoneOverdueEventHandler : INotificationHandler<MilestoneOverdueDomainEvent>
 {
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly ILogger<MilestoneOverdueEventHandler> _logger;
 
     public MilestoneOverdueEventHandler(
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         ILogger<MilestoneOverdueEventHandler> logger)
     {
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _logger = logger;
     }
 
@@ -33,14 +33,19 @@ public sealed class MilestoneOverdueEventHandler : INotificationHandler<Mileston
             notification.ApplicationId,
             notification.TargetDate);
 
-        var message = $"Planning milestone '{notification.MilestoneType}' is overdue. " +
-                      $"The target date was {notification.TargetDate:dd MMM yyyy}. Please review and take action.";
-
-        await _notificationService.SendToRoleAsync(
-            "PlanningManager",
-            "MilestoneOverdue",
-            message,
-            notification.ApplicationId,
-            cancellationToken);
+        await _notificationEngine.EmitAsync(new NotificationEvent
+        {
+            EventType = "MilestoneOverdue",
+            Module = "PlanningApprovals",
+            EntityId = notification.ApplicationId,
+            EntityType = "PlanningApplication",
+            RelatedUrl = $"/planning-approvals/applications/{notification.ApplicationId}",
+            Variables = new Dictionary<string, string>
+            {
+                ["milestoneType"] = notification.MilestoneType.ToString(),
+                ["targetDate"] = notification.TargetDate.ToString("dd MMM yyyy")
+            },
+            TriggeredByUserId = null
+        }, cancellationToken);
     }
 }

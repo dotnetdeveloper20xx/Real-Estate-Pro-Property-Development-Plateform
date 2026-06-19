@@ -1,22 +1,35 @@
 /**
- * Notification event types mirroring the backend NotificationEventType enum.
- * Used to drive notification icon rendering and categorization.
+ * Notification event types - now supports dynamic event types from the notification engine.
+ * The enum is kept for backward compatibility but the panel handles any string gracefully.
  */
 export enum NotificationEventType {
   StatusChange = 'StatusChange',
   ApprovalRequest = 'ApprovalRequest',
   OfferExpiry = 'OfferExpiry',
   DueDiligenceFailure = 'DueDiligenceFailure',
-  ContractSigned = 'ContractSigned'
+  ContractSigned = 'ContractSigned',
+  OpportunityCreated = 'OpportunityCreated',
+  OpportunityStatusChanged = 'OpportunityStatusChanged',
+  OpportunityAcquired = 'OpportunityAcquired',
+  OpportunityWithdrawn = 'OpportunityWithdrawn',
+  OfferSubmitted = 'OfferSubmitted',
+  OfferAccepted = 'OfferAccepted',
+  OfferExpired = 'OfferExpired',
+  DueDiligenceCompleted = 'DueDiligenceCompleted',
+  DueDiligenceFailed = 'DueDiligenceFailed',
+  ApprovalRequested = 'ApprovalRequested',
+  ApprovalDecided = 'ApprovalDecided',
+  ContractExchanged = 'ContractExchanged',
+  DocumentUploaded = 'DocumentUploaded'
 }
 
 /**
  * Notification entity returned from the notifications API.
- * Represents an in-app notification for key acquisition events.
+ * Represents an in-app notification for key business events.
  */
 export interface INotification {
   readonly id: string;
-  readonly eventType: NotificationEventType;
+  readonly eventType: string;
   readonly title: string;
   readonly description: string;
   readonly entityId: string;

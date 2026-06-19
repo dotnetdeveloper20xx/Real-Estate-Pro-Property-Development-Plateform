@@ -6,22 +6,22 @@ using Microsoft.Extensions.Logging;
 namespace BuildEstate.Application.Features.LegalCompliance.Notifications.Handlers;
 
 /// <summary>
-/// Handles the AuditActionOverdueEvent by sending a notification to the
-/// Legal_Compliance_Officer when an audit record action becomes overdue.
+/// Handles the AuditActionOverdueEvent by emitting a notification event.
+/// The engine resolves recipients from configured rules.
 ///
 /// Validates: Requirements 12.6, 12.7
 /// </summary>
 public sealed class AuditActionOverdueNotificationHandler
     : INotificationHandler<AuditActionOverdueEvent>
 {
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly ILogger<AuditActionOverdueNotificationHandler> _logger;
 
     public AuditActionOverdueNotificationHandler(
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         ILogger<AuditActionOverdueNotificationHandler> logger)
     {
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _logger = logger;
     }
 
@@ -34,16 +34,20 @@ public sealed class AuditActionOverdueNotificationHandler
             notification.Scope,
             notification.ActionDueDate);
 
-        var message = $"Audit record action is overdue. Type: {notification.AuditType}, " +
-                      $"Scope: '{notification.Scope}'. " +
-                      $"Action was due on {notification.ActionDueDate:dd MMM yyyy}. " +
-                      $"Please review and complete the required actions.";
-
-        await _notificationService.SendToRoleAsync(
-            "Legal_Compliance_Officer",
-            "AuditActionOverdue",
-            message,
-            notification.AuditRecordId,
-            cancellationToken);
+        await _notificationEngine.EmitAsync(new NotificationEvent
+        {
+            EventType = "AuditActionOverdue",
+            Module = "LegalCompliance",
+            EntityId = notification.AuditRecordId,
+            EntityType = "AuditRecord",
+            RelatedUrl = $"/legal-compliance/audit-records",
+            Variables = new Dictionary<string, string>
+            {
+                ["auditType"] = notification.AuditType.ToString(),
+                ["scope"] = notification.Scope,
+                ["actionDueDate"] = notification.ActionDueDate.ToString("dd MMM yyyy")
+            },
+            TriggeredByUserId = null
+        }, cancellationToken);
     }
 }

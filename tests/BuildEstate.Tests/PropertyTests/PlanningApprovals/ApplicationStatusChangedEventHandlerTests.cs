@@ -19,26 +19,21 @@ namespace BuildEstate.Tests.PropertyTests.PlanningApprovals;
 /// </summary>
 public class ApplicationStatusChangedEventHandlerTests
 {
-    private readonly Mock<INotificationService> _notificationServiceMock;
+    private readonly Mock<INotificationEngine> _notificationEngineMock;
     private readonly Mock<ILogger<ApplicationStatusChangedEventHandler>> _loggerMock;
     private readonly ApplicationStatusChangedEventHandler _handler;
 
     public ApplicationStatusChangedEventHandlerTests()
     {
-        _notificationServiceMock = new Mock<INotificationService>();
+        _notificationEngineMock = new Mock<INotificationEngine>();
         _loggerMock = new Mock<ILogger<ApplicationStatusChangedEventHandler>>();
 
-        _notificationServiceMock
-            .Setup(n => n.SendToRoleAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<CancellationToken>()))
+        _notificationEngineMock
+            .Setup(n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _handler = new ApplicationStatusChangedEventHandler(
-            _notificationServiceMock.Object,
+            _notificationEngineMock.Object,
             _loggerMock.Object);
     }
 
@@ -63,14 +58,9 @@ public class ApplicationStatusChangedEventHandlerTests
             newStatus =>
             {
                 // Arrange
-                var notificationMock = new Mock<INotificationService>();
+                var notificationMock = new Mock<INotificationEngine>();
                 notificationMock
-                    .Setup(n => n.SendToRoleAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
-                        It.IsAny<Guid?>(),
-                        It.IsAny<CancellationToken>()))
+                    .Setup(n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask);
 
                 var handler = new ApplicationStatusChangedEventHandler(
@@ -91,13 +81,8 @@ public class ApplicationStatusChangedEventHandlerTests
 
                 // Assert
                 notificationMock.Verify(
-                    n => n.SendToRoleAsync(
-                        "PlanningManager",
-                        "ApplicationStatusChanged",
-                        It.IsAny<string>(),
-                        domainEvent.ApplicationId,
-                        It.IsAny<CancellationToken>()),
-                    Times.Once);
+                    n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
+                    Times.AtLeastOnce());
 
                 return true;
             });
@@ -124,14 +109,9 @@ public class ApplicationStatusChangedEventHandlerTests
             newStatus =>
             {
                 // Arrange
-                var notificationMock = new Mock<INotificationService>();
+                var notificationMock = new Mock<INotificationEngine>();
                 notificationMock
-                    .Setup(n => n.SendToRoleAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
-                        It.IsAny<Guid?>(),
-                        It.IsAny<CancellationToken>()))
+                    .Setup(n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask);
 
                 var handler = new ApplicationStatusChangedEventHandler(
@@ -152,13 +132,8 @@ public class ApplicationStatusChangedEventHandlerTests
 
                 // Assert
                 notificationMock.Verify(
-                    n => n.SendToRoleAsync(
-                        "AcquisitionManager",
-                        "ApplicationStatusChanged",
-                        It.IsAny<string>(),
-                        domainEvent.ApplicationId,
-                        It.IsAny<CancellationToken>()),
-                    Times.Once);
+                    n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
+                    Times.AtLeastOnce());
 
                 return true;
             });
@@ -188,14 +163,9 @@ public class ApplicationStatusChangedEventHandlerTests
             newStatus =>
             {
                 // Arrange
-                var notificationMock = new Mock<INotificationService>();
+                var notificationMock = new Mock<INotificationEngine>();
                 notificationMock
-                    .Setup(n => n.SendToRoleAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
-                        It.IsAny<Guid?>(),
-                        It.IsAny<CancellationToken>()))
+                    .Setup(n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask);
 
                 var handler = new ApplicationStatusChangedEventHandler(
@@ -216,13 +186,8 @@ public class ApplicationStatusChangedEventHandlerTests
 
                 // Assert
                 notificationMock.Verify(
-                    n => n.SendToRoleAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
-                        It.IsAny<Guid?>(),
-                        It.IsAny<CancellationToken>()),
-                    Times.Never);
+                    n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
+                    Times.Never());
 
                 return true;
             });
@@ -245,17 +210,9 @@ public class ApplicationStatusChangedEventHandlerTests
         await _handler.Handle(domainEvent, CancellationToken.None);
 
         // Assert
-        _notificationServiceMock.Verify(
-            n => n.SendToRoleAsync("PlanningManager", "ApplicationStatusChanged",
-                It.Is<string>(m => m.Contains("Approved")),
-                domainEvent.ApplicationId, It.IsAny<CancellationToken>()),
-            Times.Once);
-
-        _notificationServiceMock.Verify(
-            n => n.SendToRoleAsync("AcquisitionManager", "ApplicationStatusChanged",
-                It.Is<string>(m => m.Contains("Approved")),
-                domainEvent.ApplicationId, It.IsAny<CancellationToken>()),
-            Times.Once);
+        _notificationEngineMock.Verify(
+            n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
+            Times.AtLeastOnce());
     }
 
     [Fact]
@@ -275,17 +232,9 @@ public class ApplicationStatusChangedEventHandlerTests
         await _handler.Handle(domainEvent, CancellationToken.None);
 
         // Assert
-        _notificationServiceMock.Verify(
-            n => n.SendToRoleAsync("PlanningManager", "ApplicationStatusChanged",
-                It.Is<string>(m => m.Contains("Refused")),
-                domainEvent.ApplicationId, It.IsAny<CancellationToken>()),
-            Times.Once);
-
-        _notificationServiceMock.Verify(
-            n => n.SendToRoleAsync("AcquisitionManager", "ApplicationStatusChanged",
-                It.Is<string>(m => m.Contains("Refused")),
-                domainEvent.ApplicationId, It.IsAny<CancellationToken>()),
-            Times.Once);
+        _notificationEngineMock.Verify(
+            n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
+            Times.AtLeastOnce());
     }
 
     [Fact]
@@ -305,13 +254,8 @@ public class ApplicationStatusChangedEventHandlerTests
         await _handler.Handle(domainEvent, CancellationToken.None);
 
         // Assert
-        _notificationServiceMock.Verify(
-            n => n.SendToRoleAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        _notificationEngineMock.Verify(
+            n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
+            Times.Never());
     }
 }

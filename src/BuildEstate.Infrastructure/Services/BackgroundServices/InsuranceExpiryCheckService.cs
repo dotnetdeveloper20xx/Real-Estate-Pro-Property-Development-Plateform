@@ -83,18 +83,18 @@ public sealed class InsuranceExpiryCheckService : BackgroundService
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<BuildEstateDbContext>();
         var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
-        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+        var notificationEngine = scope.ServiceProvider.GetRequiredService<INotificationEngine>();
 
         var utcNow = DateTime.UtcNow;
         var expiryThreshold = utcNow.AddDays(ExpiryWarningDays);
 
         // Step 1: Transition Active → ExpiringSoon (within 30 days of expiry)
         await TransitionActiveToExpiringSoonAsync(
-            dbContext, publisher, notificationService, utcNow, expiryThreshold, cancellationToken);
+            dbContext, publisher, notificationEngine, utcNow, expiryThreshold, cancellationToken);
 
         // Step 2: Transition ExpiringSoon → Expired (past expiry date)
         await TransitionExpiringSoonToExpiredAsync(
-            dbContext, publisher, notificationService, utcNow, cancellationToken);
+            dbContext, publisher, notificationEngine, utcNow, cancellationToken);
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ public sealed class InsuranceExpiryCheckService : BackgroundService
     private async Task TransitionActiveToExpiringSoonAsync(
         BuildEstateDbContext dbContext,
         IPublisher publisher,
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         DateTime utcNow,
         DateTime expiryThreshold,
         CancellationToken cancellationToken)
@@ -153,12 +153,21 @@ public sealed class InsuranceExpiryCheckService : BackgroundService
                     },
                     cancellationToken);
 
-                await notificationService.SendToRoleAsync(
-                    "Legal_Compliance_Officer",
-                    "InsuranceExpiringSoon",
-                    $"Insurance policy {record.PolicyNumber} ({record.Insurer}) is expiring on {record.ExpiryDate:yyyy-MM-dd}. Please arrange renewal.",
-                    record.Id,
-                    cancellationToken);
+                await notificationEngine.EmitAsync(new NotificationEvent
+                {
+                    EventType = "InsuranceExpiringSoon",
+                    Module = "LegalCompliance",
+                    EntityId = record.Id,
+                    EntityType = "InsuranceRecord",
+                    RelatedUrl = "/legal-compliance/insurance",
+                    Variables = new Dictionary<string, string>
+                    {
+                        ["policyNumber"] = record.PolicyNumber,
+                        ["insurer"] = record.Insurer ?? "",
+                        ["expiryDate"] = record.ExpiryDate.ToString("yyyy-MM-dd")
+                    },
+                    TriggeredByUserId = null
+                }, cancellationToken);
 
                 _logger.LogInformation(
                     "Published InsuranceExpiringEvent for policy {PolicyNumber} (Id: {InsuranceRecordId}), expiry: {ExpiryDate:O}",
@@ -180,7 +189,7 @@ public sealed class InsuranceExpiryCheckService : BackgroundService
     private async Task TransitionExpiringSoonToExpiredAsync(
         BuildEstateDbContext dbContext,
         IPublisher publisher,
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         DateTime utcNow,
         CancellationToken cancellationToken)
     {
@@ -228,19 +237,21 @@ public sealed class InsuranceExpiryCheckService : BackgroundService
                     },
                     cancellationToken);
 
-                await notificationService.SendToRoleAsync(
-                    "Legal_Compliance_Officer",
-                    "InsuranceExpired",
-                    $"Insurance policy {record.PolicyNumber} ({record.Insurer}) has expired on {record.ExpiryDate:yyyy-MM-dd}. Immediate action required.",
-                    record.Id,
-                    cancellationToken);
-
-                await notificationService.SendToRoleAsync(
-                    "Finance_Director",
-                    "InsuranceExpired",
-                    $"Insurance policy {record.PolicyNumber} ({record.Insurer}) has expired on {record.ExpiryDate:yyyy-MM-dd}. Coverage gap exists.",
-                    record.Id,
-                    cancellationToken);
+                await notificationEngine.EmitAsync(new NotificationEvent
+                {
+                    EventType = "InsuranceExpired",
+                    Module = "LegalCompliance",
+                    EntityId = record.Id,
+                    EntityType = "InsuranceRecord",
+                    RelatedUrl = "/legal-compliance/insurance",
+                    Variables = new Dictionary<string, string>
+                    {
+                        ["policyNumber"] = record.PolicyNumber,
+                        ["insurer"] = record.Insurer ?? "",
+                        ["expiryDate"] = record.ExpiryDate.ToString("yyyy-MM-dd")
+                    },
+                    TriggeredByUserId = null
+                }, cancellationToken);
 
                 _logger.LogInformation(
                     "Published InsuranceExpiringEvent (Expired) for policy {PolicyNumber} (Id: {InsuranceRecordId}), expiry: {ExpiryDate:O}",

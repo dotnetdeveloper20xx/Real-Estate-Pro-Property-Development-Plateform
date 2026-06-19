@@ -7,22 +7,22 @@ using Microsoft.Extensions.Logging;
 namespace BuildEstate.Application.Features.LegalCompliance.Notifications.Handlers;
 
 /// <summary>
-/// Handles the LegalCaseStatusChangedEvent by sending notifications when a legal case
-/// is escalated. Notifies the Finance_Director and Legal_Compliance_Officer.
+/// Handles the LegalCaseStatusChangedEvent by emitting a notification event when
+/// a legal case is escalated. The engine resolves recipients from configured rules.
 ///
 /// Validates: Requirements 12.1, 12.7
 /// </summary>
 public sealed class LegalCaseStatusChangedNotificationHandler
     : INotificationHandler<LegalCaseStatusChangedEvent>
 {
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly ILogger<LegalCaseStatusChangedNotificationHandler> _logger;
 
     public LegalCaseStatusChangedNotificationHandler(
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         ILogger<LegalCaseStatusChangedNotificationHandler> logger)
     {
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _logger = logger;
     }
 
@@ -37,23 +37,21 @@ public sealed class LegalCaseStatusChangedNotificationHandler
 
         if (notification.NewStatus == LegalCaseStatus.Escalated)
         {
-            var message = $"Legal case '{notification.CaseReference}' has been escalated from " +
-                          $"{notification.PreviousStatus}. Reason: {notification.TransitionReason ?? "Not specified"}. " +
-                          $"Immediate attention required.";
-
-            await _notificationService.SendToRoleAsync(
-                "Finance_Director",
-                "LegalCaseEscalated",
-                message,
-                notification.LegalCaseId,
-                cancellationToken);
-
-            await _notificationService.SendToRoleAsync(
-                "Legal_Compliance_Officer",
-                "LegalCaseEscalated",
-                message,
-                notification.LegalCaseId,
-                cancellationToken);
+            await _notificationEngine.EmitAsync(new NotificationEvent
+            {
+                EventType = "LegalCaseEscalated",
+                Module = "LegalCompliance",
+                EntityId = notification.LegalCaseId,
+                EntityType = "LegalCase",
+                RelatedUrl = $"/legal-compliance/cases/{notification.LegalCaseId}",
+                Variables = new Dictionary<string, string>
+                {
+                    ["caseReference"] = notification.CaseReference,
+                    ["previousStatus"] = notification.PreviousStatus.ToString(),
+                    ["reason"] = notification.TransitionReason ?? "Not specified"
+                },
+                TriggeredByUserId = notification.UserId
+            }, cancellationToken);
         }
     }
 }

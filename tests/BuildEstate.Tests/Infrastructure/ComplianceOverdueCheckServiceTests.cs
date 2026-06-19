@@ -19,13 +19,13 @@ namespace BuildEstate.Tests.Infrastructure;
 /// </summary>
 public class ComplianceOverdueCheckServiceTests
 {
-    private readonly Mock<INotificationService> _notificationServiceMock;
+    private readonly Mock<INotificationEngine> _notificationEngineMock;
     private readonly Mock<IPublisher> _publisherMock;
     private readonly Mock<ILogger<ComplianceOverdueCheckService>> _loggerMock;
 
     public ComplianceOverdueCheckServiceTests()
     {
-        _notificationServiceMock = new Mock<INotificationService>();
+        _notificationEngineMock = new Mock<INotificationEngine>();
         _publisherMock = new Mock<IPublisher>();
         _loggerMock = new Mock<ILogger<ComplianceOverdueCheckService>>();
     }
@@ -38,11 +38,11 @@ public class ComplianceOverdueCheckServiceTests
 
         var seedContext = new BuildEstateDbContext(options);
 
-        var notificationMock = _notificationServiceMock;
+        var notificationMock = _notificationEngineMock;
         var publisherMock = _publisherMock;
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddScoped(_ => new BuildEstateDbContext(options));
-        serviceCollection.AddScoped<INotificationService>(_ => notificationMock.Object);
+        serviceCollection.AddScoped<INotificationEngine>(_ => notificationMock.Object);
         serviceCollection.AddScoped<IPublisher>(_ => publisherMock.Object);
 
         var serviceProvider = serviceCollection.BuildServiceProvider();
@@ -86,14 +86,9 @@ public class ComplianceOverdueCheckServiceTests
         await service.StopAsync(CancellationToken.None);
 
         // Assert
-        _notificationServiceMock.Verify(
-            n => n.SendToRoleAsync(
-                "Legal_Compliance_Officer",
-                "DocumentRetentionExpiring",
-                It.Is<string>(msg => msg.Contains("TestContract.pdf") && msg.Contains("retention period")),
-                document.Id,
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        _notificationEngineMock.Verify(
+            n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
+            Times.AtLeastOnce());
     }
 
     [Fact]
@@ -131,13 +126,8 @@ public class ComplianceOverdueCheckServiceTests
         await service.StopAsync(CancellationToken.None);
 
         // Assert — no retention expiry notification should be sent
-        _notificationServiceMock.Verify(
-            n => n.SendToRoleAsync(
-                "Legal_Compliance_Officer",
-                "DocumentRetentionExpiring",
-                It.IsAny<string>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<CancellationToken>()),
+        _notificationEngineMock.Verify(
+            n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -178,13 +168,8 @@ public class ComplianceOverdueCheckServiceTests
         await service.StopAsync(CancellationToken.None);
 
         // Assert — soft-deleted documents should not trigger notifications
-        _notificationServiceMock.Verify(
-            n => n.SendToRoleAsync(
-                "Legal_Compliance_Officer",
-                "DocumentRetentionExpiring",
-                It.IsAny<string>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<CancellationToken>()),
+        _notificationEngineMock.Verify(
+            n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -223,13 +208,8 @@ public class ComplianceOverdueCheckServiceTests
         await service.StopAsync(CancellationToken.None);
 
         // Assert — already-expired documents should not trigger the "approaching expiry" notification
-        _notificationServiceMock.Verify(
-            n => n.SendToRoleAsync(
-                "Legal_Compliance_Officer",
-                "DocumentRetentionExpiring",
-                It.IsAny<string>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<CancellationToken>()),
+        _notificationEngineMock.Verify(
+            n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }

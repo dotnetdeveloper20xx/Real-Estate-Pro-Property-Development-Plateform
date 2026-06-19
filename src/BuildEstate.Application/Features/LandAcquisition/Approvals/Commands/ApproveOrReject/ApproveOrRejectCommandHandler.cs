@@ -21,20 +21,20 @@ public sealed class ApproveOrRejectCommandHandler
     private readonly IRepository<ApprovalRequest> _approvalRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly IMapper _mapper;
 
     public ApproveOrRejectCommandHandler(
         IRepository<ApprovalRequest> approvalRepository,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         IMapper mapper)
     {
         _approvalRepository = approvalRepository;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _mapper = mapper;
     }
 
@@ -63,15 +63,24 @@ public sealed class ApproveOrRejectCommandHandler
             approvalRequest.ApprovalTimestamp = DateTime.UtcNow;
             approvalRequest.RejectionReason = request.RejectionReason;
 
-            // Notify the creator (Acquisition Manager) of the rejection
+            // Notify the creator (Acquisition Manager) of the rejection via engine
             if (!string.IsNullOrEmpty(approvalRequest.CreatedBy))
             {
-                await _notificationService.SendAsync(
-                    approvalRequest.CreatedBy,
-                    "ApprovalRejected",
-                    $"Your approval request for £{approvalRequest.RequestedAmount:N2} has been rejected. Reason: {request.RejectionReason}",
-                    approvalRequest.Id,
-                    cancellationToken);
+                await _notificationEngine.EmitAsync(new NotificationEvent
+                {
+                    EventType = "ApprovalDecided",
+                    Module = "LandAcquisition",
+                    EntityId = approvalRequest.OpportunityId,
+                    EntityType = "LandOpportunity",
+                    RelatedUrl = $"/land-acquisition/opportunities/{approvalRequest.OpportunityId}",
+                    Variables = new Dictionary<string, string>
+                    {
+                        ["opportunityName"] = "Opportunity",
+                        ["decision"] = "rejected",
+                        ["amount"] = approvalRequest.RequestedAmount.ToString("N2")
+                    },
+                    TriggeredByUserId = _currentUserService.UserId
+                }, cancellationToken);
             }
         }
 

@@ -22,18 +22,18 @@ public sealed class AppealAllowedEventHandler : INotificationHandler<AppealAllow
 {
     private readonly IRepository<PlanningApplication> _applicationRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly ILogger<AppealAllowedEventHandler> _logger;
 
     public AppealAllowedEventHandler(
         IRepository<PlanningApplication> applicationRepository,
         IUnitOfWork unitOfWork,
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         ILogger<AppealAllowedEventHandler> logger)
     {
         _applicationRepository = applicationRepository;
         _unitOfWork = unitOfWork;
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _logger = logger;
     }
 
@@ -70,21 +70,20 @@ public sealed class AppealAllowedEventHandler : INotificationHandler<AppealAllow
             "Application {ApplicationId} status transitioned from {PreviousStatus} to {NewStatus} via appeal {AppealId} with outcome {OutcomeType}",
             notification.ApplicationId, previousStatus, newStatus, notification.AppealId, notification.OutcomeType);
 
-        // Send notifications to Planning_Manager and Legal_Compliance_Officer
-        var message = $"Planning appeal has been allowed. Application status updated to {newStatus}.";
-
-        await _notificationService.SendToRoleAsync(
-            "PlanningManager",
-            "AppealAllowed",
-            message,
-            notification.ApplicationId,
-            cancellationToken);
-
-        await _notificationService.SendToRoleAsync(
-            "LegalComplianceOfficer",
-            "AppealAllowed",
-            message,
-            notification.ApplicationId,
-            cancellationToken);
+        // Send notification via engine — rules determine recipients
+        await _notificationEngine.EmitAsync(new NotificationEvent
+        {
+            EventType = "AppealAllowed",
+            Module = "PlanningApprovals",
+            EntityId = notification.ApplicationId,
+            EntityType = "PlanningApplication",
+            RelatedUrl = $"/planning-approvals/applications/{notification.ApplicationId}",
+            Variables = new Dictionary<string, string>
+            {
+                ["newStatus"] = newStatus.ToString(),
+                ["outcomeType"] = notification.OutcomeType.ToString()
+            },
+            TriggeredByUserId = null
+        }, cancellationToken);
     }
 }

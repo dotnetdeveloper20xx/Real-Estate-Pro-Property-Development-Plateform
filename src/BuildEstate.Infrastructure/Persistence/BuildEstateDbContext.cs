@@ -1,11 +1,13 @@
 using System.Reflection;
 using BuildEstate.Domain.Entities.LandAcquisition;
 using BuildEstate.Domain.Entities.LegalCompliance;
+using BuildEstate.Domain.Entities.Notifications;
 using BuildEstate.Domain.Entities.PlanningApprovals;
 using BuildEstate.Domain.Entities.UserManagement;
 using BuildEstate.Infrastructure.Identity;
 using BuildEstate.Infrastructure.Persistence.Configurations.UserManagement;
 using BuildEstate.Infrastructure.Persistence.Entities;
+using BuildEstate.Infrastructure.Persistence.Seeds;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -52,6 +54,11 @@ public class BuildEstateDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<PlanningFee> PlanningFees => Set<PlanningFee>();
     public DbSet<PlanningMilestone> PlanningMilestones => Set<PlanningMilestone>();
 
+    // Notification system entities
+    public DbSet<NotificationRule> NotificationRules => Set<NotificationRule>();
+    public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
+    public DbSet<UserNotificationPreference> UserNotificationPreferences => Set<UserNotificationPreference>();
+
     // Legal & Compliance entities
     public DbSet<LegalCase> LegalCases => Set<LegalCase>();
     public DbSet<LegalContract> LegalContracts => Set<LegalContract>();
@@ -69,6 +76,9 @@ public class BuildEstateDbContext : IdentityDbContext<ApplicationUser, Applicati
 
         // Seed built-in roles, permissions, and role-permission mappings
         UserManagementSeedData.ApplySeedData(builder);
+
+        // Seed default notification templates and rules for Land Acquisition
+        NotificationSeedData.SeedNotificationRulesAndTemplates(builder);
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)

@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { ConfirmDialogService } from './shared/services/confirm-dialog.service';
 import { ToastContainerComponent } from './shared/components/toast-container/toast-container.component';
+import { NotificationPanelComponent } from './shared/components/notification-panel/notification-panel.component';
 import { AuthService, ICurrentUser } from './core/services/auth.service';
 import { HasRoleDirective } from './shared/directives/has-role.directive';
 import { selectCurrentUser, selectUserRoles } from './core/store/auth/auth.selectors';
@@ -39,7 +40,7 @@ interface INavItem {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent, HasRoleDirective],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent, HasRoleDirective, NotificationPanelComponent],
   template: `
     <div class="flex h-screen bg-base-200">
       <!-- Sidebar -->
@@ -232,38 +233,8 @@ interface INavItem {
           </div>
 
           <div class="flex items-center gap-2">
-            <!-- Notifications Dropdown -->
-            <div class="dropdown dropdown-end">
-              <button tabindex="0" class="btn btn-ghost btn-circle btn-sm relative" aria-label="Notifications">
-                <span class="material-symbols-outlined text-xl">notifications</span>
-                <span class="absolute -top-0.5 -right-0.5 w-4 h-4 bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
-              </button>
-              <div tabindex="0" class="dropdown-content bg-base-100 rounded-xl z-50 w-80 shadow-xl border border-base-200 mt-2">
-                <div class="p-3 border-b border-base-200">
-                  <h3 class="text-sm font-semibold">Notifications</h3>
-                </div>
-                <div class="max-h-64 overflow-y-auto">
-                  <div class="p-3 hover:bg-base-200/50 border-b border-base-200/50 cursor-pointer">
-                    <p class="text-sm font-medium">New offer received</p>
-                    <p class="text-xs text-base-content/50">Greenwich Site — £4.8M offer submitted</p>
-                    <p class="text-xs text-base-content/40 mt-1">2 hours ago</p>
-                  </div>
-                  <div class="p-3 hover:bg-base-200/50 border-b border-base-200/50 cursor-pointer">
-                    <p class="text-sm font-medium">DD check completed</p>
-                    <p class="text-xs text-base-content/50">Environmental report ready for Battersea site</p>
-                    <p class="text-xs text-base-content/40 mt-1">5 hours ago</p>
-                  </div>
-                  <div class="p-3 hover:bg-base-200/50 cursor-pointer">
-                    <p class="text-sm font-medium">Approval required</p>
-                    <p class="text-xs text-base-content/50">Investment committee review pending for £2.1M acquisition</p>
-                    <p class="text-xs text-base-content/40 mt-1">1 day ago</p>
-                  </div>
-                </div>
-                <div class="p-2 border-t border-base-200">
-                  <button class="btn btn-ghost btn-sm btn-block text-xs" (click)="viewAllNotifications()">View All Notifications</button>
-                </div>
-              </div>
-            </div>
+            <!-- Notifications Panel (real data from API) -->
+            <app-notification-panel (navigate)="handleNotificationNavigate($event)"></app-notification-panel>
 
             <!-- User Menu -->
             <div class="dropdown dropdown-end">
@@ -428,6 +399,9 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.currentUrl.startsWith('/admin/permissions')) return 'Permission Matrix';
     if (this.currentUrl.startsWith('/admin/sessions')) return 'Session Management';
     if (this.currentUrl.startsWith('/admin/audit-logs')) return 'Audit Logs';
+    if (this.currentUrl.startsWith('/admin/notification-rules')) return 'Notification Rules';
+    if (this.currentUrl.startsWith('/admin/notification-templates')) return 'Notification Templates';
+    if (this.currentUrl.startsWith('/admin/notification-history')) return 'Notification History';
     if (this.currentUrl.startsWith('/admin/settings')) return 'System Settings';
     if (this.currentUrl.startsWith('/profile')) return 'Profile';
     if (this.currentUrl.startsWith('/settings')) return 'Settings';
@@ -464,8 +438,20 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
 
   viewAllNotifications(): void {
-    this.router.navigate(['/home']);
-    // TODO: Navigate to dedicated notifications page when implemented
+    this.router.navigate(['/admin/notification-history']);
+  }
+
+  /** Handle notification panel navigation events */
+  handleNotificationNavigate(event: { entityId: string; entityType: string }): void {
+    if (event.entityType === 'all') {
+      this.router.navigate(['/admin/notification-history']);
+    } else if (event.entityType === 'LandOpportunity' && event.entityId) {
+      this.router.navigate(['/land-acquisition/opportunities', event.entityId]);
+    } else if (event.entityType === 'PlanningApplication' && event.entityId) {
+      this.router.navigate(['/planning-approvals/applications', event.entityId]);
+    } else if (event.entityType === 'LegalCase' && event.entityId) {
+      this.router.navigate(['/legal-compliance/cases', event.entityId]);
+    }
   }
 
   /** Get displayed user initials from auth store or fallback. */

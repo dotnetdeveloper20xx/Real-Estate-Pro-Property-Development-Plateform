@@ -8,32 +8,20 @@ namespace BuildEstate.Application.Features.LandAcquisition.EventHandlers;
 
 /// <summary>
 /// Handles the OpportunityStatusTransitionedNotification when NewStatus is Acquired.
-/// Sends notifications to all land acquisition roles informing them of the successful acquisition.
+/// Emits a notification event via the engine — rules determine recipients.
 /// Validates: Requirement 19.1
 /// </summary>
 public sealed class OpportunityAcquiredNotificationHandler
     : INotificationHandler<OpportunityStatusTransitionedNotification>
 {
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly ILogger<OpportunityAcquiredNotificationHandler> _logger;
 
-    /// <summary>
-    /// All land acquisition roles that should be notified when an opportunity is acquired.
-    /// </summary>
-    private static readonly string[] LandAcquisitionRoles =
-    [
-        "AcquisitionManager",
-        "LegalComplianceOfficer",
-        "ValuationAnalyst",
-        "FinanceDirector",
-        "AdminSupport"
-    ];
-
     public OpportunityAcquiredNotificationHandler(
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         ILogger<OpportunityAcquiredNotificationHandler> logger)
     {
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _logger = logger;
     }
 
@@ -47,19 +35,21 @@ public sealed class OpportunityAcquiredNotificationHandler
         }
 
         _logger.LogInformation(
-            "Opportunity {OpportunityId} acquired. Notifying all land acquisition roles",
+            "Opportunity {OpportunityId} acquired. Emitting notification event",
             notification.OpportunityId);
 
-        var message = $"Land opportunity has been successfully acquired.";
-
-        foreach (var role in LandAcquisitionRoles)
+        await _notificationEngine.EmitAsync(new NotificationEvent
         {
-            await _notificationService.SendToRoleAsync(
-                role,
-                "OpportunityAcquired",
-                message,
-                notification.OpportunityId,
-                cancellationToken);
-        }
+            EventType = "OpportunityAcquired",
+            Module = "LandAcquisition",
+            EntityId = notification.OpportunityId,
+            EntityType = "LandOpportunity",
+            RelatedUrl = $"/land-acquisition/opportunities/{notification.OpportunityId}",
+            Variables = new Dictionary<string, string>
+            {
+                ["opportunityName"] = "Opportunity"
+            },
+            TriggeredByUserId = notification.TransitionedBy
+        }, cancellationToken);
     }
 }

@@ -596,6 +596,13 @@ namespace BuildEstate.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("InApp");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -609,10 +616,24 @@ namespace BuildEstate.Infrastructure.Migrations
                     b.Property<string>("DeletedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("DeliveryStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("Delivered");
+
                     b.Property<string>("EventType")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Icon")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasDefaultValue("notifications");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -627,6 +648,23 @@ namespace BuildEstate.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<string>("Module")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("Normal");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("RecipientUserId")
                         .IsRequired()
                         .HasMaxLength(450)
@@ -634,6 +672,20 @@ namespace BuildEstate.Infrastructure.Migrations
 
                     b.Property<Guid?>("RelatedEntityId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RelatedEntityType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("RelatedUrl")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasDefaultValue("");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -644,6 +696,20 @@ namespace BuildEstate.Infrastructure.Migrations
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("Info");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasDefaultValue("");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -651,6 +717,10 @@ namespace BuildEstate.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EventType");
+
+                    b.HasIndex("Module");
 
                     b.HasIndex("RecipientUserId");
 
@@ -1397,6 +1467,606 @@ namespace BuildEstate.Infrastructure.Migrations
                     b.HasIndex("LegalCaseId");
 
                     b.ToTable("LegalDocuments", (string)null);
+                });
+
+            modelBuilder.Entity("BuildEstate.Domain.Entities.Notifications.NotificationRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Module")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RecipientType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RecipientValue")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid?>("TemplateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Module");
+
+                    b.HasIndex("TemplateId");
+
+                    b.HasIndex("EventType", "IsActive");
+
+                    b.ToTable("NotificationRules", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Channel = 0,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            Description = "Notify the entity creator when an offer expires",
+                            EventType = "OfferExpired",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Module = "LandAcquisition",
+                            Priority = 2,
+                            RecipientType = 2,
+                            RecipientValue = "",
+                            RowVersion = new byte[0],
+                            TemplateId = new Guid("10000000-0000-0000-0000-000000000006")
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000002"),
+                            Channel = 0,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            Description = "Notify the entity creator when due diligence fails",
+                            EventType = "DueDiligenceFailed",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Module = "LandAcquisition",
+                            Priority = 2,
+                            RecipientType = 2,
+                            RecipientValue = "",
+                            RowVersion = new byte[0],
+                            TemplateId = new Guid("10000000-0000-0000-0000-000000000008")
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000003"),
+                            Channel = 0,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            Description = "Notify Finance Director when approval is requested",
+                            EventType = "ApprovalRequested",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Module = "LandAcquisition",
+                            Priority = 3,
+                            RecipientType = 0,
+                            RecipientValue = "FinanceDirector",
+                            RowVersion = new byte[0],
+                            TemplateId = new Guid("10000000-0000-0000-0000-000000000009")
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000004"),
+                            Channel = 0,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            Description = "Notify the entity creator when an approval decision is made",
+                            EventType = "ApprovalDecided",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Module = "LandAcquisition",
+                            Priority = 2,
+                            RecipientType = 2,
+                            RecipientValue = "",
+                            RowVersion = new byte[0],
+                            TemplateId = new Guid("10000000-0000-0000-0000-000000000010")
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000005"),
+                            Channel = 0,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            Description = "Notify all Land Acquisition roles when an opportunity is acquired",
+                            EventType = "OpportunityAcquired",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Module = "LandAcquisition",
+                            Priority = 2,
+                            RecipientType = 4,
+                            RecipientValue = "LandAcquisition",
+                            RowVersion = new byte[0],
+                            TemplateId = new Guid("10000000-0000-0000-0000-000000000002")
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000006"),
+                            Channel = 0,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            Description = "Notify the entity creator when an offer is accepted",
+                            EventType = "OfferAccepted",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Module = "LandAcquisition",
+                            Priority = 1,
+                            RecipientType = 2,
+                            RecipientValue = "",
+                            RowVersion = new byte[0],
+                            TemplateId = new Guid("10000000-0000-0000-0000-000000000005")
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000007"),
+                            Channel = 0,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            Description = "Notify all Land Acquisition roles when contracts are exchanged",
+                            EventType = "ContractExchanged",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Module = "LandAcquisition",
+                            Priority = 2,
+                            RecipientType = 4,
+                            RecipientValue = "LandAcquisition",
+                            RowVersion = new byte[0],
+                            TemplateId = new Guid("10000000-0000-0000-0000-000000000011")
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000008"),
+                            Channel = 0,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            Description = "Notify Finance Director when feasibility is ready for review",
+                            EventType = "FeasibilityReady",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Module = "LandAcquisition",
+                            Priority = 1,
+                            RecipientType = 0,
+                            RecipientValue = "FinanceDirector",
+                            RowVersion = new byte[0],
+                            TemplateId = new Guid("10000000-0000-0000-0000-000000000013")
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000009"),
+                            Channel = 0,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            Description = "Notify the entity creator when an opportunity is withdrawn",
+                            EventType = "OpportunityWithdrawn",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Module = "LandAcquisition",
+                            Priority = 1,
+                            RecipientType = 2,
+                            RecipientValue = "",
+                            RowVersion = new byte[0],
+                            TemplateId = new Guid("10000000-0000-0000-0000-000000000003")
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000010"),
+                            Channel = 0,
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            Description = "Notify the entity creator when a document is uploaded",
+                            EventType = "DocumentUploaded",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Module = "LandAcquisition",
+                            Priority = 0,
+                            RecipientType = 2,
+                            RecipientValue = "",
+                            RowVersion = new byte[0],
+                            TemplateId = new Guid("10000000-0000-0000-0000-000000000012")
+                        });
+                });
+
+            modelBuilder.Entity("BuildEstate.Domain.Entities.Notifications.NotificationTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BodyTemplate")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("IconName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Severity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TitleTemplate")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Variables")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventType");
+
+                    b.ToTable("NotificationTemplates", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
+                            BodyTemplate = "A new land opportunity has been added at {location}",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "OpportunityCreated",
+                            IconName = "add_location",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "OpportunityCreated",
+                            RowVersion = new byte[0],
+                            Severity = 0,
+                            TitleTemplate = "New Opportunity: {opportunityName}",
+                            Variables = "[\"opportunityName\",\"location\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000002"),
+                            BodyTemplate = "The acquisition of {opportunityName} is complete",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "OpportunityAcquired",
+                            IconName = "check_circle",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "OpportunityAcquired",
+                            RowVersion = new byte[0],
+                            Severity = 1,
+                            TitleTemplate = "Land Acquired: {opportunityName}",
+                            Variables = "[\"opportunityName\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000003"),
+                            BodyTemplate = "{opportunityName} has been withdrawn. Reason: {reason}",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "OpportunityWithdrawn",
+                            IconName = "cancel",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "OpportunityWithdrawn",
+                            RowVersion = new byte[0],
+                            Severity = 2,
+                            TitleTemplate = "Opportunity Withdrawn: {opportunityName}",
+                            Variables = "[\"opportunityName\",\"reason\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000004"),
+                            BodyTemplate = "A £{amount} offer has been submitted for {opportunityName}",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "OfferSubmitted",
+                            IconName = "local_offer",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "OfferSubmitted",
+                            RowVersion = new byte[0],
+                            Severity = 0,
+                            TitleTemplate = "New Offer: {opportunityName}",
+                            Variables = "[\"opportunityName\",\"amount\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000005"),
+                            BodyTemplate = "The £{amount} offer for {opportunityName} has been accepted",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "OfferAccepted",
+                            IconName = "thumb_up",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "OfferAccepted",
+                            RowVersion = new byte[0],
+                            Severity = 1,
+                            TitleTemplate = "Offer Accepted: {opportunityName}",
+                            Variables = "[\"opportunityName\",\"amount\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000006"),
+                            BodyTemplate = "The offer for {opportunityName} has expired",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "OfferExpired",
+                            IconName = "schedule",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "OfferExpired",
+                            RowVersion = new byte[0],
+                            Severity = 2,
+                            TitleTemplate = "Offer Expired: {opportunityName}",
+                            Variables = "[\"opportunityName\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000007"),
+                            BodyTemplate = "{checkType} due diligence for {opportunityName} is complete",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "DueDiligenceCompleted",
+                            IconName = "verified",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "DueDiligenceCompleted",
+                            RowVersion = new byte[0],
+                            Severity = 1,
+                            TitleTemplate = "DD Complete: {opportunityName}",
+                            Variables = "[\"opportunityName\",\"checkType\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000008"),
+                            BodyTemplate = "{checkType} due diligence for {opportunityName} has failed",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "DueDiligenceFailed",
+                            IconName = "error",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "DueDiligenceFailed",
+                            RowVersion = new byte[0],
+                            Severity = 3,
+                            TitleTemplate = "DD Failed: {opportunityName}",
+                            Variables = "[\"opportunityName\",\"checkType\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000009"),
+                            BodyTemplate = "An approval has been requested for {opportunityName} (£{amount})",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "ApprovalRequested",
+                            IconName = "approval",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "ApprovalRequested",
+                            RowVersion = new byte[0],
+                            Severity = 2,
+                            TitleTemplate = "Approval Needed",
+                            Variables = "[\"opportunityName\",\"amount\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000010"),
+                            BodyTemplate = "The approval request for {opportunityName} has been {decision}",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "ApprovalDecided",
+                            IconName = "gavel",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "ApprovalDecided",
+                            RowVersion = new byte[0],
+                            Severity = 0,
+                            TitleTemplate = "Approval Decision",
+                            Variables = "[\"opportunityName\",\"decision\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000011"),
+                            BodyTemplate = "Contracts have been exchanged for {opportunityName}",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "ContractExchanged",
+                            IconName = "handshake",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "ContractExchanged",
+                            RowVersion = new byte[0],
+                            Severity = 1,
+                            TitleTemplate = "Contract Exchanged: {opportunityName}",
+                            Variables = "[\"opportunityName\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000012"),
+                            BodyTemplate = "A new {docType} document has been uploaded for {opportunityName}",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "DocumentUploaded",
+                            IconName = "upload_file",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "DocumentUploaded",
+                            RowVersion = new byte[0],
+                            Severity = 0,
+                            TitleTemplate = "New Document",
+                            Variables = "[\"opportunityName\",\"docType\"]"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000013"),
+                            BodyTemplate = "The feasibility assessment for {opportunityName} is ready for review",
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedBy = "System",
+                            EventType = "FeasibilityReady",
+                            IconName = "assessment",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "FeasibilityReady",
+                            RowVersion = new byte[0],
+                            Severity = 0,
+                            TitleTemplate = "Feasibility Ready for Review",
+                            Variables = "[\"opportunityName\"]"
+                        });
+                });
+
+            modelBuilder.Entity("BuildEstate.Domain.Entities.Notifications.UserNotificationPreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("EmailEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("InAppEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("MutedUntil")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "EventType")
+                        .IsUnique();
+
+                    b.ToTable("UserNotificationPreferences", (string)null);
                 });
 
             modelBuilder.Entity("BuildEstate.Domain.Entities.PlanningApprovals.CouncilContact", b =>
@@ -3867,6 +4537,16 @@ namespace BuildEstate.Infrastructure.Migrations
                     b.Navigation("Contract");
 
                     b.Navigation("LegalCase");
+                });
+
+            modelBuilder.Entity("BuildEstate.Domain.Entities.Notifications.NotificationRule", b =>
+                {
+                    b.HasOne("BuildEstate.Domain.Entities.Notifications.NotificationTemplate", "Template")
+                        .WithMany()
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Template");
                 });
 
             modelBuilder.Entity("BuildEstate.Domain.Entities.PlanningApprovals.CouncilContact", b =>

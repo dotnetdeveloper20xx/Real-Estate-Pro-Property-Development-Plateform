@@ -12,25 +12,39 @@ import { Subject, interval } from 'rxjs';
 import { takeUntil, startWith, switchMap } from 'rxjs/operators';
 
 import { NotificationService } from '@core/services/notification.service';
-import { INotification, NotificationEventType } from '@features/land-acquisition/models/notification.model';
+import { INotification } from '@features/land-acquisition/models/notification.model';
 
 /**
- * Icon mapping for each notification event type.
+ * Icon mapping for notification event types.
  * Uses Material Symbols Outlined icon names.
+ * Falls back to 'notifications' for unrecognized types.
  */
-const EVENT_TYPE_ICON_MAP: Record<NotificationEventType, string> = {
-  [NotificationEventType.StatusChange]: 'swap_horiz',
-  [NotificationEventType.ApprovalRequest]: 'approval',
-  [NotificationEventType.OfferExpiry]: 'timer_off',
-  [NotificationEventType.DueDiligenceFailure]: 'warning',
-  [NotificationEventType.ContractSigned]: 'handshake'
+const EVENT_TYPE_ICON_MAP: Record<string, string> = {
+  'StatusChange': 'swap_horiz',
+  'ApprovalRequest': 'approval',
+  'ApprovalRequested': 'approval',
+  'ApprovalDecided': 'task_alt',
+  'OfferExpiry': 'timer_off',
+  'OfferExpired': 'timer_off',
+  'OfferSubmitted': 'local_offer',
+  'OfferAccepted': 'handshake',
+  'DueDiligenceFailure': 'warning',
+  'DueDiligenceFailed': 'warning',
+  'DueDiligenceCompleted': 'verified',
+  'ContractSigned': 'handshake',
+  'ContractExchanged': 'receipt_long',
+  'OpportunityCreated': 'add_circle',
+  'OpportunityStatusChanged': 'swap_horiz',
+  'OpportunityAcquired': 'check_circle',
+  'OpportunityWithdrawn': 'remove_circle',
+  'DocumentUploaded': 'upload_file'
 };
 
 /**
  * Returns the Material Symbols icon name for a given notification event type.
  * Falls back to 'notifications' if the event type is unrecognized.
  */
-export function getNotificationIcon(eventType: NotificationEventType): string {
+export function getNotificationIcon(eventType: string): string {
   return EVENT_TYPE_ICON_MAP[eventType] ?? 'notifications';
 }
 
@@ -246,26 +260,23 @@ export class NotificationPanelComponent implements OnInit, OnDestroy {
   }
 
   /** Get the Material Symbols icon name for a notification event type */
-  getIcon(eventType: NotificationEventType): string {
+  getIcon(eventType: string): string {
     return getNotificationIcon(eventType);
   }
 
   /** Get the background/text color class for the icon container based on event type */
-  getIconContainerClass(eventType: NotificationEventType): string {
-    switch (eventType) {
-      case NotificationEventType.StatusChange:
-        return 'bg-info/10 text-info';
-      case NotificationEventType.ApprovalRequest:
-        return 'bg-warning/10 text-warning';
-      case NotificationEventType.OfferExpiry:
-        return 'bg-error/10 text-error';
-      case NotificationEventType.DueDiligenceFailure:
-        return 'bg-error/10 text-error';
-      case NotificationEventType.ContractSigned:
-        return 'bg-success/10 text-success';
-      default:
-        return 'bg-base-200 text-base-content/60';
-    }
+  getIconContainerClass(eventType: string): string {
+    // Categorize event types into color groups
+    const warningTypes = ['ApprovalRequest', 'ApprovalRequested', 'OfferExpiry', 'OfferExpired'];
+    const errorTypes = ['DueDiligenceFailure', 'DueDiligenceFailed', 'OpportunityWithdrawn'];
+    const successTypes = ['ContractSigned', 'ContractExchanged', 'OfferAccepted', 'OpportunityAcquired', 'DueDiligenceCompleted', 'ApprovalDecided'];
+    const infoTypes = ['StatusChange', 'OpportunityStatusChanged', 'OpportunityCreated', 'OfferSubmitted', 'DocumentUploaded'];
+
+    if (errorTypes.includes(eventType)) return 'bg-error/10 text-error';
+    if (warningTypes.includes(eventType)) return 'bg-warning/10 text-warning';
+    if (successTypes.includes(eventType)) return 'bg-success/10 text-success';
+    if (infoTypes.includes(eventType)) return 'bg-info/10 text-info';
+    return 'bg-base-200 text-base-content/60';
   }
 
   /** Convert ISO date string to relative time display (e.g., "2 hours ago") */

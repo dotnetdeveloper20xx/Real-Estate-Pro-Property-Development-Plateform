@@ -77,14 +77,14 @@ public sealed class ComplianceOverdueCheckService : BackgroundService
     {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<BuildEstateDbContext>();
-        var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+        var notificationEngine = scope.ServiceProvider.GetRequiredService<INotificationEngine>();
         var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
 
         var utcNow = DateTime.UtcNow;
 
-        await ProcessOverdueComplianceRequirementsAsync(dbContext, notificationService, utcNow, cancellationToken);
-        await ProcessOverdueAuditRecordsAsync(dbContext, notificationService, publisher, utcNow, cancellationToken);
-        await ProcessDocumentRetentionExpiryAsync(dbContext, notificationService, utcNow, cancellationToken);
+        await ProcessOverdueComplianceRequirementsAsync(dbContext, notificationEngine, utcNow, cancellationToken);
+        await ProcessOverdueAuditRecordsAsync(dbContext, notificationEngine, publisher, utcNow, cancellationToken);
+        await ProcessDocumentRetentionExpiryAsync(dbContext, notificationEngine, utcNow, cancellationToken);
     }
 
     /// <summary>
@@ -93,7 +93,7 @@ public sealed class ComplianceOverdueCheckService : BackgroundService
     /// </summary>
     private async Task ProcessOverdueComplianceRequirementsAsync(
         BuildEstateDbContext dbContext,
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         DateTime utcNow,
         CancellationToken cancellationToken)
     {
@@ -117,13 +117,21 @@ public sealed class ComplianceOverdueCheckService : BackgroundService
         {
             try
             {
-                await notificationService.SendToRoleAsync(
-                    requirement.ResponsibleRole,
-                    "ComplianceRequirementOverdue",
-                    $"Compliance requirement '{requirement.Name}' (Category: {requirement.Category}) is overdue. " +
-                    $"Due date was {requirement.NextDueDate:yyyy-MM-dd}. Please complete the required check.",
-                    requirement.Id,
-                    cancellationToken);
+                await notificationEngine.EmitAsync(new NotificationEvent
+                {
+                    EventType = "ComplianceRequirementOverdue",
+                    Module = "LegalCompliance",
+                    EntityId = requirement.Id,
+                    EntityType = "ComplianceRequirement",
+                    RelatedUrl = "/legal-compliance/compliance/checklist",
+                    Variables = new Dictionary<string, string>
+                    {
+                        ["requirementName"] = requirement.Name,
+                        ["category"] = requirement.Category.ToString(),
+                        ["dueDate"] = requirement.NextDueDate?.ToString("yyyy-MM-dd") ?? ""
+                    },
+                    TriggeredByUserId = null
+                }, cancellationToken);
 
                 _logger.LogInformation(
                     "Notification sent for overdue ComplianceRequirement {RequirementId} '{RequirementName}' " +
@@ -151,7 +159,7 @@ public sealed class ComplianceOverdueCheckService : BackgroundService
     /// </summary>
     private async Task ProcessOverdueAuditRecordsAsync(
         BuildEstateDbContext dbContext,
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         IPublisher publisher,
         DateTime utcNow,
         CancellationToken cancellationToken)
@@ -221,13 +229,21 @@ public sealed class ComplianceOverdueCheckService : BackgroundService
 
             try
             {
-                await notificationService.SendToRoleAsync(
-                    "Legal_Compliance_Officer",
-                    "AuditActionOverdue",
-                    $"Audit record action is overdue. Type: {auditRecord.AuditType}, " +
-                    $"Scope: '{auditRecord.Scope}', Due date was {auditRecord.ActionDueDate:yyyy-MM-dd}.",
-                    auditRecord.Id,
-                    cancellationToken);
+                await notificationEngine.EmitAsync(new NotificationEvent
+                {
+                    EventType = "AuditActionOverdue",
+                    Module = "LegalCompliance",
+                    EntityId = auditRecord.Id,
+                    EntityType = "AuditRecord",
+                    RelatedUrl = "/legal-compliance/audit-records",
+                    Variables = new Dictionary<string, string>
+                    {
+                        ["auditType"] = auditRecord.AuditType.ToString(),
+                        ["scope"] = auditRecord.Scope,
+                        ["actionDueDate"] = auditRecord.ActionDueDate?.ToString("yyyy-MM-dd") ?? ""
+                    },
+                    TriggeredByUserId = null
+                }, cancellationToken);
 
                 _logger.LogInformation(
                     "Notification sent for overdue AuditRecord {AuditRecordId}",
@@ -251,7 +267,7 @@ public sealed class ComplianceOverdueCheckService : BackgroundService
     /// </summary>
     private async Task ProcessDocumentRetentionExpiryAsync(
         BuildEstateDbContext dbContext,
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         DateTime utcNow,
         CancellationToken cancellationToken)
     {
@@ -278,13 +294,21 @@ public sealed class ComplianceOverdueCheckService : BackgroundService
         {
             try
             {
-                await notificationService.SendToRoleAsync(
-                    "Legal_Compliance_Officer",
-                    "DocumentRetentionExpiring",
-                    $"Document '{document.FileName}' (Type: {document.DocumentType}) has a retention period " +
-                    $"expiring on {document.RetentionExpiryDate:yyyy-MM-dd}. Please review and take appropriate action.",
-                    document.Id,
-                    cancellationToken);
+                await notificationEngine.EmitAsync(new NotificationEvent
+                {
+                    EventType = "DocumentRetentionExpiring",
+                    Module = "LegalCompliance",
+                    EntityId = document.Id,
+                    EntityType = "LegalDocument",
+                    RelatedUrl = "/legal-compliance/cases",
+                    Variables = new Dictionary<string, string>
+                    {
+                        ["fileName"] = document.FileName,
+                        ["documentType"] = document.DocumentType.ToString(),
+                        ["retentionExpiryDate"] = document.RetentionExpiryDate?.ToString("yyyy-MM-dd") ?? ""
+                    },
+                    TriggeredByUserId = null
+                }, cancellationToken);
 
                 _logger.LogInformation(
                     "Notification sent for document retention expiry: Document {DocumentId} '{FileName}' " +

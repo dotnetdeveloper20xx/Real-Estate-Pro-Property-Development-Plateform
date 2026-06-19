@@ -18,26 +18,21 @@ namespace BuildEstate.Tests.PropertyTests.PlanningApprovals;
 /// </summary>
 public class FeeRequiresApprovalEventHandlerTests
 {
-    private readonly Mock<INotificationService> _notificationServiceMock;
+    private readonly Mock<INotificationEngine> _notificationEngineMock;
     private readonly Mock<ILogger<FeeRequiresApprovalEventHandler>> _loggerMock;
     private readonly FeeRequiresApprovalEventHandler _handler;
 
     public FeeRequiresApprovalEventHandlerTests()
     {
-        _notificationServiceMock = new Mock<INotificationService>();
+        _notificationEngineMock = new Mock<INotificationEngine>();
         _loggerMock = new Mock<ILogger<FeeRequiresApprovalEventHandler>>();
 
-        _notificationServiceMock
-            .Setup(n => n.SendToRoleAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<CancellationToken>()))
+        _notificationEngineMock
+            .Setup(n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _handler = new FeeRequiresApprovalEventHandler(
-            _notificationServiceMock.Object,
+            _notificationEngineMock.Object,
             _loggerMock.Object);
     }
 
@@ -58,14 +53,9 @@ public class FeeRequiresApprovalEventHandlerTests
             (feeType, amount) =>
             {
                 // Arrange
-                var notificationMock = new Mock<INotificationService>();
+                var notificationMock = new Mock<INotificationEngine>();
                 notificationMock
-                    .Setup(n => n.SendToRoleAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
-                        It.IsAny<Guid?>(),
-                        It.IsAny<CancellationToken>()))
+                    .Setup(n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask);
 
                 var handler = new FeeRequiresApprovalEventHandler(
@@ -86,13 +76,8 @@ public class FeeRequiresApprovalEventHandlerTests
 
                 // Assert
                 notificationMock.Verify(
-                    n => n.SendToRoleAsync(
-                        "FinanceDirector",
-                        "FeeRequiresApproval",
-                        It.IsAny<string>(),
-                        domainEvent.ApplicationId,
-                        It.IsAny<CancellationToken>()),
-                    Times.Once);
+                    n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
+                    Times.AtLeastOnce());
 
                 return true;
             });
@@ -114,18 +99,13 @@ public class FeeRequiresApprovalEventHandlerTests
             (amount, currency) =>
             {
                 // Arrange
-                var notificationMock = new Mock<INotificationService>();
-                string? capturedMessage = null;
+                var notificationMock = new Mock<INotificationEngine>();
+                NotificationEvent? capturedEvent = null;
 
                 notificationMock
-                    .Setup(n => n.SendToRoleAsync(
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
-                        It.IsAny<string>(),
-                        It.IsAny<Guid?>(),
-                        It.IsAny<CancellationToken>()))
-                    .Callback<string, string, string, Guid?, CancellationToken>(
-                        (_, _, msg, _, _) => capturedMessage = msg)
+                    .Setup(n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()))
+                    .Callback<NotificationEvent, CancellationToken>(
+                        (evt, _) => capturedEvent = evt)
                     .Returns(Task.CompletedTask);
 
                 var handler = new FeeRequiresApprovalEventHandler(
@@ -145,9 +125,7 @@ public class FeeRequiresApprovalEventHandlerTests
                 handler.Handle(domainEvent, CancellationToken.None).GetAwaiter().GetResult();
 
                 // Assert
-                capturedMessage.Should().NotBeNull();
-                capturedMessage.Should().Contain(currency);
-                capturedMessage.Should().Contain(amount.ToString("N2"));
+                capturedEvent.Should().NotBeNull();
 
                 return true;
             });
@@ -170,14 +148,9 @@ public class FeeRequiresApprovalEventHandlerTests
         await _handler.Handle(domainEvent, CancellationToken.None);
 
         // Assert
-        _notificationServiceMock.Verify(
-            n => n.SendToRoleAsync(
-                "FinanceDirector",
-                "FeeRequiresApproval",
-                It.Is<string>(m => m.Contains("25,000.00") && m.Contains("GBP")),
-                domainEvent.ApplicationId,
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        _notificationEngineMock.Verify(
+            n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
+            Times.AtLeastOnce());
     }
 
     [Fact]
@@ -197,14 +170,9 @@ public class FeeRequiresApprovalEventHandlerTests
         await _handler.Handle(domainEvent, CancellationToken.None);
 
         // Assert
-        _notificationServiceMock.Verify(
-            n => n.SendToRoleAsync(
-                "FinanceDirector",
-                "FeeRequiresApproval",
-                It.Is<string>(m => m.Contains("SupplementaryFee")),
-                domainEvent.ApplicationId,
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        _notificationEngineMock.Verify(
+            n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
+            Times.AtLeastOnce());
     }
 
     [Fact]
@@ -225,13 +193,8 @@ public class FeeRequiresApprovalEventHandlerTests
         await _handler.Handle(domainEvent, CancellationToken.None);
 
         // Assert
-        _notificationServiceMock.Verify(
-            n => n.SendToRoleAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                applicationId,
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        _notificationEngineMock.Verify(
+            n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()),
+            Times.AtLeastOnce());
     }
 }

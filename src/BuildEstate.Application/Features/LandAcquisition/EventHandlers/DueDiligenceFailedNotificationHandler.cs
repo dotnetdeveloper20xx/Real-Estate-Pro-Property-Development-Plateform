@@ -5,21 +5,21 @@ using Microsoft.Extensions.Logging;
 namespace BuildEstate.Application.Features.LandAcquisition.EventHandlers;
 
 /// <summary>
-/// Handles the DueDiligenceFailedNotification by notifying the Acquisition Manager
-/// associated with the parent opportunity.
+/// Handles the DueDiligenceFailedNotification by emitting a notification event.
+/// The engine resolves recipients from configured rules.
 /// Validates: Requirement 19.3
 /// </summary>
 public sealed class DueDiligenceFailedNotificationHandler
     : INotificationHandler<DueDiligenceFailedNotification>
 {
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly ILogger<DueDiligenceFailedNotificationHandler> _logger;
 
     public DueDiligenceFailedNotificationHandler(
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         ILogger<DueDiligenceFailedNotificationHandler> logger)
     {
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _logger = logger;
     }
 
@@ -28,18 +28,23 @@ public sealed class DueDiligenceFailedNotificationHandler
         CancellationToken cancellationToken)
     {
         _logger.LogInformation(
-            "Due diligence {DueDiligenceId} failed for opportunity {OpportunityId}. Notifying Acquisition Manager {CreatedBy}",
+            "Due diligence {DueDiligenceId} failed for opportunity {OpportunityId}. Emitting notification event",
             notification.DueDiligenceId,
-            notification.OpportunityId,
-            notification.OpportunityCreatedBy);
+            notification.OpportunityId);
 
-        var message = $"A due diligence check has failed for your opportunity. Please review the findings and determine next steps.";
-
-        await _notificationService.SendAsync(
-            notification.OpportunityCreatedBy,
-            "DueDiligenceFailed",
-            message,
-            notification.DueDiligenceId,
-            cancellationToken);
+        await _notificationEngine.EmitAsync(new NotificationEvent
+        {
+            EventType = "DueDiligenceFailed",
+            Module = "LandAcquisition",
+            EntityId = notification.OpportunityId,
+            EntityType = "LandOpportunity",
+            RelatedUrl = $"/land-acquisition/opportunities/{notification.OpportunityId}",
+            Variables = new Dictionary<string, string>
+            {
+                ["opportunityName"] = "Opportunity",
+                ["checkType"] = "General"
+            },
+            TriggeredByUserId = null
+        }, cancellationToken);
     }
 }

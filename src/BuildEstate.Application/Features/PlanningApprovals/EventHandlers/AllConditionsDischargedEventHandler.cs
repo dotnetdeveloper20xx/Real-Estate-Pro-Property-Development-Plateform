@@ -6,21 +6,21 @@ using Microsoft.Extensions.Logging;
 namespace BuildEstate.Application.Features.PlanningApprovals.EventHandlers;
 
 /// <summary>
-/// Handles the AllConditionsDischargedDomainEvent by sending a notification
-/// to the Planning_Manager role indicating all conditions have been discharged.
+/// Handles the AllConditionsDischargedDomainEvent by emitting a notification event.
+/// The engine resolves recipients from configured rules.
 ///
 /// Validates: Requirements 5.6
 /// </summary>
 public sealed class AllConditionsDischargedEventHandler : INotificationHandler<AllConditionsDischargedDomainEvent>
 {
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly ILogger<AllConditionsDischargedEventHandler> _logger;
 
     public AllConditionsDischargedEventHandler(
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         ILogger<AllConditionsDischargedEventHandler> logger)
     {
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _logger = logger;
     }
 
@@ -32,14 +32,18 @@ public sealed class AllConditionsDischargedEventHandler : INotificationHandler<A
             notification.ApplicationId,
             notification.DischargedAt);
 
-        var message = $"All {notification.TotalConditions} planning conditions have been discharged. " +
-                      $"All obligations for this application are now fulfilled.";
-
-        await _notificationService.SendToRoleAsync(
-            "PlanningManager",
-            "AllConditionsDischarged",
-            message,
-            notification.ApplicationId,
-            cancellationToken);
+        await _notificationEngine.EmitAsync(new NotificationEvent
+        {
+            EventType = "AllConditionsDischarged",
+            Module = "PlanningApprovals",
+            EntityId = notification.ApplicationId,
+            EntityType = "PlanningApplication",
+            RelatedUrl = $"/planning-approvals/applications/{notification.ApplicationId}",
+            Variables = new Dictionary<string, string>
+            {
+                ["totalConditions"] = notification.TotalConditions.ToString()
+            },
+            TriggeredByUserId = null
+        }, cancellationToken);
     }
 }

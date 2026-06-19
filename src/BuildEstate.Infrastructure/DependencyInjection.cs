@@ -135,6 +135,9 @@ public static class InfrastructureDependencyInjection
         // 11. Register notification service (Scoped — uses DbContext)
         services.AddScoped<INotificationService, NotificationService>();
 
+        // 11a. Register notification engine (Scoped — rule-based notification dispatch)
+        services.AddScoped<INotificationEngine, NotificationEngine>();
+
         // 12. Register audit log query service (Scoped — uses DbContext)
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
 

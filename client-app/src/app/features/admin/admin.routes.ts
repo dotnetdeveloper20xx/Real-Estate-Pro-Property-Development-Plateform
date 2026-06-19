@@ -90,6 +90,35 @@ export const adminRoutes: Routes = [
     data: { roles: ['SuperAdmin'], breadcrumb: 'Audit Logs' }
   },
 
+  // ── Notification Management ──────────────────────────────────────────────────
+  {
+    path: 'notification-rules',
+    loadComponent: () =>
+      import('./notifications/notification-rules/notification-rules.component').then(
+        m => m.NotificationRulesComponent
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['SuperAdmin'], breadcrumb: 'Notification Rules' }
+  },
+  {
+    path: 'notification-templates',
+    loadComponent: () =>
+      import('./notifications/notification-templates/notification-templates.component').then(
+        m => m.NotificationTemplatesComponent
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['SuperAdmin'], breadcrumb: 'Notification Templates' }
+  },
+  {
+    path: 'notification-history',
+    loadComponent: () =>
+      import('./notifications/notification-history/notification-history.component').then(
+        m => m.NotificationHistoryComponent
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['SuperAdmin'], breadcrumb: 'Notification History' }
+  },
+
   // ── System Settings ─────────────────────────────────────────────────────────
   {
     path: 'settings',

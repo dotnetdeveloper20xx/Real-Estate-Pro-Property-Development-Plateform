@@ -22,7 +22,7 @@ public sealed class CreateOrUpdateFeasibilityCommandHandler
     private readonly IRepository<LandOpportunity> _opportunityRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly IMapper _mapper;
 
     public CreateOrUpdateFeasibilityCommandHandler(
@@ -30,14 +30,14 @@ public sealed class CreateOrUpdateFeasibilityCommandHandler
         IRepository<LandOpportunity> opportunityRepository,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         IMapper mapper)
     {
         _feasibilityRepository = feasibilityRepository;
         _opportunityRepository = opportunityRepository;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _mapper = mapper;
     }
 
@@ -114,16 +114,22 @@ public sealed class CreateOrUpdateFeasibilityCommandHandler
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // If marked ready for review, notify the Finance Director
+        // If marked ready for review, emit notification via engine
         if (request.IsReadyForReview)
         {
-            var message = $"Feasibility assessment for opportunity '{opportunity.Name}' is ready for review.";
-            await _notificationService.SendToRoleAsync(
-                "FinanceDirector",
-                "FeasibilityReadyForReview",
-                message,
-                request.OpportunityId,
-                cancellationToken);
+            await _notificationEngine.EmitAsync(new NotificationEvent
+            {
+                EventType = "FeasibilityReady",
+                Module = "LandAcquisition",
+                EntityId = request.OpportunityId,
+                EntityType = "LandOpportunity",
+                RelatedUrl = $"/land-acquisition/opportunities/{request.OpportunityId}",
+                Variables = new Dictionary<string, string>
+                {
+                    ["opportunityName"] = opportunity.Name
+                },
+                TriggeredByUserId = _currentUserService.UserId
+            }, cancellationToken);
         }
 
         return _mapper.Map<FeasibilityAssessmentDto>(assessment);

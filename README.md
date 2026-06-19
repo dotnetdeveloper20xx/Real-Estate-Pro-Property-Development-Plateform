@@ -63,7 +63,7 @@ Each of the 14 modules provides comprehensive capabilities:
 - **Documents & Knowledge** — Centralized repository (2,500 documents) with version control, approval workflows, and search
 - **Reports & Dashboards** — Real-time dashboards, custom report builder with £520.6M total value and £68.4M profit tracking
 
-**Cross-Cutting Capabilities:** [Role-based access control (13 roles, 43 permissions, full RBAC with policy-based authorization)](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md), [user administration & session management](developer-notes/user-management-feature/README.md), audit logs & activity tracking, notifications & alerts, workflow & approvals, data security & backups, multi-currency & multi-language, mobile & cloud ready.
+**Cross-Cutting Capabilities:** [Role-based access control (13 roles, 43 permissions, full RBAC with policy-based authorization)](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md), [user administration & session management](developer-notes/user-management-feature/README.md), [enterprise notification engine (rule-based, template-driven, admin-configurable)](docs/enterprise-notification-system.md), audit logs & activity tracking, workflow & approvals, data security & backups, multi-currency & multi-language, mobile & cloud ready.
 
 **Built for International Standards:** ISO 9001, ISO 27001, GDPR, IFRS, AML, RICS, CSCS, Local Government Compliance.
 
@@ -345,6 +345,7 @@ The platform is being built incrementally, starting with Module 1 (Land Acquisit
 |--------|--------|---------|
 | ✅ [**User Management**](developer-notes/user-management-feature/README.md) | Complete | Enterprise user administration — create, edit, deactivate users, role assignment, bulk operations, session management, immutable audit trail. 13 built-in roles, modal-based workflows, advanced filtering, KPI dashboards. |
 | ✅ [**Security & Authorization**](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md) | Complete | Military-grade authentication & authorization — JWT + refresh tokens, 43 granular permissions across 8 business domains, policy-based access control on every API endpoint, real-time permission enforcement via session revocation, full audit trail, account lockout protection. |
+| ✅ [**Enterprise Notification System**](docs/enterprise-notification-system.md) | Complete | Centrally-managed, rule-based, template-driven notification engine — admin-configurable notification matrix across all modules, dynamic recipient resolution (by role, entity creator, specific user), template variable substitution, user opt-out preferences, full delivery audit trail, real-time bell with 60s polling. |
 
 ---
 
@@ -417,6 +418,57 @@ The User Management system is not just a CRUD screen — it's a **full enterpris
 📖 **[Full Feature Documentation →](developer-notes/user-management-feature/README.md)**
 
 ![Create/Edit User](developer-notes/user-management-feature/create-new-user-form.png)
+
+---
+
+## 🔔 Enterprise Notification System — Intelligent Event Routing
+
+> *"One engine. All modules. Admin-configurable. Zero code changes for new notification types."*
+
+BuildEstate Pro includes a **centrally-managed, rule-based, template-driven notification engine** that powers notifications across all 14 modules from a single, admin-configurable system:
+
+| Component | What It Does |
+|-----------|-------------|
+| 🔔 **Notification Engine** | Receives events from any module, resolves rules → recipients → templates → delivers |
+| 📋 **Notification Rules** | Admin defines which events go to whom (by role, entity creator, specific user, all module roles) |
+| ✉️ **Notification Templates** | Admin controls message content with `{variable}` substitution — no code changes |
+| 👤 **User Preferences** | Each user can opt-out or temporarily mute specific notification types |
+| 📊 **Notification History** | Full audit trail of every notification delivered across all users |
+| 🔔 **Real-Time Bell** | Header component polls API every 60 seconds, shows unread count, click-to-navigate |
+
+**How it works — any module handler simply emits an event:**
+
+```csharp
+await _notificationEngine.EmitAsync(new NotificationEvent {
+    EventType = "OfferAccepted",
+    Module = "LandAcquisition",
+    EntityId = opportunity.Id,
+    Variables = new() { ["opportunityName"] = "Greenwich Site", ["amount"] = "£4.8M" }
+});
+```
+
+The engine then:
+1. Finds active **rules** matching "OfferAccepted"
+2. Resolves **recipients** (e.g., FinanceDirector role, entity creator)
+3. Checks user **preferences** (opt-out / mute)
+4. Applies **template** with variable substitution
+5. Creates **notification records** per recipient
+6. Frontend **bell** displays them with severity-coded icons
+
+**Current event coverage:**
+- **Land Acquisition** — 13 event types (offers, approvals, due diligence, contracts, acquisitions)
+- **Planning & Approvals** — 5 event types (status changes, fees, milestones, conditions, appeals)
+- **Legal & Compliance** — 9 event types (cases, insurance, contracts, compliance, audit, retention)
+- **Background Services** — Automated events (offer expiry, insurance expiry, compliance overdue)
+
+**Admin UI (SuperAdmin):**
+- `/admin/notification-rules` — Full CRUD with inline toggle, module filtering
+- `/admin/notification-templates` — Card grid with live preview, variable editing
+- `/admin/notification-history` — Paginated audit trail with filtering by module/date/status
+
+**Adding notifications for a new module requires zero engine changes — just emit the event and configure rules via the admin UI.**
+
+📖 **[Full Technical Architecture →](docs/enterprise-notification-system.md)**
 
 ---
 

@@ -30,7 +30,7 @@ public sealed class CreateOfferCommandHandler : IRequestHandler<CreateOfferComma
     private readonly IRepository<ApprovalRequest> _approvalRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly IConfiguration _configuration;
     private readonly ILogger<CreateOfferCommandHandler> _logger;
     private readonly IMapper _mapper;
@@ -41,7 +41,7 @@ public sealed class CreateOfferCommandHandler : IRequestHandler<CreateOfferComma
         IRepository<ApprovalRequest> approvalRepository,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         IConfiguration configuration,
         ILogger<CreateOfferCommandHandler> logger,
         IMapper mapper)
@@ -51,7 +51,7 @@ public sealed class CreateOfferCommandHandler : IRequestHandler<CreateOfferComma
         _approvalRepository = approvalRepository;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _configuration = configuration;
         _logger = logger;
         _mapper = mapper;
@@ -123,13 +123,20 @@ public sealed class CreateOfferCommandHandler : IRequestHandler<CreateOfferComma
         await _approvalRepository.AddAsync(approvalRequest, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Notify the Finance Director about the new approval requirement
-        await _notificationService.SendToRoleAsync(
-            "FinanceDirector",
-            "ApprovalCreated",
-            $"A new approval request for £{offerAmount:N2} has been created for opportunity '{opportunity.Name}'. " +
-            $"The offer amount exceeds the approval threshold of £{threshold:N2}.",
-            approvalRequest.Id,
-            cancellationToken);
+        // Notify via notification engine — rules determine recipients
+        await _notificationEngine.EmitAsync(new NotificationEvent
+        {
+            EventType = "ApprovalRequested",
+            Module = "LandAcquisition",
+            EntityId = opportunity.Id,
+            EntityType = "LandOpportunity",
+            RelatedUrl = $"/land-acquisition/opportunities/{opportunity.Id}",
+            Variables = new Dictionary<string, string>
+            {
+                ["opportunityName"] = opportunity.Name,
+                ["amount"] = offerAmount.ToString("N2")
+            },
+            TriggeredByUserId = _currentUserService.UserId
+        }, cancellationToken);
     }
 }

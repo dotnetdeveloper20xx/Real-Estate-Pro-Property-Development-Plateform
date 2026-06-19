@@ -7,23 +7,23 @@ using Microsoft.Extensions.Logging;
 namespace BuildEstate.Application.Features.LegalCompliance.Notifications.Handlers;
 
 /// <summary>
-/// Handles the ComplianceCheckRecordedEvent by sending notifications when a
-/// compliance check records a Non-Compliant outcome. Notifies the
-/// Legal_Compliance_Officer and Finance_Director.
+/// Handles the ComplianceCheckRecordedEvent by emitting a notification event
+/// when a compliance check records a Non-Compliant outcome.
+/// The engine resolves recipients from configured rules.
 ///
 /// Validates: Requirements 12.4, 12.7
 /// </summary>
 public sealed class ComplianceCheckRecordedNotificationHandler
     : INotificationHandler<ComplianceCheckRecordedEvent>
 {
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly ILogger<ComplianceCheckRecordedNotificationHandler> _logger;
 
     public ComplianceCheckRecordedNotificationHandler(
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         ILogger<ComplianceCheckRecordedNotificationHandler> logger)
     {
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _logger = logger;
     }
 
@@ -37,23 +37,20 @@ public sealed class ComplianceCheckRecordedNotificationHandler
 
         if (notification.Outcome == ComplianceCheckOutcome.NonCompliant)
         {
-            var message = $"A compliance check recorded on {notification.CheckDate:dd MMM yyyy} " +
-                          $"has a Non-Compliant outcome. Requirement ID: {notification.ComplianceRequirementId}. " +
-                          $"Immediate review and remediation action required.";
-
-            await _notificationService.SendToRoleAsync(
-                "Legal_Compliance_Officer",
-                "ComplianceCheckNonCompliant",
-                message,
-                notification.ComplianceCheckId,
-                cancellationToken);
-
-            await _notificationService.SendToRoleAsync(
-                "Finance_Director",
-                "ComplianceCheckNonCompliant",
-                message,
-                notification.ComplianceCheckId,
-                cancellationToken);
+            await _notificationEngine.EmitAsync(new NotificationEvent
+            {
+                EventType = "ComplianceCheckNonCompliant",
+                Module = "LegalCompliance",
+                EntityId = notification.ComplianceCheckId,
+                EntityType = "ComplianceCheck",
+                RelatedUrl = $"/legal-compliance/compliance/checklist",
+                Variables = new Dictionary<string, string>
+                {
+                    ["requirementId"] = notification.ComplianceRequirementId.ToString(),
+                    ["checkDate"] = notification.CheckDate.ToString("dd MMM yyyy")
+                },
+                TriggeredByUserId = null
+            }, cancellationToken);
         }
     }
 }

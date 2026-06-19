@@ -7,23 +7,23 @@ using Microsoft.Extensions.Logging;
 namespace BuildEstate.Application.Features.LegalCompliance.Notifications.Handlers;
 
 /// <summary>
-/// Handles the ContractStatusChangedEvent by sending notifications when a contract
-/// transitions to Executed or Terminated. Notifies the Legal_Compliance_Officer
-/// and Acquisition_Manager.
+/// Handles the ContractStatusChangedEvent by emitting a notification event when
+/// a contract transitions to Executed or Terminated.
+/// The engine resolves recipients from configured rules.
 ///
 /// Validates: Requirements 12.2, 12.7
 /// </summary>
 public sealed class ContractStatusChangedNotificationHandler
     : INotificationHandler<ContractStatusChangedEvent>
 {
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly ILogger<ContractStatusChangedNotificationHandler> _logger;
 
     public ContractStatusChangedNotificationHandler(
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         ILogger<ContractStatusChangedNotificationHandler> logger)
     {
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _logger = logger;
     }
 
@@ -38,23 +38,21 @@ public sealed class ContractStatusChangedNotificationHandler
 
         if (notification.NewStatus is LegalContractStatus.Executed or LegalContractStatus.Terminated)
         {
-            var action = notification.NewStatus == LegalContractStatus.Executed ? "executed" : "terminated";
-            var message = $"Contract '{notification.ContractReference}' has been {action}. " +
-                          $"Previous status: {notification.PreviousStatus}. Please review accordingly.";
-
-            await _notificationService.SendToRoleAsync(
-                "Legal_Compliance_Officer",
-                $"Contract{notification.NewStatus}",
-                message,
-                notification.ContractId,
-                cancellationToken);
-
-            await _notificationService.SendToRoleAsync(
-                "Acquisition_Manager",
-                $"Contract{notification.NewStatus}",
-                message,
-                notification.ContractId,
-                cancellationToken);
+            await _notificationEngine.EmitAsync(new NotificationEvent
+            {
+                EventType = $"Contract{notification.NewStatus}",
+                Module = "LegalCompliance",
+                EntityId = notification.ContractId,
+                EntityType = "LegalContract",
+                RelatedUrl = $"/legal-compliance/contracts/{notification.ContractId}",
+                Variables = new Dictionary<string, string>
+                {
+                    ["contractReference"] = notification.ContractReference,
+                    ["previousStatus"] = notification.PreviousStatus.ToString(),
+                    ["newStatus"] = notification.NewStatus.ToString()
+                },
+                TriggeredByUserId = notification.UserId
+            }, cancellationToken);
         }
     }
 }

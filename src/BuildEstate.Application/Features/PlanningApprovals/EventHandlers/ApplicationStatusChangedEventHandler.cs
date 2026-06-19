@@ -7,10 +7,9 @@ using Microsoft.Extensions.Logging;
 namespace BuildEstate.Application.Features.PlanningApprovals.EventHandlers;
 
 /// <summary>
-/// Handles the ApplicationStatusChangedDomainEvent by sending notifications to
-/// relevant stakeholders when a planning application reaches a decision status.
-///
-/// - Approved / ApprovedWithConditions / Refused → Notify PlanningManager and AcquisitionManager
+/// Handles the ApplicationStatusChangedDomainEvent by emitting a notification event
+/// when a planning application reaches a decision status.
+/// The engine resolves recipients from configured rules.
 ///
 /// Validates: Requirements 12.1, 12.6
 /// </summary>
@@ -23,14 +22,14 @@ public sealed class ApplicationStatusChangedEventHandler : INotificationHandler<
         PlanningApplicationStatus.Refused
     };
 
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly ILogger<ApplicationStatusChangedEventHandler> _logger;
 
     public ApplicationStatusChangedEventHandler(
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         ILogger<ApplicationStatusChangedEventHandler> logger)
     {
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _logger = logger;
     }
 
@@ -49,27 +48,21 @@ public sealed class ApplicationStatusChangedEventHandler : INotificationHandler<
             return;
         }
 
-        var message = $"Planning application has reached a decision: {FormatStatus(notification.NewStatus)}. " +
-                      $"Previous status was {FormatStatus(notification.PreviousStatus)}.";
-
-        await _notificationService.SendToRoleAsync(
-            "PlanningManager",
-            "ApplicationStatusChanged",
-            message,
-            notification.ApplicationId,
-            cancellationToken);
-
-        await _notificationService.SendToRoleAsync(
-            "AcquisitionManager",
-            "ApplicationStatusChanged",
-            message,
-            notification.ApplicationId,
-            cancellationToken);
-
-        _logger.LogInformation(
-            "Notifications sent to PlanningManager and AcquisitionManager for application {ApplicationId} decision: {NewStatus}",
-            notification.ApplicationId,
-            notification.NewStatus);
+        await _notificationEngine.EmitAsync(new NotificationEvent
+        {
+            EventType = "ApplicationStatusChanged",
+            Module = "PlanningApprovals",
+            EntityId = notification.ApplicationId,
+            EntityType = "PlanningApplication",
+            RelatedUrl = $"/planning-approvals/applications/{notification.ApplicationId}",
+            Variables = new Dictionary<string, string>
+            {
+                ["applicationReference"] = notification.ApplicationId.ToString(),
+                ["newStatus"] = FormatStatus(notification.NewStatus),
+                ["previousStatus"] = FormatStatus(notification.PreviousStatus)
+            },
+            TriggeredByUserId = notification.ChangedBy
+        }, cancellationToken);
     }
 
     private static string FormatStatus(PlanningApplicationStatus status) => status switch

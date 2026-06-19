@@ -7,23 +7,22 @@ using Microsoft.Extensions.Logging;
 namespace BuildEstate.Application.Features.LegalCompliance.Notifications.Handlers;
 
 /// <summary>
-/// Handles the InsuranceExpiringEvent by sending notifications to the
-/// Legal_Compliance_Officer when an insurance policy is expiring soon or has expired.
-/// Also notifies the Finance_Director when a policy has expired.
+/// Handles the InsuranceExpiringEvent by emitting a notification event.
+/// The engine resolves recipients from configured rules.
 ///
 /// Validates: Requirements 12.3, 12.7
 /// </summary>
 public sealed class InsuranceExpiringNotificationHandler
     : INotificationHandler<InsuranceExpiringEvent>
 {
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly ILogger<InsuranceExpiringNotificationHandler> _logger;
 
     public InsuranceExpiringNotificationHandler(
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         ILogger<InsuranceExpiringNotificationHandler> logger)
     {
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _logger = logger;
     }
 
@@ -40,29 +39,20 @@ public sealed class InsuranceExpiringNotificationHandler
             ? "InsuranceExpired"
             : "InsuranceExpiringSoon";
 
-        var statusDescription = notification.InsuranceStatus == InsuranceStatus.Expired
-            ? "has expired"
-            : "is expiring soon";
-
-        var message = $"Insurance policy '{notification.PolicyNumber}' {statusDescription}. " +
-                      $"Expiry date: {notification.ExpiryDate:dd MMM yyyy}. " +
-                      $"Please review and arrange renewal if required.";
-
-        await _notificationService.SendToRoleAsync(
-            "Legal_Compliance_Officer",
-            eventType,
-            message,
-            notification.InsuranceRecordId,
-            cancellationToken);
-
-        if (notification.InsuranceStatus == InsuranceStatus.Expired)
+        await _notificationEngine.EmitAsync(new NotificationEvent
         {
-            await _notificationService.SendToRoleAsync(
-                "Finance_Director",
-                eventType,
-                message,
-                notification.InsuranceRecordId,
-                cancellationToken);
-        }
+            EventType = eventType,
+            Module = "LegalCompliance",
+            EntityId = notification.InsuranceRecordId,
+            EntityType = "InsuranceRecord",
+            RelatedUrl = $"/legal-compliance/insurance",
+            Variables = new Dictionary<string, string>
+            {
+                ["policyNumber"] = notification.PolicyNumber,
+                ["expiryDate"] = notification.ExpiryDate.ToString("dd MMM yyyy"),
+                ["status"] = notification.InsuranceStatus.ToString()
+            },
+            TriggeredByUserId = null // System-triggered
+        }, cancellationToken);
     }
 }

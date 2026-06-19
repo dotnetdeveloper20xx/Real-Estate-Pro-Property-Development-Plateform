@@ -225,6 +225,13 @@ export const ADMIN_NAV_ITEMS: readonly INavItem[] = [
     enabled: true
   },
   {
+    label: 'Notifications',
+    routerLink: '/admin/notification-rules',
+    icon: 'notifications_active',
+    roles: ['SuperAdmin'],
+    enabled: true
+  },
+  {
     label: 'System Settings',
     routerLink: '/admin/settings',
     icon: 'settings',

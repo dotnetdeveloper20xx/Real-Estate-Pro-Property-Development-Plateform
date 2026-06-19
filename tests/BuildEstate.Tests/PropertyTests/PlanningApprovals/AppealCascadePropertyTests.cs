@@ -265,7 +265,7 @@ public class AppealCascadePropertyTests
     {
         var applicationRepoMock = new Mock<IRepository<PlanningApplication>>();
         unitOfWorkMock ??= new Mock<IUnitOfWork>();
-        var notificationServiceMock = new Mock<INotificationService>();
+        var notificationEngineMock = new Mock<INotificationEngine>();
         var loggerMock = new Mock<ILogger<AppealAllowedEventHandler>>();
 
         // Setup application repository to return the test application by Id
@@ -277,19 +277,14 @@ public class AppealCascadePropertyTests
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        notificationServiceMock
-            .Setup(n => n.SendToRoleAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<Guid?>(),
-                It.IsAny<CancellationToken>()))
+        notificationEngineMock
+            .Setup(n => n.EmitAsync(It.IsAny<NotificationEvent>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         return new AppealAllowedEventHandler(
             applicationRepoMock.Object,
             unitOfWorkMock.Object,
-            notificationServiceMock.Object,
+            notificationEngineMock.Object,
             loggerMock.Object);
     }
 

@@ -22,7 +22,7 @@ public sealed class CreateApprovalRequestCommandHandler
     private readonly IRepository<ApprovalRequest> _approvalRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
-    private readonly INotificationService _notificationService;
+    private readonly INotificationEngine _notificationEngine;
     private readonly IMapper _mapper;
 
     public CreateApprovalRequestCommandHandler(
@@ -30,14 +30,14 @@ public sealed class CreateApprovalRequestCommandHandler
         IRepository<ApprovalRequest> approvalRepository,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        INotificationService notificationService,
+        INotificationEngine notificationEngine,
         IMapper mapper)
     {
         _opportunityRepository = opportunityRepository;
         _approvalRepository = approvalRepository;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
-        _notificationService = notificationService;
+        _notificationEngine = notificationEngine;
         _mapper = mapper;
     }
 
@@ -65,13 +65,21 @@ public sealed class CreateApprovalRequestCommandHandler
         await _approvalRepository.AddAsync(approvalRequest, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Notify the Finance Director role about the new approval request
-        await _notificationService.SendToRoleAsync(
-            "FinanceDirector",
-            "ApprovalCreated",
-            $"A new approval request for £{request.RequestedAmount:N2} has been created for opportunity '{opportunity.Name}'.",
-            approvalRequest.Id,
-            cancellationToken);
+        // Notify via notification engine — rules determine recipients
+        await _notificationEngine.EmitAsync(new NotificationEvent
+        {
+            EventType = "ApprovalRequested",
+            Module = "LandAcquisition",
+            EntityId = opportunity.Id,
+            EntityType = "LandOpportunity",
+            RelatedUrl = $"/land-acquisition/opportunities/{opportunity.Id}",
+            Variables = new Dictionary<string, string>
+            {
+                ["opportunityName"] = opportunity.Name,
+                ["amount"] = request.RequestedAmount.ToString("N2")
+            },
+            TriggeredByUserId = _currentUserService.UserId
+        }, cancellationToken);
 
         return _mapper.Map<ApprovalRequestDto>(approvalRequest);
     }
