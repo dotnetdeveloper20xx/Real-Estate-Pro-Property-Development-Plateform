@@ -2,6 +2,8 @@
 
 ## Technical Architecture Documentation
 
+![Enterprise Notification System Architecture](enterprise-notification-system.png)
+
 ---
 
 ## Overview

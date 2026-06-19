@@ -63,7 +63,7 @@ Each of the 14 modules provides comprehensive capabilities:
 - **Documents & Knowledge** — Centralized repository (2,500 documents) with version control, approval workflows, and search
 - **Reports & Dashboards** — Real-time dashboards, custom report builder with £520.6M total value and £68.4M profit tracking
 
-**Cross-Cutting Capabilities:** [Role-based access control (13 roles, 43 permissions, full RBAC with policy-based authorization)](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md), [user administration & session management](developer-notes/user-management-feature/README.md), [enterprise notification engine (rule-based, template-driven, admin-configurable)](docs/enterprise-notification-system.md), audit logs & activity tracking, workflow & approvals, data security & backups, multi-currency & multi-language, mobile & cloud ready.
+**Cross-Cutting Capabilities:** [Role-based access control (13 roles, 43 permissions, full RBAC with policy-based authorization)](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md), [user administration & session management](developer-notes/user-management-feature/README.md), [enterprise notification engine (rule-based, template-driven, admin-configurable)](developer-notes/notification-system-module/enterprise-notification-system.md), audit logs & activity tracking, workflow & approvals, data security & backups, multi-currency & multi-language, mobile & cloud ready.
 
 **Built for International Standards:** ISO 9001, ISO 27001, GDPR, IFRS, AML, RICS, CSCS, Local Government Compliance.
 
@@ -345,7 +345,7 @@ The platform is being built incrementally, starting with Module 1 (Land Acquisit
 |--------|--------|---------|
 | ✅ [**User Management**](developer-notes/user-management-feature/README.md) | Complete | Enterprise user administration — create, edit, deactivate users, role assignment, bulk operations, session management, immutable audit trail. 13 built-in roles, modal-based workflows, advanced filtering, KPI dashboards. |
 | ✅ [**Security & Authorization**](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md) | Complete | Military-grade authentication & authorization — JWT + refresh tokens, 43 granular permissions across 8 business domains, policy-based access control on every API endpoint, real-time permission enforcement via session revocation, full audit trail, account lockout protection. |
-| ✅ [**Enterprise Notification System**](docs/enterprise-notification-system.md) | Complete | Centrally-managed, rule-based, template-driven notification engine — admin-configurable notification matrix across all modules, dynamic recipient resolution (by role, entity creator, specific user), template variable substitution, user opt-out preferences, full delivery audit trail, real-time bell with 60s polling. |
+| ✅ [**Enterprise Notification System**](developer-notes/notification-system-module/enterprise-notification-system.md) | Complete | Centrally-managed, rule-based, template-driven notification engine — admin-configurable notification matrix across all modules, dynamic recipient resolution (by role, entity creator, specific user), template variable substitution, user opt-out preferences, full delivery audit trail, real-time bell with 60s polling. |
 
 ---
 
@@ -425,6 +425,8 @@ The User Management system is not just a CRUD screen — it's a **full enterpris
 
 > *"One engine. All modules. Admin-configurable. Zero code changes for new notification types."*
 
+![Enterprise Notification System](developer-notes/notification-system-module/enterprise-notification-system.png)
+
 BuildEstate Pro includes a **centrally-managed, rule-based, template-driven notification engine** that powers notifications across all 14 modules from a single, admin-configurable system:
 
 | Component | What It Does |
@@ -468,7 +470,7 @@ The engine then:
 
 **Adding notifications for a new module requires zero engine changes — just emit the event and configure rules via the admin UI.**
 
-📖 **[Full Technical Architecture →](docs/enterprise-notification-system.md)**
+📖 **[Full Technical Architecture →](developer-notes/notification-system-module/enterprise-notification-system.md)**
 
 ---
 
