@@ -5,3 +5,7 @@ export { ContractService, ICreateContract, ITransitionContractStatus } from './c
 export { DocumentService } from './document.service';
 export { FeasibilityService } from './feasibility.service';
 export { DashboardService } from './dashboard.service';
+export { AcquisitionService } from './acquisition.service';
+export { LandOwnerService } from './land-owner.service';
+export { AuditService } from './audit.service';
+export { CsvExportService, IColumnDef } from './csv-export.service';

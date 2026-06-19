@@ -1,12 +1,13 @@
 import {
   Component, ChangeDetectionStrategy, OnInit, OnDestroy, AfterViewInit,
-  inject, ViewChild, ElementRef
+  inject, ViewChild, ElementRef, signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, Subscription, filter } from 'rxjs';
 import { Chart, registerables } from 'chart.js';
+import { CdkDragDrop } from '@angular/cdk/drag-drop';
 
 import { OpportunityActions } from '../../store/opportunity/opportunity.actions';
 import {
@@ -16,8 +17,10 @@ import {
 } from '../../store/opportunity/opportunity.selectors';
 import { DashboardActions, selectMetrics } from '../../store/dashboard';
 import { PipelineColumnComponent } from '../../components/pipeline-column/pipeline-column.component';
+import { WithdrawalModalComponent } from '../../components/withdrawal-modal/withdrawal-modal.component';
 import { IOpportunityListItem, OpportunityStatus } from '../../models/opportunity.model';
 import { IDashboardMetrics } from '../../models/dashboard.model';
+import { ToastService } from '../../../../core/services/toast.service';
 
 Chart.register(...registerables);
 
@@ -38,7 +41,7 @@ const STAGE_PROBABILITY: Record<string, number> = {
 @Component({
   selector: 'app-pipeline-page',
   standalone: true,
-  imports: [CommonModule, PipelineColumnComponent, RouterLink],
+  imports: [CommonModule, PipelineColumnComponent, RouterLink, WithdrawalModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host { display: block; }
@@ -126,10 +129,21 @@ const STAGE_PROBABILITY: Record<string, number> = {
               [columnIndex]="i"
               [totalValue]="getColumnEstimatedValue(column.status)"
               [showLimit]="2"
+              [dropListId]="getDropListId(column.status)"
+              [connectedDropLists]="getAllDropListIds()"
+              [transitioningIds]="transitioningIds"
               (cardClick)="onCardClick($event)"
+              (cardDropped)="onCardDropped($event, column.status)"
             />
           }
         </div>
+
+        <!-- Withdrawal Modal for drag-to-Withdrawn flow -->
+        <app-withdrawal-modal
+          [visible]="showWithdrawalModal()"
+          (confirmed)="onWithdrawalConfirmed($event)"
+          (cancelled)="onWithdrawalCancelled()">
+        </app-withdrawal-modal>
 
         <!-- KPI Footer Strip -->
         <section class="mt-6" aria-label="Pipeline Key Performance Indicators">
@@ -232,9 +246,20 @@ const STAGE_PROBABILITY: Record<string, number> = {
           <div class="card bg-base-100 border border-base-200">
             <div class="card-body p-5">
               <h2 class="text-sm font-semibold text-base-content mb-4">Pipeline Value by Stage</h2>
-              <div class="w-full" style="position: relative; height: 240px;">
-                <canvas #valueByStageCanvas></canvas>
-              </div>
+              <ng-container *ngIf="!chartError().valueByStage; else valueByStageError">
+                <div class="w-full" style="position: relative; height: 240px;">
+                  <canvas #valueByStageCanvas></canvas>
+                </div>
+              </ng-container>
+              <ng-template #valueByStageError>
+                <div class="flex flex-col items-center py-8 text-base-content/50">
+                  <span class="material-symbols-outlined text-3xl mb-2 text-error">error_outline</span>
+                  <p class="text-sm mb-3">Unable to render chart</p>
+                  <button class="btn btn-sm btn-outline btn-error" (click)="retryChart('valueByStage')">
+                    <span class="material-symbols-outlined text-base mr-1">refresh</span> Retry
+                  </button>
+                </div>
+              </ng-template>
             </div>
           </div>
 
@@ -242,14 +267,25 @@ const STAGE_PROBABILITY: Record<string, number> = {
           <div class="card bg-base-100 border border-base-200">
             <div class="card-body p-5">
               <h2 class="text-sm font-semibold text-base-content mb-4">Pipeline by Probability</h2>
-              <div class="relative flex justify-center">
-                <canvas #probabilityDonutCanvas width="220" height="220"></canvas>
-                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                  <span class="text-lg font-bold text-base-content">{{ formatCurrency(getWeightedPipelineValue()) }}</span>
-                  <br/>
-                  <span class="text-[10px] text-base-content/60">Weighted</span>
+              <ng-container *ngIf="!chartError().probabilityDonut; else probabilityDonutError">
+                <div class="relative flex justify-center">
+                  <canvas #probabilityDonutCanvas width="220" height="220"></canvas>
+                  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                    <span class="text-lg font-bold text-base-content">{{ formatCurrency(getWeightedPipelineValue()) }}</span>
+                    <br/>
+                    <span class="text-[10px] text-base-content/60">Weighted</span>
+                  </div>
                 </div>
-              </div>
+              </ng-container>
+              <ng-template #probabilityDonutError>
+                <div class="flex flex-col items-center py-8 text-base-content/50">
+                  <span class="material-symbols-outlined text-3xl mb-2 text-error">error_outline</span>
+                  <p class="text-sm mb-3">Unable to render chart</p>
+                  <button class="btn btn-sm btn-outline btn-error" (click)="retryChart('probabilityDonut')">
+                    <span class="material-symbols-outlined text-base mr-1">refresh</span> Retry
+                  </button>
+                </div>
+              </ng-template>
             </div>
           </div>
 
@@ -257,9 +293,20 @@ const STAGE_PROBABILITY: Record<string, number> = {
           <div class="card bg-base-100 border border-base-200">
             <div class="card-body p-5">
               <h2 class="text-sm font-semibold text-base-content mb-4">Top Locations by Value</h2>
-              <div class="w-full" style="position: relative; height: 240px;">
-                <canvas #topLocationsCanvas></canvas>
-              </div>
+              <ng-container *ngIf="!chartError().topLocations; else topLocationsError">
+                <div class="w-full" style="position: relative; height: 240px;">
+                  <canvas #topLocationsCanvas></canvas>
+                </div>
+              </ng-container>
+              <ng-template #topLocationsError>
+                <div class="flex flex-col items-center py-8 text-base-content/50">
+                  <span class="material-symbols-outlined text-3xl mb-2 text-error">error_outline</span>
+                  <p class="text-sm mb-3">Unable to render chart</p>
+                  <button class="btn btn-sm btn-outline btn-error" (click)="retryChart('topLocations')">
+                    <span class="material-symbols-outlined text-base mr-1">refresh</span> Retry
+                  </button>
+                </div>
+              </ng-template>
             </div>
           </div>
         </section>
@@ -275,6 +322,7 @@ const STAGE_PROBABILITY: Record<string, number> = {
 export class PipelinePageComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
+  private readonly toastService = inject(ToastService);
   private subscription: Subscription | null = null;
   private metricsSubscription: Subscription | null = null;
 
@@ -298,6 +346,33 @@ export class PipelinePageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** Observable of dashboard metrics for avg cycle days. */
   readonly metrics$: Observable<IDashboardMetrics | null> = this.store.select(selectMetrics);
+
+  /** Valid state transitions per opportunity status (state machine). */
+  readonly validTransitions: Readonly<Record<OpportunityStatus, readonly OpportunityStatus[]>> = {
+    [OpportunityStatus.Identified]: [OpportunityStatus.InitialReview, OpportunityStatus.Withdrawn],
+    [OpportunityStatus.InitialReview]: [OpportunityStatus.DueDiligence, OpportunityStatus.Withdrawn],
+    [OpportunityStatus.DueDiligence]: [OpportunityStatus.OfferMade, OpportunityStatus.Withdrawn],
+    [OpportunityStatus.OfferMade]: [OpportunityStatus.UnderContract, OpportunityStatus.Withdrawn],
+    [OpportunityStatus.UnderContract]: [OpportunityStatus.Acquired, OpportunityStatus.Withdrawn],
+    [OpportunityStatus.Acquired]: [],
+    [OpportunityStatus.Withdrawn]: []
+  };
+
+  /** Signal controlling withdrawal modal visibility. */
+  readonly showWithdrawalModal = signal(false);
+
+  /** The opportunity pending withdrawal confirmation. */
+  private pendingWithdrawalOpportunity: IOpportunityListItem | null = null;
+
+  /** Set of opportunity IDs currently in transition (loading overlay). */
+  transitioningIds = new Set<string>();
+
+  /** Signal tracking which charts have encountered rendering errors. */
+  readonly chartError = signal<{ valueByStage: boolean; probabilityDonut: boolean; topLocations: boolean }>({
+    valueByStage: false,
+    probabilityDonut: false,
+    topLocations: false
+  });
 
   /** Pipeline columns definition in display order with colors. */
   readonly pipelineColumns: readonly PipelineColumn[] = [
@@ -452,6 +527,89 @@ export class PipelinePageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.store.dispatch(OpportunityActions.loadOpportunities());
   }
 
+  // ─── Drag-and-Drop ────────────────────────────────────────────────────
+
+  /** Returns the CDK drop list ID for a given status column. */
+  getDropListId(status: OpportunityStatus): string {
+    return `pipeline-drop-${status}`;
+  }
+
+  /** Returns all drop list IDs for connecting columns together. */
+  getAllDropListIds(): string[] {
+    return this.pipelineColumns.map(col => this.getDropListId(col.status));
+  }
+
+  /** Handles a card being dropped into a target column. */
+  onCardDropped(event: CdkDragDrop<IOpportunityListItem[], IOpportunityListItem[], IOpportunityListItem>, targetStatus: OpportunityStatus): void {
+    const opportunity: IOpportunityListItem = event.item.data;
+    const sourceStatus = opportunity.status;
+
+    // Same column drop — no action needed
+    if (sourceStatus === targetStatus) {
+      return;
+    }
+
+    // Check if the transition is valid per state machine
+    const validTargets = this.validTransitions[sourceStatus] ?? [];
+    if (!validTargets.includes(targetStatus)) {
+      this.toastService.showError(
+        `Cannot move from ${this.formatStatusLabel(sourceStatus)} to ${this.formatStatusLabel(targetStatus)}`
+      );
+      return;
+    }
+
+    // If target is Withdrawn, open the withdrawal modal
+    if (targetStatus === OpportunityStatus.Withdrawn) {
+      this.pendingWithdrawalOpportunity = opportunity;
+      this.showWithdrawalModal.set(true);
+      return;
+    }
+
+    // Valid non-withdrawal transition — dispatch action with loading state
+    this.transitioningIds = new Set([...this.transitioningIds, opportunity.id]);
+    this.store.dispatch(OpportunityActions.transitionStatus({
+      id: opportunity.id,
+      targetStatus
+    }));
+
+    // Clear transitioning state after a reasonable timeout (effect will reload data)
+    setTimeout(() => {
+      const updated = new Set(this.transitioningIds);
+      updated.delete(opportunity.id);
+      this.transitioningIds = updated;
+    }, 5000);
+  }
+
+  /** Handles confirmation from the withdrawal modal. */
+  onWithdrawalConfirmed(reason: string): void {
+    if (!this.pendingWithdrawalOpportunity) return;
+
+    const opportunity = this.pendingWithdrawalOpportunity;
+    this.transitioningIds = new Set([...this.transitioningIds, opportunity.id]);
+
+    this.store.dispatch(OpportunityActions.transitionStatus({
+      id: opportunity.id,
+      targetStatus: OpportunityStatus.Withdrawn,
+      reason
+    }));
+
+    // Clear transitioning state after timeout
+    setTimeout(() => {
+      const updated = new Set(this.transitioningIds);
+      updated.delete(opportunity.id);
+      this.transitioningIds = updated;
+    }, 5000);
+
+    this.showWithdrawalModal.set(false);
+    this.pendingWithdrawalOpportunity = null;
+  }
+
+  /** Handles cancellation from the withdrawal modal. */
+  onWithdrawalCancelled(): void {
+    this.showWithdrawalModal.set(false);
+    this.pendingWithdrawalOpportunity = null;
+  }
+
   private updateTime(): void {
     const now = new Date();
     this.currentTime = now.toLocaleTimeString('en-US', {
@@ -462,140 +620,170 @@ export class PipelinePageComponent implements OnInit, AfterViewInit, OnDestroy {
   // ─── Chart Rendering ─────────────────────────────────────────────────
 
   private renderValueByStageChart(): void {
-    if (!this.valueByStageCanvas) return;
-    this.valueByStageChart?.destroy();
+    try {
+      if (!this.valueByStageCanvas) return;
+      this.valueByStageChart?.destroy();
 
-    const labels = this.pipelineColumns.map(c => this.formatStatusLabel(c.status));
-    const data = this.pipelineColumns.map(c => this.getColumnEstimatedValue(c.status) / 1_000_000);
-    const colors = this.pipelineColumns.map(c => c.color);
+      const labels = this.pipelineColumns.map(c => this.formatStatusLabel(c.status));
+      const data = this.pipelineColumns.map(c => this.getColumnEstimatedValue(c.status) / 1_000_000);
+      const colors = this.pipelineColumns.map(c => c.color);
 
-    this.valueByStageChart = new Chart(this.valueByStageCanvas.nativeElement, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: colors,
-          borderRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => `£${(ctx.parsed.y ?? 0).toFixed(2)}M`
+      this.valueByStageChart = new Chart(this.valueByStageCanvas.nativeElement, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `£${(ctx.parsed.y ?? 0).toFixed(2)}M`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { font: { size: 10 } }, grid: { display: false } },
+            y: {
+              beginAtZero: true,
+              ticks: { font: { size: 10 }, callback: (v) => `£${v}M` },
+              grid: { color: 'rgba(0,0,0,0.05)' }
             }
           }
-        },
-        scales: {
-          x: { ticks: { font: { size: 10 } }, grid: { display: false } },
-          y: {
-            beginAtZero: true,
-            ticks: { font: { size: 10 }, callback: (v) => `£${v}M` },
-            grid: { color: 'rgba(0,0,0,0.05)' }
-          }
         }
-      }
-    });
+      });
+      this.chartError.update(state => ({ ...state, valueByStage: false }));
+    } catch (error) {
+      console.error('Failed to render value by stage chart:', error);
+      this.chartError.update(state => ({ ...state, valueByStage: true }));
+    }
   }
 
   private renderProbabilityDonut(): void {
-    if (!this.probabilityDonutCanvas) return;
-    this.probabilityDonutChart?.destroy();
+    try {
+      if (!this.probabilityDonutCanvas) return;
+      this.probabilityDonutChart?.destroy();
 
-    const activeColumns = this.pipelineColumns.filter(c => c.status !== OpportunityStatus.Withdrawn);
-    const labels = activeColumns.map(c => this.formatStatusLabel(c.status));
-    const data = activeColumns.map(c => {
-      const count = (this.groupedOpportunities[c.status] ?? []).length;
-      const probability = STAGE_PROBABILITY[c.status] ?? 0;
-      return (count * AVG_OPPORTUNITY_VALUE * probability) / 1_000_000;
-    });
-    const colors = activeColumns.map(c => c.color);
+      const activeColumns = this.pipelineColumns.filter(c => c.status !== OpportunityStatus.Withdrawn);
+      const labels = activeColumns.map(c => this.formatStatusLabel(c.status));
+      const data = activeColumns.map(c => {
+        const count = (this.groupedOpportunities[c.status] ?? []).length;
+        const probability = STAGE_PROBABILITY[c.status] ?? 0;
+        return (count * AVG_OPPORTUNITY_VALUE * probability) / 1_000_000;
+      });
+      const colors = activeColumns.map(c => c.color);
 
-    this.probabilityDonutChart = new Chart(this.probabilityDonutCanvas.nativeElement, {
-      type: 'doughnut',
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: colors,
-          borderWidth: 0,
-          hoverOffset: 4
-        }]
-      },
-      options: {
-        responsive: false,
-        cutout: '60%',
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => `${ctx.label}: £${(ctx.parsed as number).toFixed(2)}M`
+      this.probabilityDonutChart = new Chart(this.probabilityDonutCanvas.nativeElement, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: false,
+          cutout: '60%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.label}: £${(ctx.parsed as number).toFixed(2)}M`
+              }
             }
           }
         }
-      }
-    });
+      });
+      this.chartError.update(state => ({ ...state, probabilityDonut: false }));
+    } catch (error) {
+      console.error('Failed to render probability donut chart:', error);
+      this.chartError.update(state => ({ ...state, probabilityDonut: true }));
+    }
   }
 
   private renderTopLocationsChart(): void {
-    if (!this.topLocationsCanvas) return;
-    this.topLocationsChart?.destroy();
+    try {
+      if (!this.topLocationsCanvas) return;
+      this.topLocationsChart?.destroy();
 
-    // Aggregate opportunity values by location
-    const locationValues: Record<string, number> = {};
-    for (const column of this.pipelineColumns) {
-      const opportunities = this.groupedOpportunities[column.status] ?? [];
-      for (const opp of opportunities) {
-        const loc = opp.location || 'Unknown';
-        locationValues[loc] = (locationValues[loc] ?? 0) + AVG_OPPORTUNITY_VALUE;
-      }
-    }
-
-    // Sort and take top 5
-    const sorted = Object.entries(locationValues)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5);
-
-    const labels = sorted.map(([loc]) => loc.length > 18 ? loc.substring(0, 18) + '…' : loc);
-    const data = sorted.map(([, val]) => val / 1_000_000);
-    const colors = ['#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b'];
-
-    this.topLocationsChart = new Chart(this.topLocationsCanvas.nativeElement, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: colors,
-          borderRadius: 4
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => `£${(ctx.parsed.x ?? 0).toFixed(2)}M`
-            }
-          }
-        },
-        scales: {
-          x: {
-            beginAtZero: true,
-            ticks: { font: { size: 10 }, callback: (v) => `£${v}M` },
-            grid: { color: 'rgba(0,0,0,0.05)' }
-          },
-          y: { ticks: { font: { size: 10 } }, grid: { display: false } }
+      // Aggregate opportunity values by location
+      const locationValues: Record<string, number> = {};
+      for (const column of this.pipelineColumns) {
+        const opportunities = this.groupedOpportunities[column.status] ?? [];
+        for (const opp of opportunities) {
+          const loc = opp.location || 'Unknown';
+          locationValues[loc] = (locationValues[loc] ?? 0) + AVG_OPPORTUNITY_VALUE;
         }
       }
-    });
+
+      // Sort and take top 5
+      const sorted = Object.entries(locationValues)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5);
+
+      const labels = sorted.map(([loc]) => loc.length > 18 ? loc.substring(0, 18) + '…' : loc);
+      const data = sorted.map(([, val]) => val / 1_000_000);
+      const colors = ['#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b'];
+
+      this.topLocationsChart = new Chart(this.topLocationsCanvas.nativeElement, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `£${(ctx.parsed.x ?? 0).toFixed(2)}M`
+              }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              ticks: { font: { size: 10 }, callback: (v) => `£${v}M` },
+              grid: { color: 'rgba(0,0,0,0.05)' }
+            },
+            y: { ticks: { font: { size: 10 } }, grid: { display: false } }
+          }
+        }
+      });
+      this.chartError.update(state => ({ ...state, topLocations: false }));
+    } catch (error) {
+      console.error('Failed to render top locations chart:', error);
+      this.chartError.update(state => ({ ...state, topLocations: true }));
+    }
+  }
+
+  /** Retry rendering a specific chart after an error. */
+  retryChart(chartName: 'valueByStage' | 'probabilityDonut' | 'topLocations'): void {
+    this.chartError.update(state => ({ ...state, [chartName]: false }));
+    setTimeout(() => {
+      switch (chartName) {
+        case 'valueByStage': this.renderValueByStageChart(); break;
+        case 'probabilityDonut': this.renderProbabilityDonut(); break;
+        case 'topLocations': this.renderTopLocationsChart(); break;
+      }
+    }, 50);
   }
 }
 

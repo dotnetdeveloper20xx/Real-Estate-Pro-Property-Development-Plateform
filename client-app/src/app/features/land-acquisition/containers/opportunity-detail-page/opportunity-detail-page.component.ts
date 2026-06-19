@@ -13,15 +13,36 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Store } from '@ngrx/store';
+import { Actions, ofType } from '@ngrx/effects';
+import { take } from 'rxjs';
 
 import { OpportunityService } from '../../services/opportunity.service';
+import {
+  DueDiligenceService,
+  OfferService,
+  ContractService,
+  DocumentService,
+  FeasibilityService,
+  LandOwnerService,
+  AuditService
+} from '../../services';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 import { ToastService } from '@core/services/toast.service';
 import { AuthService } from '@core/services/auth.service';
-import { StatusProgressComponent } from '../../components/status-progress/status-progress.component';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ActivityTimelineComponent } from '../../components/activity-timeline/activity-timeline.component';
 import { ApprovalPanelComponent, IApprovalDecision, IRejectionDecision } from '../../components/approval-panel/approval-panel.component';
 import { CurrencyInputComponent } from '../../../../shared/components/currency-input/currency-input.component';
+import { WithdrawalModalComponent } from '../../components/withdrawal-modal/withdrawal-modal.component';
+import { ContractTransitionComponent } from '../../components/contract-transition/contract-transition.component';
+import { AcquisitionTabComponent } from '../../components/acquisition-tab/acquisition-tab.component';
+import { OfferFormModalComponent } from '../../components/offer-form-modal/offer-form-modal.component';
+import { DueDiligenceFormModalComponent } from '../../components/dd-form-modal/dd-form-modal.component';
+import { DocumentUploadModalComponent } from '../../components/document-upload-modal/document-upload-modal.component';
+import { LandOwnerFormModalComponent } from '../../components/land-owner-form-modal/land-owner-form-modal.component';
+import { FeasibilityFormModalComponent } from '../../components/feasibility-form-modal/feasibility-form-modal.component';
+import { ApprovalRequestModalComponent } from '../../components/approval-request-modal/approval-request-modal.component';
+import { ContractFormModalComponent } from '../../components/contract-form-modal/contract-form-modal.component';
 import { OpportunityActions } from '../../store/opportunity/opportunity.actions';
 import {
   IOpportunityDetail,
@@ -29,7 +50,10 @@ import {
   DueDiligenceStatus,
   DueDiligenceType,
   OfferStatus,
-  DocumentType
+  DocumentType,
+  FeasibilityScenario,
+  OwnershipType,
+  IAuditEntry
 } from '../../models';
 import { IRecentActivity } from '../../models/dashboard.model';
 
@@ -66,11 +90,20 @@ interface IActionButton {
     RouterLink,
     DatePipe,
     DecimalPipe,
-    StatusProgressComponent,
     StatusBadgeComponent,
     ActivityTimelineComponent,
     ApprovalPanelComponent,
-    CurrencyInputComponent
+    CurrencyInputComponent,
+    WithdrawalModalComponent,
+    ContractTransitionComponent,
+    AcquisitionTabComponent,
+    OfferFormModalComponent,
+    DueDiligenceFormModalComponent,
+    DocumentUploadModalComponent,
+    LandOwnerFormModalComponent,
+    FeasibilityFormModalComponent,
+    ApprovalRequestModalComponent,
+    ContractFormModalComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -152,33 +185,33 @@ interface IActionButton {
           <!-- Subtle top accent gradient -->
           <div class="h-1 bg-gradient-to-r from-primary via-secondary to-accent"></div>
           <div class="card-body p-6">
-            <!-- Top Row: Title + Actions -->
+            <!-- Top Row: Title + Stats + Actions -->
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-              <!-- Left: Title and Metadata -->
+              <!-- Left: Title and Meta Bar -->
               <div class="flex flex-col gap-2">
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 flex-wrap">
                   <h1 class="text-2xl font-bold text-base-content">{{ opportunity()!.name }}</h1>
                   <app-status-badge [status]="opportunity()!.status"></app-status-badge>
                 </div>
-                <div class="flex flex-wrap items-center gap-4 text-sm text-base-content/70">
+                <!-- Meta Bar -->
+                <div class="flex flex-wrap items-center gap-3 text-sm text-base-content/60">
                   <span class="flex items-center gap-1">
-                    <span class="material-symbols-outlined text-base">location_on</span>
+                    <span class="material-symbols-outlined text-sm">location_on</span>
                     {{ opportunity()!.location }}
                   </span>
+                  <span class="text-base-content/30">•</span>
                   <span class="flex items-center gap-1">
-                    <span class="material-symbols-outlined text-base">straighten</span>
+                    <span class="material-symbols-outlined text-sm">straighten</span>
                     {{ opportunity()!.landSize | number:'1.2-2' }} acres
                   </span>
+                  <span *ngIf="opportunity()!.source" class="text-base-content/30">•</span>
                   <span *ngIf="opportunity()!.source" class="flex items-center gap-1">
-                    <span class="material-symbols-outlined text-base">source</span>
+                    <span class="material-symbols-outlined text-sm">source</span>
                     {{ opportunity()!.source }}
                   </span>
-                  <span *ngIf="opportunity()!.expectedAcquisition" class="flex items-center gap-1">
-                    <span class="material-symbols-outlined text-base">event</span>
-                    Target: {{ opportunity()!.expectedAcquisition | date:'dd MMM yyyy' }}
-                  </span>
+                  <span class="text-base-content/30">•</span>
                   <span class="flex items-center gap-1">
-                    <span class="material-symbols-outlined text-base">calendar_today</span>
+                    <span class="material-symbols-outlined text-sm">calendar_today</span>
                     Created: {{ opportunity()!.createdAt | date:'dd MMM yyyy' }}
                   </span>
                 </div>
@@ -197,9 +230,85 @@ interface IActionButton {
               </div>
             </div>
 
-            <!-- Status Progress Indicator -->
+            <!-- Stats Bar -->
             <div class="mt-4 pt-4 border-t border-base-200">
-              <app-status-progress [currentStatus]="opportunity()!.status"></app-status-progress>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="flex flex-col gap-0.5">
+                  <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Current Phase</span>
+                  <span class="text-sm font-semibold text-base-content">{{ opportunity()!.status === 'InitialReview' ? 'Initial Review' : opportunity()!.status === 'DueDiligence' ? 'Due Diligence' : opportunity()!.status === 'OfferMade' ? 'Offer Made' : opportunity()!.status === 'UnderContract' ? 'Under Contract' : opportunity()!.status }}</span>
+                </div>
+                <div class="flex flex-col gap-0.5">
+                  <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Time in Phase</span>
+                  <span class="text-sm font-semibold text-base-content">{{ daysInCurrentPhase() }} days</span>
+                </div>
+                <div class="flex flex-col gap-0.5">
+                  <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Total Pipeline Time</span>
+                  <span class="text-sm font-semibold text-base-content">{{ totalPipelineDays() }} days</span>
+                </div>
+                <div class="flex flex-col gap-0.5">
+                  <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Last Updated</span>
+                  <span class="text-sm font-semibold text-base-content">{{ lastUpdatedDisplay() | date:'dd MMM yyyy' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Enhanced Status Stepper -->
+            <div class="mt-4 pt-4 border-t border-base-200">
+              <div class="flex items-center justify-between gap-0 overflow-x-auto pb-2">
+                <ng-container *ngFor="let stage of pipelineStages; let i = index; let last = last">
+                  <!-- Stage Node -->
+                  <div class="flex flex-col items-center min-w-[80px]">
+                    <!-- Circle -->
+                    <div
+                      class="flex items-center justify-center rounded-full border-2 transition-all duration-300"
+                      [ngClass]="{
+                        'w-9 h-9 bg-success border-success text-success-content': i < currentStageIndex() || (i === currentStageIndex() && opportunity()!.status === 'Acquired'),
+                        'w-10 h-10 bg-primary border-primary text-primary-content shadow-lg shadow-primary/30': i === currentStageIndex() && opportunity()!.status !== 'Acquired' && opportunity()!.status !== 'Withdrawn',
+                        'w-8 h-8 bg-base-200 border-base-300 text-base-content/40': i > currentStageIndex()
+                      }">
+                      <span *ngIf="i < currentStageIndex() || (i === currentStageIndex() && opportunity()!.status === 'Acquired')" class="material-symbols-outlined text-sm">check</span>
+                      <span *ngIf="i === currentStageIndex() && opportunity()!.status !== 'Acquired' && opportunity()!.status !== 'Withdrawn'" class="material-symbols-outlined text-sm animate-pulse">radio_button_checked</span>
+                      <span *ngIf="i > currentStageIndex()" class="text-xs font-bold">{{ i + 1 }}</span>
+                      <span *ngIf="i === currentStageIndex() && opportunity()!.status === 'Withdrawn'" class="material-symbols-outlined text-sm text-error">close</span>
+                    </div>
+                    <!-- Label -->
+                    <span class="text-[11px] font-semibold mt-1.5 text-center whitespace-nowrap"
+                      [ngClass]="{
+                        'text-success': i < currentStageIndex(),
+                        'text-primary': i === currentStageIndex() && opportunity()!.status !== 'Withdrawn',
+                        'text-error': i === currentStageIndex() && opportunity()!.status === 'Withdrawn',
+                        'text-base-content/40': i > currentStageIndex()
+                      }">
+                      {{ stage.label }}
+                    </span>
+                    <!-- Subtitle -->
+                    <span class="text-[10px] text-base-content/40 text-center whitespace-nowrap">
+                      <ng-container *ngIf="i < currentStageIndex()">Completed</ng-container>
+                      <ng-container *ngIf="i === currentStageIndex() && opportunity()!.status !== 'Acquired' && opportunity()!.status !== 'Withdrawn'">In Progress</ng-container>
+                      <ng-container *ngIf="i === currentStageIndex() && opportunity()!.status === 'Acquired'">Completed</ng-container>
+                      <ng-container *ngIf="i === currentStageIndex() && opportunity()!.status === 'Withdrawn'">Withdrawn</ng-container>
+                      <ng-container *ngIf="i > currentStageIndex()">{{ stage.subtitle }}</ng-container>
+                    </span>
+                  </div>
+                  <!-- Connector Line -->
+                  <div *ngIf="!last" class="flex-1 h-0.5 mx-1 min-w-[20px]"
+                    [ngClass]="{
+                      'bg-success': i < currentStageIndex(),
+                      'bg-gradient-to-r from-primary to-base-300': i === currentStageIndex(),
+                      'border-t-2 border-dashed border-base-300 h-0': i > currentStageIndex()
+                    }">
+                  </div>
+                </ng-container>
+              </div>
+              <!-- Progress bar summary -->
+              <div class="mt-3 flex items-center gap-3">
+                <div class="flex-1 bg-base-200 rounded-full h-2 overflow-hidden">
+                  <div class="bg-primary h-full rounded-full transition-all duration-500" [style.width.%]="pipelineCompletionPercent()"></div>
+                </div>
+                <span class="text-xs font-medium text-base-content/60 whitespace-nowrap">
+                  {{ completedStagesCount() }} of 6 stages completed • {{ pipelineCompletionPercent() }}%
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -212,7 +321,7 @@ interface IActionButton {
             <!-- DaisyUI Tabs — Enhanced -->
             <div role="tablist" class="flex gap-1 border-b border-base-200 mb-6 -mx-2 px-2 overflow-x-auto">
               <button
-                *ngFor="let tab of tabs"
+                *ngFor="let tab of tabs()"
                 role="tab"
                 class="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-all duration-200
                        border-b-2 -mb-[2px] whitespace-nowrap"
@@ -239,8 +348,10 @@ interface IActionButton {
               role="tabpanel"
               aria-labelledby="tab-overview"
               style="animation: fade-in 0.3s ease-out">
+
+              <!-- Top 4 Cards Grid -->
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Opportunity Details Card -->
+                <!-- Card 1: Opportunity Details -->
                 <div class="rounded-xl border border-base-200/80 bg-base-100 overflow-hidden">
                   <div class="px-5 py-3 bg-base-200/30 border-b border-base-200/80">
                     <h3 class="text-sm font-semibold text-base-content flex items-center gap-2">
@@ -249,7 +360,7 @@ interface IActionButton {
                     </h3>
                   </div>
                   <div class="p-5">
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 gap-3">
                       <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
                         <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Name</span>
                         <span class="text-sm font-medium text-base-content">{{ opportunity()!.name }}</span>
@@ -278,17 +389,27 @@ interface IActionButton {
                       </div>
                       <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
                         <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Created</span>
-                        <span class="text-sm font-medium text-base-content">{{ opportunity()!.createdAt | date:'dd MMM yyyy, HH:mm' }}</span>
+                        <span class="text-sm font-medium text-base-content">{{ opportunity()!.createdAt | date:'dd MMM yyyy' }}</span>
+                      </div>
+                      <div *ngIf="opportunity()!.description" class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30 col-span-2">
+                        <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Description</span>
+                        <span class="text-sm font-medium text-base-content">{{ opportunity()!.description }}</span>
                       </div>
                       <div class="flex flex-col gap-1 p-3 rounded-lg bg-error/5 border border-error/10" *ngIf="opportunity()!.withdrawalReason">
                         <span class="text-[11px] text-error/70 uppercase font-semibold tracking-wide">Withdrawal Reason</span>
                         <span class="text-sm font-medium text-error">{{ opportunity()!.withdrawalReason }}</span>
                       </div>
                     </div>
+                    <div class="mt-4 pt-3 border-t border-base-200/60">
+                      <a routerLink="." fragment="details" class="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1 cursor-pointer">
+                        View Full Details
+                        <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Land Owner Card -->
+                <!-- Card 2: Land Owner -->
                 <div class="rounded-xl border border-base-200/80 bg-base-100 overflow-hidden">
                   <div class="px-5 py-3 bg-base-200/30 border-b border-base-200/80">
                     <h3 class="text-sm font-semibold text-base-content flex items-center gap-2">
@@ -297,32 +418,333 @@ interface IActionButton {
                     </h3>
                   </div>
                   <div class="p-5">
+                    <!-- Read-only display when NOT editing -->
                     <div *ngIf="opportunity()!.landOwner as owner; else noOwner">
-                      <div class="grid grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
-                          <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Owner Name</span>
-                          <span class="text-sm font-medium text-base-content">{{ owner.name }}</span>
+                      <div *ngIf="!showOwnerForm()">
+                        <div class="grid grid-cols-2 gap-3">
+                          <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
+                            <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Owner Name</span>
+                            <span class="text-sm font-medium text-base-content">{{ owner.name }}</span>
+                          </div>
+                          <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
+                            <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Ownership Type</span>
+                            <span class="text-sm font-medium text-base-content">{{ owner.ownershipType }}</span>
+                          </div>
+                          <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30 col-span-2">
+                            <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Contact Details</span>
+                            <span class="text-sm font-medium text-base-content">{{ owner.contactDetails }}</span>
+                          </div>
+                          <div *ngIf="owner.address" class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30 col-span-2">
+                            <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Address</span>
+                            <span class="text-sm font-medium text-base-content">{{ owner.address }}</span>
+                          </div>
                         </div>
-                        <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
-                          <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Ownership Type</span>
-                          <span class="text-sm font-medium text-base-content">{{ owner.ownershipType }}</span>
+                        <div class="mt-4 pt-3 border-t border-base-200/60 flex items-center justify-between">
+                          <span class="text-xs font-medium text-base-content/50">Owner Profile</span>
+                          <div class="flex gap-2">
+                            <button class="btn btn-ghost btn-xs gap-1" (click)="openOwnerModal(true)">
+                              <span class="material-symbols-outlined text-sm">edit</span>
+                              Edit Owner
+                            </button>
+                            <button class="btn btn-ghost btn-xs text-error gap-1" (click)="deleteOwner()">
+                              <span class="material-symbols-outlined text-sm">delete</span>
+                              Delete Owner
+                            </button>
+                          </div>
                         </div>
-                        <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30 col-span-2">
-                          <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Contact Details</span>
-                          <span class="text-sm font-medium text-base-content">{{ owner.contactDetails }}</span>
+                      </div>
+
+                      <!-- Inline Edit Form (shown when editing existing owner) -->
+                      <div *ngIf="showOwnerForm() && editingOwner()" style="animation: scale-in 0.2s ease-out">
+                        <h4 class="text-sm font-semibold text-base-content mb-3">Edit Land Owner</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div class="form-control w-full">
+                            <label class="label"><span class="label-text text-xs font-medium">Name *</span></label>
+                            <input type="text" class="input input-bordered input-sm w-full"
+                                   [(ngModel)]="ownerForm.name"
+                                   placeholder="2-200 characters"
+                                   minlength="2" maxlength="200" />
+                            <label class="label" *ngIf="ownerForm.name.length > 0 && ownerForm.name.trim().length < 2">
+                              <span class="label-text-alt text-error">Name must be at least 2 characters</span>
+                            </label>
+                          </div>
+                          <div class="form-control w-full">
+                            <label class="label"><span class="label-text text-xs font-medium">Ownership Type *</span></label>
+                            <select class="select select-bordered select-sm w-full" [(ngModel)]="ownerForm.ownershipType">
+                              <option value="Freehold">Freehold</option>
+                              <option value="Leasehold">Leasehold</option>
+                            </select>
+                          </div>
+                          <div class="form-control w-full sm:col-span-2">
+                            <label class="label"><span class="label-text text-xs font-medium">Contact Details *</span></label>
+                            <textarea class="textarea textarea-bordered textarea-sm w-full" rows="2"
+                                      [(ngModel)]="ownerForm.contactDetails"
+                                      placeholder="5-500 characters"
+                                      minlength="5" maxlength="500"></textarea>
+                            <label class="label" *ngIf="ownerForm.contactDetails.length > 0 && ownerForm.contactDetails.trim().length < 5">
+                              <span class="label-text-alt text-error">Contact details must be at least 5 characters</span>
+                            </label>
+                          </div>
+                          <div class="form-control w-full sm:col-span-2">
+                            <label class="label"><span class="label-text text-xs font-medium">Address (optional)</span></label>
+                            <input type="text" class="input input-bordered input-sm w-full"
+                                   [(ngModel)]="ownerForm.address"
+                                   placeholder="Enter address" />
+                          </div>
                         </div>
-                        <div *ngIf="owner.address" class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30 col-span-2">
-                          <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Address</span>
-                          <span class="text-sm font-medium text-base-content">{{ owner.address }}</span>
+                        <div class="flex justify-end gap-2 pt-3">
+                          <button class="btn btn-ghost btn-sm" (click)="cancelOwnerForm()" [disabled]="ownerFormSaving()">Cancel</button>
+                          <button class="btn btn-primary btn-sm" (click)="saveOwner()" [disabled]="!isOwnerFormValid() || ownerFormSaving()">
+                            <span *ngIf="ownerFormSaving()" class="loading loading-spinner loading-xs"></span>
+                            <span class="material-symbols-outlined text-sm" *ngIf="!ownerFormSaving()">save</span>
+                            Update Owner
+                          </button>
                         </div>
                       </div>
                     </div>
+
+                    <!-- No Owner state + Add Owner form -->
                     <ng-template #noOwner>
-                      <div class="flex flex-col items-center justify-center py-8 text-base-content/40">
-                        <span class="material-symbols-outlined text-4xl mb-2">person_off</span>
-                        <p class="text-sm font-medium">No land owner recorded</p>
-                        <p class="text-xs mt-1">Owner details will appear here once captured.</p>
+                      <div *ngIf="!showOwnerForm()">
+                        <div class="flex flex-col items-center justify-center py-8 text-base-content/40">
+                          <span class="material-symbols-outlined text-4xl mb-2">person_off</span>
+                          <p class="text-sm font-medium">No owner linked yet</p>
+                          <p class="text-xs mt-1 mb-3">Owner details will appear here once captured.</p>
+                          <button class="btn btn-primary btn-sm gap-1" (click)="openOwnerModal(false)">
+                            <span class="material-symbols-outlined text-sm">person_add</span>
+                            Add Owner
+                          </button>
+                        </div>
                       </div>
+
+                      <!-- Create Form (shown when adding new owner) -->
+                      <div *ngIf="showOwnerForm() && !editingOwner()" style="animation: scale-in 0.2s ease-out">
+                        <h4 class="text-sm font-semibold text-base-content mb-3">Add Land Owner</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div class="form-control w-full">
+                            <label class="label"><span class="label-text text-xs font-medium">Name *</span></label>
+                            <input type="text" class="input input-bordered input-sm w-full"
+                                   [(ngModel)]="ownerForm.name"
+                                   placeholder="2-200 characters"
+                                   minlength="2" maxlength="200" />
+                            <label class="label" *ngIf="ownerForm.name.length > 0 && ownerForm.name.trim().length < 2">
+                              <span class="label-text-alt text-error">Name must be at least 2 characters</span>
+                            </label>
+                          </div>
+                          <div class="form-control w-full">
+                            <label class="label"><span class="label-text text-xs font-medium">Ownership Type *</span></label>
+                            <select class="select select-bordered select-sm w-full" [(ngModel)]="ownerForm.ownershipType">
+                              <option value="Freehold">Freehold</option>
+                              <option value="Leasehold">Leasehold</option>
+                            </select>
+                          </div>
+                          <div class="form-control w-full sm:col-span-2">
+                            <label class="label"><span class="label-text text-xs font-medium">Contact Details *</span></label>
+                            <textarea class="textarea textarea-bordered textarea-sm w-full" rows="2"
+                                      [(ngModel)]="ownerForm.contactDetails"
+                                      placeholder="5-500 characters"
+                                      minlength="5" maxlength="500"></textarea>
+                            <label class="label" *ngIf="ownerForm.contactDetails.length > 0 && ownerForm.contactDetails.trim().length < 5">
+                              <span class="label-text-alt text-error">Contact details must be at least 5 characters</span>
+                            </label>
+                          </div>
+                          <div class="form-control w-full sm:col-span-2">
+                            <label class="label"><span class="label-text text-xs font-medium">Address (optional)</span></label>
+                            <input type="text" class="input input-bordered input-sm w-full"
+                                   [(ngModel)]="ownerForm.address"
+                                   placeholder="Enter address" />
+                          </div>
+                        </div>
+                        <div class="flex justify-end gap-2 pt-3">
+                          <button class="btn btn-ghost btn-sm" (click)="cancelOwnerForm()" [disabled]="ownerFormSaving()">Cancel</button>
+                          <button class="btn btn-primary btn-sm" (click)="saveOwner()" [disabled]="!isOwnerFormValid() || ownerFormSaving()">
+                            <span *ngIf="ownerFormSaving()" class="loading loading-spinner loading-xs"></span>
+                            <span class="material-symbols-outlined text-sm" *ngIf="!ownerFormSaving()">person_add</span>
+                            Add Owner
+                          </button>
+                        </div>
+                      </div>
+                    </ng-template>
+                  </div>
+                </div>
+
+                <!-- Card 3: Pipeline Health -->
+                <div class="rounded-xl border border-base-200/80 bg-base-100 overflow-hidden">
+                  <div class="px-5 py-3 bg-base-200/30 border-b border-base-200/80">
+                    <h3 class="text-sm font-semibold text-base-content flex items-center gap-2">
+                      <span class="material-symbols-outlined text-primary text-base">health_and_safety</span>
+                      Pipeline Health
+                    </h3>
+                  </div>
+                  <div class="p-5">
+                    <div class="flex items-center gap-4 mb-4">
+                      <div class="flex flex-col items-center">
+                        <span class="text-3xl font-bold" [ngClass]="pipelineHealthScore().cssClass">{{ pipelineHealthScore().overall }}</span>
+                        <span class="text-[11px] text-base-content/50 uppercase font-semibold">Score</span>
+                      </div>
+                      <div class="flex-1">
+                        <span class="text-sm font-semibold" [ngClass]="pipelineHealthScore().cssClass">{{ pipelineHealthScore().label }}</span>
+                        <p class="text-xs text-base-content/50 mt-0.5">Based on legal, commercial, financial &amp; risk factors</p>
+                      </div>
+                    </div>
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between text-xs">
+                        <span class="text-base-content/60">Legal &amp; Compliance</span>
+                        <span class="font-medium">{{ pipelineHealthScore().legal }}%</span>
+                      </div>
+                      <div class="w-full bg-base-200 rounded-full h-1.5">
+                        <div class="bg-info h-1.5 rounded-full transition-all" [style.width.%]="pipelineHealthScore().legal"></div>
+                      </div>
+                      <div class="flex items-center justify-between text-xs">
+                        <span class="text-base-content/60">Commercial Viability</span>
+                        <span class="font-medium">{{ pipelineHealthScore().commercial }}%</span>
+                      </div>
+                      <div class="w-full bg-base-200 rounded-full h-1.5">
+                        <div class="bg-secondary h-1.5 rounded-full transition-all" [style.width.%]="pipelineHealthScore().commercial"></div>
+                      </div>
+                      <div class="flex items-center justify-between text-xs">
+                        <span class="text-base-content/60">Financial Feasibility</span>
+                        <span class="font-medium">{{ pipelineHealthScore().financial }}%</span>
+                      </div>
+                      <div class="w-full bg-base-200 rounded-full h-1.5">
+                        <div class="bg-accent h-1.5 rounded-full transition-all" [style.width.%]="pipelineHealthScore().financial"></div>
+                      </div>
+                      <div class="flex items-center justify-between text-xs">
+                        <span class="text-base-content/60">Risk &amp; Issues</span>
+                        <span class="font-medium">{{ pipelineHealthScore().risk }}%</span>
+                      </div>
+                      <div class="w-full bg-base-200 rounded-full h-1.5">
+                        <div class="bg-warning h-1.5 rounded-full transition-all" [style.width.%]="pipelineHealthScore().risk"></div>
+                      </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-base-200/60">
+                      <a class="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1 cursor-pointer">
+                        View Analytics Dashboard
+                        <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card 4: Key Information -->
+                <div class="rounded-xl border border-base-200/80 bg-base-100 overflow-hidden">
+                  <div class="px-5 py-3 bg-base-200/30 border-b border-base-200/80">
+                    <h3 class="text-sm font-semibold text-base-content flex items-center gap-2">
+                      <span class="material-symbols-outlined text-primary text-base">assignment</span>
+                      Key Information
+                    </h3>
+                  </div>
+                  <div class="p-5">
+                    <div class="space-y-3">
+                      <div class="flex items-center justify-between p-3 rounded-lg bg-base-200/30">
+                        <div class="flex flex-col gap-0.5">
+                          <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Next Milestone</span>
+                          <span class="text-sm font-medium text-base-content">{{ nextMilestone() }}</span>
+                        </div>
+                        <span class="material-symbols-outlined text-primary text-lg">flag</span>
+                      </div>
+                      <div class="flex items-center justify-between p-3 rounded-lg bg-base-200/30">
+                        <div class="flex flex-col gap-0.5">
+                          <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Key Contact</span>
+                          <span class="text-sm font-medium text-base-content">{{ opportunity()!.createdBy || 'System' }}</span>
+                        </div>
+                        <span class="material-symbols-outlined text-primary text-lg">contact_phone</span>
+                      </div>
+                      <div class="flex items-center justify-between p-3 rounded-lg bg-base-200/30">
+                        <div class="flex flex-col gap-0.5">
+                          <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Related Tasks</span>
+                          <span class="text-sm font-medium text-base-content">{{ relatedTasksCount() }} items</span>
+                        </div>
+                        <span class="material-symbols-outlined text-primary text-lg">task</span>
+                      </div>
+                      <div class="flex items-center justify-between p-3 rounded-lg" [ngClass]="openIssuesCount() > 0 ? 'bg-warning/10 border border-warning/20' : 'bg-base-200/30'">
+                        <div class="flex flex-col gap-0.5">
+                          <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Open Issues</span>
+                          <span class="text-sm font-medium" [ngClass]="openIssuesCount() > 0 ? 'text-warning' : 'text-base-content'">{{ openIssuesCount() }} pending</span>
+                        </div>
+                        <span class="material-symbols-outlined text-lg" [ngClass]="openIssuesCount() > 0 ? 'text-warning' : 'text-primary'">report</span>
+                      </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-base-200/60">
+                      <a (click)="setActiveTab('due-diligence')" class="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1 cursor-pointer">
+                        View All Tasks &amp; Issues
+                        <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom Row: Recent Items -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <!-- Recent Activity -->
+                <div class="rounded-xl border border-base-200/80 bg-base-100 overflow-hidden">
+                  <div class="px-4 py-2.5 bg-base-200/30 border-b border-base-200/80">
+                    <h4 class="text-xs font-semibold text-base-content flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-sm text-primary">history</span>
+                      Recent Activity
+                    </h4>
+                  </div>
+                  <div class="p-4">
+                    <div *ngIf="activityData().length > 0; else noRecentActivity">
+                      <div class="flex items-start gap-2">
+                        <span class="material-symbols-outlined text-sm text-base-content/40 mt-0.5">circle</span>
+                        <div class="flex-1 min-w-0">
+                          <p class="text-xs font-medium text-base-content truncate">{{ activityData()[0].newStatus }}</p>
+                          <p class="text-[11px] text-base-content/50 mt-0.5">{{ activityData()[0].changedBy }} • {{ activityData()[0].changedAt | date:'dd MMM yyyy' }}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <ng-template #noRecentActivity>
+                      <p class="text-xs text-base-content/40 text-center py-3">No recent activity</p>
+                    </ng-template>
+                  </div>
+                </div>
+
+                <!-- Recent Document -->
+                <div class="rounded-xl border border-base-200/80 bg-base-100 overflow-hidden">
+                  <div class="px-4 py-2.5 bg-base-200/30 border-b border-base-200/80">
+                    <h4 class="text-xs font-semibold text-base-content flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-sm text-primary">description</span>
+                      Recent Document
+                    </h4>
+                  </div>
+                  <div class="p-4">
+                    <div *ngIf="opportunity()!.documents.length > 0; else noRecentDoc">
+                      <div class="flex items-start gap-2">
+                        <span class="material-symbols-outlined text-sm text-base-content/40 mt-0.5">attach_file</span>
+                        <div class="flex-1 min-w-0">
+                          <p class="text-xs font-medium text-base-content truncate">{{ opportunity()!.documents[opportunity()!.documents.length - 1].fileName }}</p>
+                          <p class="text-[11px] text-base-content/50 mt-0.5">{{ opportunity()!.documents[opportunity()!.documents.length - 1].uploadedAt | date:'dd MMM yyyy' }}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <ng-template #noRecentDoc>
+                      <p class="text-xs text-base-content/40 text-center py-3">No documents uploaded</p>
+                    </ng-template>
+                  </div>
+                </div>
+
+                <!-- Recent Approval -->
+                <div class="rounded-xl border border-base-200/80 bg-base-100 overflow-hidden">
+                  <div class="px-4 py-2.5 bg-base-200/30 border-b border-base-200/80">
+                    <h4 class="text-xs font-semibold text-base-content flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-sm text-primary">approval</span>
+                      Recent Approval
+                    </h4>
+                  </div>
+                  <div class="p-4">
+                    <div *ngIf="opportunity()!.approvalRequests && opportunity()!.approvalRequests.length > 0; else noRecentApproval">
+                      <div class="flex items-start gap-2">
+                        <span class="material-symbols-outlined text-sm text-base-content/40 mt-0.5">verified</span>
+                        <div class="flex-1 min-w-0">
+                          <p class="text-xs font-medium text-base-content truncate">£{{ opportunity()!.approvalRequests[opportunity()!.approvalRequests.length - 1].requestedAmount | number:'1.0-0' }} — {{ opportunity()!.approvalRequests[opportunity()!.approvalRequests.length - 1].status }}</p>
+                          <p class="text-[11px] text-base-content/50 mt-0.5">{{ opportunity()!.approvalRequests[opportunity()!.approvalRequests.length - 1].approvalTimestamp | date:'dd MMM yyyy' }}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <ng-template #noRecentApproval>
+                      <p class="text-xs text-base-content/40 text-center py-3">No approval requests</p>
                     </ng-template>
                   </div>
                 </div>
@@ -337,7 +759,7 @@ interface IActionButton {
               aria-labelledby="tab-due-diligence">
               <!-- Add Check Button -->
               <div class="flex justify-end mb-4">
-                <button class="btn btn-primary btn-sm gap-1" (click)="showDdForm.set(true)" *ngIf="!showDdForm()">
+                <button class="btn btn-primary btn-sm gap-1" (click)="showDdModal.set(true)" *ngIf="!showDdForm()">
                   <span class="material-symbols-outlined text-sm">add</span>
                   Add Check
                   <span class="badge badge-ghost badge-xs ml-2">Legal Officer</span>
@@ -443,7 +865,7 @@ interface IActionButton {
               aria-labelledby="tab-offers">
               <!-- Submit Offer Button -->
               <div class="flex justify-end mb-4">
-                <button class="btn btn-primary btn-sm gap-1" (click)="showOfferForm.set(true)" *ngIf="!showOfferForm()">
+                <button class="btn btn-primary btn-sm gap-1" (click)="showOfferModal.set(true)" *ngIf="!showOfferForm()">
                   <span class="material-symbols-outlined text-sm">add</span>
                   Submit Offer
                   <span class="badge badge-ghost badge-xs ml-2">Acquisition Manager</span>
@@ -546,6 +968,66 @@ interface IActionButton {
               </ng-template>
             </div>
 
+            <!-- Contracts Tab -->
+            <div
+              *ngIf="activeTab() === 'contracts'"
+              id="panel-contracts"
+              role="tabpanel"
+              aria-labelledby="tab-contracts">
+              <!-- Create Contract Button -->
+              <div class="flex justify-between items-center mb-4">
+                <p class="text-sm text-base-content/60">Manage legal contracts for this acquisition.</p>
+                <button class="btn btn-primary btn-sm gap-1.5" (click)="showContractModal.set(true)"
+                        *ngIf="!showCreateContractForm && !opportunity()!.contract">
+                  <span class="material-symbols-outlined text-sm">add</span> Create Contract
+                </button>
+              </div>
+
+              <!-- Existing Contract — use ContractTransitionComponent -->
+              <app-contract-transition
+                *ngIf="opportunity()!.contract as contract"
+                [contract]="contract"
+                [opportunityId]="opportunity()!.id"
+                (statusChanged)="loadOpportunity()">
+              </app-contract-transition>
+
+              <!-- Create Contract Form -->
+              <div *ngIf="showCreateContractForm && !opportunity()!.contract" class="card bg-base-100 border border-base-200 shadow-sm">
+                <div class="card-body p-5 space-y-4">
+                  <h3 class="text-base font-bold text-base-content">Create Contract</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label class="text-xs font-medium text-base-content mb-1 block">Solicitor Name</label>
+                      <input type="text" class="input input-bordered input-sm w-full" [(ngModel)]="contractForm.solicitorName" placeholder="e.g., John Smith" />
+                    </div>
+                    <div>
+                      <label class="text-xs font-medium text-base-content mb-1 block">Solicitor Firm</label>
+                      <input type="text" class="input input-bordered input-sm w-full" [(ngModel)]="contractForm.solicitorFirm" placeholder="e.g., Smith & Associates" />
+                    </div>
+                    <div>
+                      <label class="text-xs font-medium text-base-content mb-1 block">Contact Details</label>
+                      <input type="text" class="input input-bordered input-sm w-full" [(ngModel)]="contractForm.solicitorContact" placeholder="e.g., 020 1234 5678" />
+                    </div>
+                    <div>
+                      <label class="text-xs font-medium text-base-content mb-1 block">Deposit Amount (£)</label>
+                      <input type="number" class="input input-bordered input-sm w-full" [(ngModel)]="contractForm.depositAmount" placeholder="e.g., 50000" />
+                    </div>
+                  </div>
+                  <div class="flex gap-2 justify-end pt-2">
+                    <button class="btn btn-ghost btn-sm" (click)="showCreateContractForm = false">Cancel</button>
+                    <button class="btn btn-primary btn-sm" (click)="createContract()">Create Contract</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- No Contract -->
+              <div *ngIf="!opportunity()!.contract && !showCreateContractForm" class="flex flex-col items-center justify-center py-8 text-base-content/50">
+                <span class="material-symbols-outlined text-4xl mb-2">description</span>
+                <p class="text-sm font-medium">No contract created yet</p>
+                <p class="text-xs mt-1">Create a contract when an offer has been accepted and you're ready to proceed.</p>
+              </div>
+            </div>
+
             <!-- Documents Tab -->
             <div
               *ngIf="activeTab() === 'documents'"
@@ -554,7 +1036,7 @@ interface IActionButton {
               aria-labelledby="tab-documents">
               <!-- Upload Document Button -->
               <div class="flex justify-end mb-4">
-                <button class="btn btn-primary btn-sm gap-1" (click)="showDocForm.set(true)" *ngIf="!showDocForm()">
+                <button class="btn btn-primary btn-sm gap-1" (click)="showDocUploadModal.set(true)" *ngIf="!showDocForm()">
                   <span class="material-symbols-outlined text-sm">upload_file</span>
                   Upload Document
                 </button>
@@ -729,7 +1211,7 @@ interface IActionButton {
                 <span class="material-symbols-outlined text-4xl mb-2">analytics</span>
                 <p class="text-sm font-medium">No feasibility assessment available</p>
                 <p class="text-xs mt-1 mb-4">Create a feasibility assessment to evaluate this opportunity's financial viability.</p>
-                <button *ngIf="canEditFinancials()" class="btn btn-primary btn-sm gap-1" (click)="showFeasibilityForm.set(true)">
+                <button *ngIf="canEditFinancials()" class="btn btn-primary btn-sm gap-1" (click)="showFeasibilityModal.set(true)">
                   <span class="material-symbols-outlined text-sm">add</span>
                   Create Feasibility Assessment
                 </button>
@@ -804,13 +1286,24 @@ interface IActionButton {
               </div>
             </div>
 
-            <!-- Activity Tab (Gap 8: Real Audit Trail from existing data) -->
+            <!-- Activity Tab (Gap 8: Real Audit Trail from API) -->
             <div
               *ngIf="activeTab() === 'activity'"
               id="panel-activity"
               role="tabpanel"
               aria-labelledby="tab-activity">
-              <app-activity-timeline [activities]="activityData()"></app-activity-timeline>
+              <!-- Loading state -->
+              <div *ngIf="auditLoading()" class="flex items-center justify-center py-8">
+                <span class="loading loading-spinner loading-md text-primary"></span>
+                <span class="ml-2 text-sm text-base-content/60">Loading activity history...</span>
+              </div>
+              <!-- Error/Fallback state -->
+              <div *ngIf="!auditLoading() && auditError()" class="flex flex-col items-center justify-center py-8 text-base-content/50">
+                <span class="material-symbols-outlined text-4xl mb-2">cloud_off</span>
+                <p class="text-sm font-medium">{{ auditError() }}</p>
+              </div>
+              <!-- Activity timeline -->
+              <app-activity-timeline *ngIf="!auditLoading() && !auditError()" [activities]="activityData()"></app-activity-timeline>
             </div>
 
             <!-- Approvals Tab (Gap 7) -->
@@ -822,7 +1315,7 @@ interface IActionButton {
               style="animation: fade-in 0.3s ease-out">
               <!-- Request Approval button -->
               <div class="flex justify-end mb-4" *ngIf="showApprovalButton()">
-                <button class="btn btn-secondary btn-sm gap-1" (click)="showApprovalForm.set(true)">
+                <button class="btn btn-secondary btn-sm gap-1" (click)="showApprovalModal.set(true)">
                   <span class="material-symbols-outlined text-sm">add</span>
                   Request Approval
                 </button>
@@ -867,21 +1360,110 @@ interface IActionButton {
                 </div>
               </ng-template>
             </div>
+
+            <!-- Acquisition Tab -->
+            <div
+              *ngIf="activeTab() === 'acquisition'"
+              id="panel-acquisition"
+              role="tabpanel"
+              aria-labelledby="tab-acquisition"
+              style="animation: fade-in 0.3s ease-out">
+              <app-acquisition-tab
+                [opportunityId]="opportunity()!.id"
+                [opportunityStatus]="opportunity()!.status">
+              </app-acquisition-tab>
+            </div>
           </div>
         </div>
       </section>
     </div>
+
+    <!-- Withdrawal Modal -->
+    <app-withdrawal-modal
+      [visible]="showWithdrawalModal()"
+      (confirmed)="onWithdrawalConfirmed($event)"
+      (cancelled)="onWithdrawalCancelled()">
+    </app-withdrawal-modal>
+
+    <!-- Offer Form Modal -->
+    <app-offer-form-modal
+      [visible]="showOfferModal()"
+      [opportunityId]="opportunity()?.id || ''"
+      (closed)="showOfferModal.set(false)"
+      (saved)="loadOpportunity()">
+    </app-offer-form-modal>
+
+    <!-- Due Diligence Form Modal -->
+    <app-dd-form-modal
+      [visible]="showDdModal()"
+      [opportunityId]="opportunity()?.id || ''"
+      (closed)="showDdModal.set(false)"
+      (saved)="loadOpportunity()">
+    </app-dd-form-modal>
+
+    <!-- Document Upload Modal -->
+    <app-document-upload-modal
+      [visible]="showDocUploadModal()"
+      [opportunityId]="opportunity()?.id || ''"
+      (closed)="showDocUploadModal.set(false)"
+      (uploaded)="loadOpportunity()">
+    </app-document-upload-modal>
+
+    <!-- Land Owner Form Modal -->
+    <app-land-owner-form-modal
+      [visible]="showOwnerModal()"
+      [opportunityId]="opportunity()?.id || ''"
+      [editMode]="ownerModalEditMode()"
+      [existingOwner]="opportunity()?.landOwner || null"
+      (closed)="showOwnerModal.set(false)"
+      (saved)="loadOpportunity()">
+    </app-land-owner-form-modal>
+
+    <!-- Feasibility Form Modal -->
+    <app-feasibility-form-modal
+      [visible]="showFeasibilityModal()"
+      [opportunityId]="opportunity()?.id || ''"
+      [editMode]="feasibilityModalEditMode()"
+      [existingAssessment]="opportunity()?.feasibilityAssessment || null"
+      (closed)="showFeasibilityModal.set(false); feasibilityModalEditMode.set(false)"
+      (saved)="loadOpportunity()">
+    </app-feasibility-form-modal>
+
+    <!-- Approval Request Modal -->
+    <app-approval-request-modal
+      [visible]="showApprovalModal()"
+      [opportunityId]="opportunity()?.id || ''"
+      (closed)="showApprovalModal.set(false)"
+      (saved)="loadOpportunity()">
+    </app-approval-request-modal>
+
+    <!-- Contract Form Modal -->
+    <app-contract-form-modal
+      [visible]="showContractModal()"
+      [opportunityId]="opportunity()?.id || ''"
+      (closed)="showContractModal.set(false)"
+      (saved)="loadOpportunity()">
+    </app-contract-form-modal>
   `
 })
 export class OpportunityDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly store = inject(Store);
+  private readonly actions$ = inject(Actions);
   private readonly opportunityService = inject(OpportunityService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly http = inject(HttpClient);
   private readonly toast = inject(ToastService);
   private readonly authService = inject(AuthService);
+  private readonly dueDiligenceService = inject(DueDiligenceService);
+  private readonly offerService = inject(OfferService);
+  private readonly contractService = inject(ContractService);
+  private readonly documentService = inject(DocumentService);
+  private readonly feasibilityService = inject(FeasibilityService);
+  private readonly landOwnerService = inject(LandOwnerService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly auditService = inject(AuditService);
 
   /** Reactive state signals */
   readonly opportunity = signal<IOpportunityDetail | null>(null);
@@ -889,12 +1471,32 @@ export class OpportunityDetailPageComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly activeTab = signal<string>('overview');
 
+  /** Audit trail entries loaded from the API */
+  readonly auditEntries = signal<readonly IAuditEntry[]>([]);
+  readonly auditLoading = signal(false);
+  readonly auditError = signal<string | null>(null);
+
   /** Form visibility toggles */
   readonly showDdForm = signal(false);
   readonly showOfferForm = signal(false);
   readonly showDocForm = signal(false);
   readonly showFeasibilityForm = signal(false);
   readonly showApprovalForm = signal(false);
+  showCreateContractForm = false;
+
+  /** Modal visibility signals */
+  readonly showOfferModal = signal(false);
+  readonly showDdModal = signal(false);
+  readonly showDocUploadModal = signal(false);
+  readonly showOwnerModal = signal(false);
+  readonly showFeasibilityModal = signal(false);
+  readonly showApprovalModal = signal(false);
+  readonly showContractModal = signal(false);
+
+  /** Modal edit mode signals */
+  readonly ownerModalEditMode = signal(false);
+  readonly feasibilityModalEditMode = signal(false);
+  contractForm = { solicitorName: '', solicitorFirm: '', solicitorContact: '', depositAmount: 0 };
 
   /** Gap 3: Track which DD check is being edited */
   readonly editingDdId = signal<string | null>(null);
@@ -905,6 +1507,14 @@ export class OpportunityDetailPageComponent implements OnInit {
 
   /** Gap 5: Track feasibility edit mode */
   readonly editingFeasibility = signal(false);
+
+  /** Land Owner CRUD signals */
+  readonly showOwnerForm = signal(false);
+  readonly editingOwner = signal(false);
+  readonly ownerFormSaving = signal(false);
+
+  /** Land owner form model */
+  ownerForm = { name: '', contactDetails: '', ownershipType: 'Freehold' as string, address: '' };
 
   /** Form models (simple objects for template-driven forms) */
   ddForm = { type: 'Legal', status: 'Pending', findings: '', reportDate: '' };
@@ -941,16 +1551,26 @@ export class OpportunityDetailPageComponent implements OnInit {
     return (this.feasibilityProfit() / costs) * 100;
   });
 
-  /** Tab configuration — Gap 7: Added Approvals tab */
-  readonly tabs: readonly { id: string; label: string; icon: string }[] = [
-    { id: 'overview', label: 'Overview', icon: 'info' },
-    { id: 'due-diligence', label: 'Due Diligence', icon: 'fact_check' },
-    { id: 'offers', label: 'Offers', icon: 'request_quote' },
-    { id: 'documents', label: 'Documents', icon: 'folder' },
-    { id: 'financials', label: 'Financials', icon: 'analytics' },
-    { id: 'activity', label: 'Activity', icon: 'history' },
-    { id: 'approvals', label: 'Approvals', icon: 'approval' }
-  ];
+  /** Tab configuration — Gap 7: Added Approvals tab, Acquisition tab (visible for UnderContract/Acquired) */
+  readonly tabs = computed(() => {
+    const baseTabs: { id: string; label: string; icon: string }[] = [
+      { id: 'overview', label: 'Overview', icon: 'info' },
+      { id: 'due-diligence', label: 'Due Diligence', icon: 'fact_check' },
+      { id: 'offers', label: 'Offers', icon: 'request_quote' },
+      { id: 'contracts', label: 'Contracts', icon: 'description' },
+      { id: 'documents', label: 'Documents', icon: 'folder' },
+      { id: 'financials', label: 'Financials', icon: 'analytics' },
+      { id: 'activity', label: 'Activity', icon: 'history' },
+      { id: 'approvals', label: 'Approvals', icon: 'approval' }
+    ];
+
+    const opp = this.opportunity();
+    if (opp && (opp.status === OpportunityStatus.UnderContract || opp.status === OpportunityStatus.Acquired)) {
+      baseTabs.push({ id: 'acquisition', label: 'Acquisition', icon: 'real_estate_agent' });
+    }
+
+    return baseTabs;
+  });
 
   /**
    * Computed contextual action buttons based on current opportunity status.
@@ -1033,75 +1653,141 @@ export class OpportunityDetailPageComponent implements OnInit {
   });
 
   /**
-   * Gap 8: Real activity data computed from existing sub-entities.
-   * Builds a timeline from DD checks, offers, documents, and approval requests.
+   * Gap 8: Real activity data from the audit API.
+   * Maps audit trail entries to the timeline display format.
+   * Falls back to a placeholder message when no entries are available.
    */
   readonly activityData = computed<readonly IRecentActivity[]>(() => {
+    const entries = this.auditEntries();
     const opp = this.opportunity();
-    if (!opp) return [];
 
-    const activities: IRecentActivity[] = [];
+    if (!entries.length || !opp) return [];
 
-    // From opportunity creation
-    activities.push({
-      id: opp.id + '-creation',
+    return entries.map(entry => ({
+      id: entry.id,
       opportunityId: opp.id,
       opportunityName: opp.name,
       previousStatus: '',
-      newStatus: `Created — ${opp.status}`,
-      changedBy: opp.createdBy ?? 'System',
-      changedAt: opp.createdAt
-    });
-
-    // From DD checks
-    opp.dueDiligences.forEach(dd => activities.push({
-      id: dd.id,
-      opportunityId: opp.id,
-      opportunityName: opp.name,
-      previousStatus: '',
-      newStatus: `DD: ${dd.type} — ${dd.status}`,
-      changedBy: 'Legal Team',
-      changedAt: dd.createdAt
+      newStatus: `${entry.action}: ${entry.entityName}${entry.changedFields.length ? ' (' + entry.changedFields.join(', ') + ')' : ''}`,
+      changedBy: entry.userName,
+      changedAt: entry.timestamp
     }));
+  });
 
-    // From Offers
-    opp.offers.forEach(o => activities.push({
-      id: o.id,
-      opportunityId: opp.id,
-      opportunityName: opp.name,
-      previousStatus: '',
-      newStatus: `Offer: £${o.amount.toLocaleString()} — ${o.status}`,
-      changedBy: 'Acquisition Manager',
-      changedAt: o.createdAt ?? o.offerDate
-    }));
+  /** Pipeline stages for the enhanced stepper */
+  readonly pipelineStages: readonly { status: OpportunityStatus; label: string; subtitle: string }[] = [
+    { status: OpportunityStatus.Identified, label: 'Identified', subtitle: 'Opportunity found' },
+    { status: OpportunityStatus.InitialReview, label: 'Initial Review', subtitle: 'Preliminary assessment' },
+    { status: OpportunityStatus.DueDiligence, label: 'Due Diligence', subtitle: 'Legal & technical checks' },
+    { status: OpportunityStatus.OfferMade, label: 'Offer Made', subtitle: 'Negotiation phase' },
+    { status: OpportunityStatus.UnderContract, label: 'Under Contract', subtitle: 'Legal exchange' },
+    { status: OpportunityStatus.Acquired, label: 'Acquired', subtitle: 'Completion' }
+  ];
 
-    // From Documents
-    opp.documents.forEach(d => activities.push({
-      id: d.id,
-      opportunityId: opp.id,
-      opportunityName: opp.name,
-      previousStatus: '',
-      newStatus: `Document: ${d.fileName}`,
-      changedBy: 'System',
-      changedAt: d.uploadedAt
-    }));
+  /** Computed: current stage index (0-based) */
+  readonly currentStageIndex = computed(() => {
+    const opp = this.opportunity();
+    if (!opp) return 0;
+    const idx = this.pipelineStages.findIndex(s => s.status === opp.status);
+    return idx >= 0 ? idx : 0;
+  });
 
-    // From Approval Requests
-    if (opp.approvalRequests) {
-      opp.approvalRequests.forEach(ar => activities.push({
-        id: ar.id,
-        opportunityId: opp.id,
-        opportunityName: opp.name,
-        previousStatus: '',
-        newStatus: `Approval Request: £${ar.requestedAmount?.toLocaleString() ?? '0'} — ${ar.status}`,
-        changedBy: ar.createdBy ?? 'System',
-        changedAt: ar.createdAt
-      }));
+  /** Computed: completed stages count */
+  readonly completedStagesCount = computed(() => {
+    const opp = this.opportunity();
+    if (!opp) return 0;
+    if (opp.status === OpportunityStatus.Acquired) return 6;
+    if (opp.status === OpportunityStatus.Withdrawn) return this.currentStageIndex();
+    return this.currentStageIndex();
+  });
+
+  /** Computed: pipeline completion percentage */
+  readonly pipelineCompletionPercent = computed(() => {
+    return Math.round((this.completedStagesCount() / 6) * 100);
+  });
+
+  /** Computed: days since creation (total pipeline time) */
+  readonly totalPipelineDays = computed(() => {
+    const opp = this.opportunity();
+    if (!opp) return 0;
+    const created = new Date(opp.createdAt).getTime();
+    const now = Date.now();
+    return Math.max(0, Math.floor((now - created) / (1000 * 60 * 60 * 24)));
+  });
+
+  /** Computed: days in current phase (since last update or creation) */
+  readonly daysInCurrentPhase = computed(() => {
+    const opp = this.opportunity();
+    if (!opp) return 0;
+    const ref = opp.updatedAt ? new Date(opp.updatedAt).getTime() : new Date(opp.createdAt).getTime();
+    const now = Date.now();
+    return Math.max(0, Math.floor((now - ref) / (1000 * 60 * 60 * 24)));
+  });
+
+  /** Computed: last updated display */
+  readonly lastUpdatedDisplay = computed(() => {
+    const opp = this.opportunity();
+    if (!opp) return 'N/A';
+    return opp.updatedAt ?? opp.createdAt;
+  });
+
+  /** Computed: Pipeline Health Score */
+  readonly pipelineHealthScore = computed(() => {
+    const opp = this.opportunity();
+    if (!opp) return { overall: 0, legal: 0, commercial: 0, financial: 0, risk: 0, label: 'At Risk' as string, cssClass: 'text-error' };
+
+    // Legal & Compliance: based on DD checks completed
+    const ddTotal = opp.dueDiligences.length;
+    const ddCompleted = opp.dueDiligences.filter(d => d.status === DueDiligenceStatus.Completed).length;
+    const legal = ddTotal > 0 ? Math.round((ddCompleted / ddTotal) * 100) : 0;
+
+    // Commercial Viability: based on offers existing
+    const commercial = opp.offers.length > 0 ? 100 : 0;
+
+    // Financial Feasibility: based on feasibility assessment existing
+    const financial = opp.feasibilityAssessment ? 100 : 0;
+
+    // Risk & Issues: based on no withdrawal + no pending approvals unresolved
+    const pendingApprovals = opp.approvalRequests.filter(a => a.status === 'Pending').length;
+    const risk = (!opp.withdrawalReason && pendingApprovals === 0) ? 100 : (opp.withdrawalReason ? 0 : 50);
+
+    const overall = Math.round((legal + commercial + financial + risk) / 4);
+    let label = 'At Risk';
+    let cssClass = 'text-error';
+    if (overall >= 70) { label = 'On Track'; cssClass = 'text-success'; }
+    else if (overall >= 40) { label = 'Needs Attention'; cssClass = 'text-warning'; }
+
+    return { overall, legal, commercial, financial, risk, label, cssClass };
+  });
+
+  /** Computed: next milestone based on current status */
+  readonly nextMilestone = computed(() => {
+    const opp = this.opportunity();
+    if (!opp) return 'N/A';
+    switch (opp.status) {
+      case OpportunityStatus.Identified: return 'Complete Initial Review';
+      case OpportunityStatus.InitialReview: return 'Begin Due Diligence';
+      case OpportunityStatus.DueDiligence: return 'Submit Offer';
+      case OpportunityStatus.OfferMade: return 'Exchange Contracts';
+      case OpportunityStatus.UnderContract: return 'Complete Acquisition';
+      case OpportunityStatus.Acquired: return 'Acquisition Complete';
+      case OpportunityStatus.Withdrawn: return 'Withdrawn';
+      default: return 'N/A';
     }
+  });
 
-    // Sort by date descending
-    activities.sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime());
-    return activities.slice(0, 20);
+  /** Computed: related tasks count */
+  readonly relatedTasksCount = computed(() => {
+    const opp = this.opportunity();
+    if (!opp) return 0;
+    return opp.dueDiligences.length + opp.offers.length + opp.documents.length;
+  });
+
+  /** Computed: open issues (pending approvals) */
+  readonly openIssuesCount = computed(() => {
+    const opp = this.opportunity();
+    if (!opp) return 0;
+    return opp.approvalRequests.filter(a => a.status === 'Pending').length;
   });
 
   ngOnInit(): void {
@@ -1130,6 +1816,7 @@ export class OpportunityDetailPageComponent implements OnInit {
           if (response.success && response.data) {
             this.opportunity.set(response.data);
             this.store.dispatch(OpportunityActions.selectOpportunity({ id }));
+            this.loadAuditEntries(id);
           } else {
             this.error.set(response.errors?.[0] ?? 'Failed to load opportunity details.');
           }
@@ -1142,34 +1829,116 @@ export class OpportunityDetailPageComponent implements OnInit {
       });
   }
 
+  /**
+   * Loads audit trail entries for the current opportunity from the API.
+   * On failure, sets a fallback error message without blocking the rest of the page.
+   */
+  private loadAuditEntries(opportunityId: string): void {
+    this.auditLoading.set(true);
+    this.auditError.set(null);
+
+    this.auditService.getByOpportunity(opportunityId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.auditEntries.set(response.data);
+          } else {
+            this.auditEntries.set([]);
+            this.auditError.set('Activity history is currently unavailable.');
+          }
+          this.auditLoading.set(false);
+        },
+        error: () => {
+          this.auditEntries.set([]);
+          this.auditError.set('Activity history is currently unavailable. Please try again later.');
+          this.auditLoading.set(false);
+        }
+      });
+  }
+
   /** Switch the active tab */
   setActiveTab(tabId: string): void {
     this.activeTab.set(tabId);
   }
 
+  /** Signal to control the withdrawal modal visibility */
+  readonly showWithdrawalModal = signal(false);
+
   /**
    * Transitions the opportunity to a new status.
-   * For Withdrawn status, a reason would be collected (simplified here).
+   * For Withdrawn status, opens the withdrawal modal to collect a reason.
+   * For other transitions, shows a confirmation dialog before dispatching.
    */
-  transitionStatus(targetStatus: OpportunityStatus): void {
+  async transitionStatus(targetStatus: OpportunityStatus): Promise<void> {
     const opp = this.opportunity();
     if (!opp) return;
 
-    // For withdrawal, prompt for a reason (simplified — full modal in 13.4/13.5)
-    let reason: string | undefined;
+    // For withdrawal, open the modal to collect reason
     if (targetStatus === OpportunityStatus.Withdrawn) {
-      reason = prompt('Please provide a reason for withdrawal (min 10 characters):') ?? undefined;
-      if (!reason || reason.length < 10) {
-        return; // User cancelled or invalid reason
-      }
+      this.showWithdrawalModal.set(true);
+      return;
     }
 
+    // For all other transitions, show a confirmation dialog
+    const currentLabel = this.formatStatusLabel(opp.status);
+    const targetLabel = this.formatStatusLabel(targetStatus);
+
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Confirm Status Transition',
+      message: `Are you sure you want to move this opportunity from "${currentLabel}" to "${targetLabel}"?`,
+      confirmText: 'Confirm Transition',
+      cancelText: 'Cancel',
+      confirmClass: 'btn-primary',
+      icon: 'swap_horiz',
+      iconClass: 'text-primary'
+    });
+
+    if (!confirmed) return;
+
     this.store.dispatch(
-      OpportunityActions.transitionStatus({ id: opp.id, targetStatus, reason })
+      OpportunityActions.transitionStatus({ id: opp.id, targetStatus, reason: undefined })
     );
 
-    // Reload the detail to reflect the updated state
-    setTimeout(() => this.loadOpportunity(), 500);
+    // Reload the detail after the transition succeeds via NgRx effect subscription
+    this.actions$.pipe(
+      ofType(OpportunityActions.transitionStatusSuccess),
+      take(1),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      this.loadOpportunity();
+    });
+  }
+
+  /** Formats a status enum value into a human-readable label. */
+  private formatStatusLabel(status: string): string {
+    return status.replace(/([a-z])([A-Z])/g, '$1 $2');
+  }
+
+  /** Handles withdrawal confirmation from the modal */
+  onWithdrawalConfirmed(reason: string): void {
+    const opp = this.opportunity();
+    if (!opp) return;
+
+    this.showWithdrawalModal.set(false);
+
+    this.store.dispatch(
+      OpportunityActions.transitionStatus({ id: opp.id, targetStatus: OpportunityStatus.Withdrawn, reason })
+    );
+
+    // Reload the detail after the transition succeeds via NgRx effect subscription
+    this.actions$.pipe(
+      ofType(OpportunityActions.transitionStatusSuccess),
+      take(1),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      this.loadOpportunity();
+    });
+  }
+
+  /** Handles withdrawal cancellation from the modal */
+  onWithdrawalCancelled(): void {
+    this.showWithdrawalModal.set(false);
   }
 
   // ─── Formatting Helpers ─────────────────────────────────────────────
@@ -1263,12 +2032,10 @@ export class OpportunityDetailPageComponent implements OnInit {
 
     if (ddId) {
       // Gap 3: PATCH existing DD check (status transition)
-      const body = {
-        targetStatus: this.ddForm.status,
+      this.dueDiligenceService.transitionStatus(opp.id, ddId, {
+        targetStatus: this.ddForm.status as DueDiligenceStatus,
         findings: this.ddForm.findings.trim() || null
-      };
-
-      this.http.patch(`/api/v1/opportunities/${opp.id}/due-diligence/${ddId}/status`, body)
+      })
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
@@ -1282,13 +2049,10 @@ export class OpportunityDetailPageComponent implements OnInit {
         });
     } else {
       // POST new DD check — send string enum names (JsonStringEnumConverter is active)
-      const body = {
-        opportunityId: opp.id,
-        type: this.ddForm.type,
+      this.dueDiligenceService.create(opp.id, {
+        type: this.ddForm.type as DueDiligenceType,
         findings: this.ddForm.findings.trim() || null
-      };
-
-      this.http.post(`/api/v1/opportunities/${opp.id}/due-diligence`, body)
+      })
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
@@ -1320,8 +2084,8 @@ export class OpportunityDetailPageComponent implements OnInit {
     const opp = this.opportunity();
     if (!opp) return;
 
-    this.http.patch(`/api/v1/opportunities/${opp.id}/offers/${offerId}/status`, {
-      targetStatus: 'CounterOffered',
+    this.offerService.transitionStatus(opp.id, offerId, {
+      targetStatus: OfferStatus.CounterOffered,
       counterOfferAmount: this.counterAmount
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -1353,7 +2117,8 @@ export class OpportunityDetailPageComponent implements OnInit {
       scenario: a.scenario
     };
     this.editingFeasibility.set(true);
-    this.showFeasibilityForm.set(true);
+    this.feasibilityModalEditMode.set(true);
+    this.showFeasibilityModal.set(true);
   }
 
   // ─── Gap 6: Mark Ready for Review ─────────────────────────────────────
@@ -1364,18 +2129,14 @@ export class OpportunityDetailPageComponent implements OnInit {
     if (!opp || !opp.feasibilityAssessment) return;
     const a = opp.feasibilityAssessment;
 
-    const body = {
-      opportunityId: opp.id,
+    this.feasibilityService.createOrUpdate(opp.id, {
       estimatedLandCost: a.estimatedLandCost,
       estimatedBuildCost: a.estimatedBuildCost,
       professionalFees: a.professionalFees,
       financeCosts: a.financeCosts,
       expectedSalesRevenue: a.expectedSalesRevenue,
-      scenario: a.scenario,
-      isReadyForReview: true
-    };
-
-    this.http.post(`/api/v1/opportunities/${opp.id}/feasibility`, body)
+      scenario: a.scenario
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1391,11 +2152,26 @@ export class OpportunityDetailPageComponent implements OnInit {
   // ─── Gap 2: Delete Document ───────────────────────────────────────────
 
   /** Delete a document from this opportunity */
-  deleteDocument(docId: string): void {
+  async deleteDocument(docId: string): Promise<void> {
     const opp = this.opportunity();
     if (!opp) return;
 
-    this.http.delete(`/api/v1/opportunities/${opp.id}/documents/${docId}`)
+    const doc = opp.documents.find(d => d.id === docId);
+    const docName = doc?.fileName ?? 'this document';
+
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Delete Document',
+      message: `Are you sure you want to delete "${docName}"? This action cannot be undone.`,
+      confirmText: 'Delete Document',
+      cancelText: 'Cancel',
+      confirmClass: 'btn-error',
+      icon: 'delete',
+      iconClass: 'text-error'
+    });
+
+    if (!confirmed) return;
+
+    this.documentService.delete(opp.id, docId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1426,14 +2202,11 @@ export class OpportunityDetailPageComponent implements OnInit {
       return;
     }
 
-    const body = {
-      opportunityId: opp.id,
+    this.offerService.create(opp.id, {
       amount: this.offerForm.amount,
       currency: 'GBP',
       validUntil: this.offerForm.validUntil
-    };
-
-    this.http.post(`/api/v1/opportunities/${opp.id}/offers`, body)
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1462,11 +2235,7 @@ export class OpportunityDetailPageComponent implements OnInit {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', this.selectedFile);
-    formData.append('docType', this.docForm.docType);
-
-    this.http.post(`/api/v1/opportunities/${opp.id}/documents`, formData)
+    this.documentService.upload(opp.id, this.selectedFile, this.docForm.docType as DocumentType)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1510,25 +2279,14 @@ export class OpportunityDetailPageComponent implements OnInit {
       return;
     }
 
-    const totalCosts = this.feasibilityForm.landCost + this.feasibilityForm.buildCost + this.feasibilityForm.fees + this.feasibilityForm.financeCosts;
-    const profit = this.feasibilityForm.revenue - totalCosts;
-    const roi = totalCosts > 0 ? (profit / totalCosts) * 100 : 0;
-
-    const body = {
-      opportunityId: opp.id,
+    this.feasibilityService.createOrUpdate(opp.id, {
       estimatedLandCost: this.feasibilityForm.landCost,
       estimatedBuildCost: this.feasibilityForm.buildCost,
       professionalFees: this.feasibilityForm.fees,
       financeCosts: this.feasibilityForm.financeCosts,
       expectedSalesRevenue: this.feasibilityForm.revenue,
-      totalCosts,
-      estimatedProfit: profit,
-      roiPercentage: roi,
-      scenario: this.feasibilityForm.scenario,
-      isReadyForReview: false
-    };
-
-    this.http.post(`/api/v1/opportunities/${opp.id}/feasibility`, body)
+      scenario: this.feasibilityForm.scenario as FeasibilityScenario
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1586,11 +2344,23 @@ export class OpportunityDetailPageComponent implements OnInit {
   // ─── Offer Status Actions ─────────────────────────────────────────────
 
   /** Accept an offer that is currently UnderReview */
-  acceptOffer(offerId: string): void {
+  async acceptOffer(offerId: string): Promise<void> {
     const opp = this.opportunity();
     if (!opp) return;
 
-    this.http.patch(`/api/v1/opportunities/${opp.id}/offers/${offerId}/status`, { targetStatus: 'Accepted' })
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Accept Offer',
+      message: 'Are you sure you want to accept this offer? This will mark the offer as accepted and may progress the opportunity.',
+      confirmText: 'Accept Offer',
+      cancelText: 'Cancel',
+      confirmClass: 'btn-success',
+      icon: 'check_circle',
+      iconClass: 'text-success'
+    });
+
+    if (!confirmed) return;
+
+    this.offerService.transitionStatus(opp.id, offerId, { targetStatus: OfferStatus.Accepted })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1604,11 +2374,23 @@ export class OpportunityDetailPageComponent implements OnInit {
   }
 
   /** Reject an offer that is currently UnderReview */
-  rejectOffer(offerId: string): void {
+  async rejectOffer(offerId: string): Promise<void> {
     const opp = this.opportunity();
     if (!opp) return;
 
-    this.http.patch(`/api/v1/opportunities/${opp.id}/offers/${offerId}/status`, { targetStatus: 'Rejected' })
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Reject Offer',
+      message: 'Are you sure you want to reject this offer? This action cannot be undone.',
+      confirmText: 'Reject Offer',
+      cancelText: 'Cancel',
+      confirmClass: 'btn-error',
+      icon: 'cancel',
+      iconClass: 'text-error'
+    });
+
+    if (!confirmed) return;
+
+    this.offerService.transitionStatus(opp.id, offerId, { targetStatus: OfferStatus.Rejected })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1625,7 +2407,11 @@ export class OpportunityDetailPageComponent implements OnInit {
 
   /** Handle approval decision from the ApprovalPanelComponent */
   handleApprovalDecision(decision: IApprovalDecision): void {
-    this.http.put(`/api/v1/approvals/${decision.approvalId}/approve`, { approvalNotes: decision.notes })
+    this.http.patch(`/api/v1/approvals/${decision.approvalId}`, {
+      approvalRequestId: decision.approvalId,
+      isApproved: true,
+      notes: decision.notes
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1640,7 +2426,11 @@ export class OpportunityDetailPageComponent implements OnInit {
 
   /** Handle rejection decision from the ApprovalPanelComponent */
   handleRejectionDecision(decision: IRejectionDecision): void {
-    this.http.put(`/api/v1/approvals/${decision.approvalId}/reject`, { rejectionReason: decision.reason })
+    this.http.patch(`/api/v1/approvals/${decision.approvalId}`, {
+      approvalRequestId: decision.approvalId,
+      isApproved: false,
+      rejectionReason: decision.reason
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -1651,5 +2441,173 @@ export class OpportunityDetailPageComponent implements OnInit {
           this.toast.showError('Failed to reject request. Please try again.');
         }
       });
+  }
+
+  // ─── Land Owner CRUD Actions ────────────────────────────────────────
+
+  /** Open create form for adding a new land owner */
+  addOwner(): void {
+    this.ownerForm = { name: '', contactDetails: '', ownershipType: 'Freehold', address: '' };
+    this.editingOwner.set(false);
+    this.showOwnerForm.set(true);
+  }
+
+  /** Open edit form pre-populated with existing owner data */
+  editOwner(): void {
+    const owner = this.opportunity()?.landOwner;
+    if (!owner) return;
+    this.ownerForm = {
+      name: owner.name,
+      contactDetails: owner.contactDetails,
+      ownershipType: owner.ownershipType,
+      address: owner.address ?? ''
+    };
+    this.editingOwner.set(true);
+    this.showOwnerForm.set(true);
+  }
+
+  /** Open the Land Owner modal in create or edit mode */
+  openOwnerModal(editMode: boolean): void {
+    this.ownerModalEditMode.set(editMode);
+    this.showOwnerModal.set(true);
+  }
+
+  /** Delete the land owner after confirmation */
+  async deleteOwner(): Promise<void> {
+    const opp = this.opportunity();
+    if (!opp || !opp.landOwner) return;
+
+    const confirmed = await this.confirmDialog.confirm({
+      title: 'Delete Land Owner',
+      message: `Are you sure you want to delete "${opp.landOwner.name}"? This action cannot be undone.`,
+      confirmText: 'Delete Owner',
+      cancelText: 'Cancel',
+      confirmClass: 'btn-error',
+      icon: 'delete',
+      iconClass: 'text-error'
+    });
+
+    if (!confirmed) return;
+
+    this.landOwnerService.delete(opp.id, opp.landOwner.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.showSuccess('Land owner deleted successfully.');
+          this.loadOpportunity();
+        },
+        error: () => {
+          this.toast.showError('Failed to delete land owner. Please try again.');
+        }
+      });
+  }
+
+  /** Validate the owner form */
+  isOwnerFormValid(): boolean {
+    const name = this.ownerForm.name.trim();
+    const contact = this.ownerForm.contactDetails.trim();
+    const type = this.ownerForm.ownershipType;
+    return (
+      name.length >= 2 && name.length <= 200 &&
+      contact.length >= 5 && contact.length <= 500 &&
+      (type === 'Freehold' || type === 'Leasehold')
+    );
+  }
+
+  /** Save owner — create or update depending on mode */
+  saveOwner(): void {
+    const opp = this.opportunity();
+    if (!opp) return;
+
+    if (!this.isOwnerFormValid()) {
+      this.toast.showWarning('Please fill in all required fields with valid values.');
+      return;
+    }
+
+    this.ownerFormSaving.set(true);
+
+    const dto = {
+      name: this.ownerForm.name.trim(),
+      contactDetails: this.ownerForm.contactDetails.trim(),
+      ownershipType: this.ownerForm.ownershipType as OwnershipType,
+      address: this.ownerForm.address.trim() || null
+    };
+
+    if (this.editingOwner() && opp.landOwner) {
+      // Update existing owner
+      this.landOwnerService.update(opp.id, opp.landOwner.id, dto)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.toast.showSuccess('Land owner updated successfully.');
+            this.cancelOwnerForm();
+            this.loadOpportunity();
+          },
+          error: () => {
+            this.toast.showError('Failed to update land owner. Please try again.');
+            this.ownerFormSaving.set(false);
+          }
+        });
+    } else {
+      // Create new owner
+      this.landOwnerService.create(opp.id, dto)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.toast.showSuccess('Land owner added successfully.');
+            this.cancelOwnerForm();
+            this.loadOpportunity();
+          },
+          error: () => {
+            this.toast.showError('Failed to add land owner. Please try again.');
+            this.ownerFormSaving.set(false);
+          }
+        });
+    }
+  }
+
+  /** Cancel and reset the owner form */
+  cancelOwnerForm(): void {
+    this.showOwnerForm.set(false);
+    this.editingOwner.set(false);
+    this.ownerFormSaving.set(false);
+    this.ownerForm = { name: '', contactDetails: '', ownershipType: 'Freehold', address: '' };
+  }
+
+  // ─── Contract Actions ─────────────────────────────────────────────────
+
+  createContract(): void {
+    const opp = this.opportunity();
+    if (!opp) return;
+
+    this.contractService.create(opp.id, {
+      solicitorName: this.contractForm.solicitorName || null,
+      solicitorFirm: this.contractForm.solicitorFirm || null,
+      solicitorContact: this.contractForm.solicitorContact || null
+    }).pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.toast.showSuccess('Contract created successfully.');
+          this.showCreateContractForm = false;
+          this.contractForm = { solicitorName: '', solicitorFirm: '', solicitorContact: '', depositAmount: 0 };
+          this.loadOpportunity();
+        },
+        error: (err: { error?: { errors?: string[] } }) => {
+          this.toast.showError(err.error?.errors?.[0] ?? 'Failed to create contract.');
+        }
+      });
+  }
+
+  getContractStatusClass(status: string): string {
+    switch (status) {
+      case 'Draft': return 'badge-ghost';
+      case 'UnderLegalReview': return 'badge-info';
+      case 'Approved': return 'badge-success';
+      case 'Signed': return 'badge-primary';
+      case 'Exchanged': return 'badge-secondary';
+      case 'Completed': return 'badge-success';
+      case 'Rejected': return 'badge-error';
+      default: return 'badge-ghost';
+    }
   }
 }

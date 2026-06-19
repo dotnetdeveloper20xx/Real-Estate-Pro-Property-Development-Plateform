@@ -8,3 +8,6 @@ export * from './document.model';
 export * from './feasibility.model';
 export * from './approval.model';
 export * from './dashboard.model';
+export * from './notification.model';
+export * from './acquisition.model';
+export * from './audit.model';

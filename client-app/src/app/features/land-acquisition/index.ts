@@ -2,4 +2,3 @@
  * Public API for the land-acquisition feature module.
  */
 export { landAcquisitionRoutes } from './land-acquisition.routes';
-export { roleGuard } from './guards/role.guard';

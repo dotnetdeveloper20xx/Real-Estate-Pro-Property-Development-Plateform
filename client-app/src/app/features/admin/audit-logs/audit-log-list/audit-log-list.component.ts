@@ -22,11 +22,9 @@ interface IAuditLogEntry {
   template: `
     <div class="p-6 space-y-6">
       <!-- Page Header -->
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-          <span class="text-white text-sm font-bold">6</span>
-        </div>
-        <h1 class="text-xl font-bold text-base-content uppercase tracking-wide">Activity Log</h1>
+      <div class="mb-2">
+        <h1 class="text-2xl font-bold text-base-content">Activity Log</h1>
+        <p class="text-sm text-base-content/60 mt-1">Review all user actions and system events for compliance and auditing.</p>
       </div>
 
       <!-- Filters Row -->
@@ -104,7 +102,7 @@ interface IAuditLogEntry {
 
         <!-- Pagination -->
         <div *ngIf="filteredEntries.length > 0" class="flex items-center justify-between px-4 py-3 border-t border-base-200">
-          <span class="text-sm text-primary">
+          <span class="text-sm text-base-content/60">
             Showing {{ startRecord }} to {{ endRecord }} of {{ filteredEntries.length }} activities
           </span>
           <div class="flex items-center gap-1">

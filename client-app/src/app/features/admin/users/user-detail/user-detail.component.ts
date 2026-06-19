@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../../../core/services/toast.service';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 
 interface IUserDetail {
   readonly id: string;
@@ -35,16 +36,14 @@ interface IUserDetail {
     <div *ngIf="loading" class="p-6"><div class="animate-pulse flex items-center gap-4"><div class="w-16 h-16 bg-base-300 rounded-full"></div><div class="space-y-2"><div class="h-6 bg-base-300 rounded w-48"></div><div class="h-4 bg-base-300 rounded w-32"></div></div></div></div>
     <!-- Content -->
     <div *ngIf="!loading && !notFound && user" class="p-6 space-y-6">
-      <!-- Page Header with number -->
-      <div class="flex items-center gap-3 mb-2">
-        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-          <span class="text-white text-sm font-bold">4</span>
-        </div>
-        <h1 class="text-xl font-bold text-base-content uppercase tracking-wide">User Details View</h1>
+      <!-- Page Header -->
+      <div class="mb-2">
+        <h1 class="text-2xl font-bold text-base-content">User Details</h1>
+        <p class="text-sm text-base-content/60 mt-1">View and manage user account information, roles, and security settings.</p>
       </div>
 
       <!-- User Header Card -->
-      <div class="rounded-2xl bg-white/70 border border-blue-100/40 p-6">
+      <div class="card bg-base-100 shadow-sm border border-base-200 p-6">
         <div class="flex items-start justify-between flex-wrap gap-4">
           <div class="flex items-center gap-4">
             <button class="btn btn-ghost btn-sm btn-square" (click)="navigateToList()" aria-label="Back"><span class="material-symbols-outlined">arrow_back</span></button>
@@ -52,7 +51,7 @@ interface IUserDetail {
             <div>
               <div class="flex items-center gap-2 flex-wrap">
                 <h2 class="text-xl font-bold text-base-content">{{user.firstName}} {{user.lastName}}</h2>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-success text-success bg-success/5">{{user.isActive ? 'Active' : 'Inactive'}}</span>
+                <span class="badge badge-sm badge-success">{{user.isActive ? 'Active' : 'Inactive'}}</span>
               </div>
               <p class="text-sm text-base-content/60 mt-0.5" *ngIf="user.roles.length">{{formatRoleName(user.roles[0])}}</p>
               <p class="text-sm text-base-content/50">{{user.email}}</p>
@@ -86,20 +85,20 @@ interface IUserDetail {
       <div *ngIf="activeTab==='overview'">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
           <!-- User Information -->
-          <div class="rounded-xl bg-white border border-blue-100/60 shadow-sm p-5">
+          <div class="card bg-base-100 shadow-sm border border-base-200 p-5">
             <h3 class="text-sm font-bold text-primary mb-4">User Information</h3>
             <div class="space-y-3 text-sm">
               <div class="flex justify-between"><span class="text-base-content/50">First Name</span><span class="font-medium text-base-content">{{user.firstName}}</span></div>
               <div class="flex justify-between"><span class="text-base-content/50">Last Name</span><span class="font-medium text-base-content">{{user.lastName}}</span></div>
               <div class="flex justify-between"><span class="text-base-content/50">Email</span><span class="font-medium text-base-content text-xs">{{user.email}}</span></div>
-              <div class="flex justify-between items-center"><span class="text-base-content/50">Status</span><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-success text-success">{{user.isActive?'Active':'Inactive'}}</span></div>
+              <div class="flex justify-between items-center"><span class="text-base-content/50">Status</span><span class="badge badge-sm badge-success">{{user.isActive?'Active':'Inactive'}}</span></div>
               <div class="flex justify-between"><span class="text-base-content/50">Created At</span><span class="text-base-content">{{user.createdAt|date:'dd MMM yyyy, hh:mm a'}}</span></div>
               <div class="flex justify-between"><span class="text-base-content/50">Created By</span><span class="text-base-content">admin&#64;buildestate.co.uk</span></div>
               <div class="flex justify-between"><span class="text-base-content/50">Updated At</span><span class="text-base-content">{{user.lastLoginAt?(user.lastLoginAt|date:'dd MMM yyyy, hh:mm a'):'—'}}</span></div>
             </div>
           </div>
           <!-- Assigned Roles -->
-          <div class="rounded-xl bg-white border border-blue-100/60 shadow-sm p-5">
+          <div class="card bg-base-100 shadow-sm border border-base-200 p-5">
             <h3 class="text-sm font-bold text-primary mb-4">Assigned Roles</h3>
             <div class="flex flex-wrap gap-2">
               <span *ngFor="let role of user.roles" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border" [ngClass]="getRoleBadgeClass(role)">{{role}}</span>
@@ -107,7 +106,7 @@ interface IUserDetail {
             </div>
           </div>
           <!-- Security Summary -->
-          <div class="rounded-xl bg-white border border-blue-100/60 shadow-sm p-5">
+          <div class="card bg-base-100 shadow-sm border border-base-200 p-5">
             <h3 class="text-sm font-bold text-primary mb-4">Security Summary</h3>
             <div class="space-y-3 text-sm">
               <div class="flex justify-between"><span class="text-base-content/50">Password Last Changed</span><span class="text-base-content">{{user.passwordLastChangedAt?(user.passwordLastChangedAt|date:'dd MMM yyyy, hh:mm a'):'Never'}}</span></div>
@@ -121,20 +120,20 @@ interface IUserDetail {
         <div>
           <h3 class="text-sm font-bold text-base-content mb-3">Quick Actions</h3>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <button class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-200 bg-white hover:bg-base-200/30 transition-colors" (click)="showPasswordResetDialog=true">
-              <span class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center"><span class="material-symbols-outlined text-amber-600 text-lg">lock_reset</span></span>
+            <button class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-200 bg-base-100 hover:bg-base-200/30 transition-colors" (click)="showPasswordResetDialog=true">
+              <span class="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center"><span class="material-symbols-outlined text-warning text-lg">lock_reset</span></span>
               <span class="text-sm font-medium text-base-content">Reset Password</span>
             </button>
-            <button class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-200 bg-white hover:bg-base-200/30 transition-colors" (click)="showDeactivateDialog=true">
-              <span class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center"><span class="material-symbols-outlined text-red-600 text-lg">block</span></span>
+            <button class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-200 bg-base-100 hover:bg-base-200/30 transition-colors" (click)="showDeactivateDialog=true">
+              <span class="w-8 h-8 rounded-lg bg-error/10 flex items-center justify-center"><span class="material-symbols-outlined text-error text-lg">block</span></span>
               <span class="text-sm font-medium text-base-content">{{user.isActive?'Deactivate User':'Activate User'}}</span>
             </button>
-            <button class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-200 bg-white hover:bg-base-200/30 transition-colors" (click)="activeTab='sessions'">
-              <span class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center"><span class="material-symbols-outlined text-purple-600 text-lg">devices</span></span>
+            <button class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-200 bg-base-100 hover:bg-base-200/30 transition-colors" (click)="activeTab='sessions'">
+              <span class="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center"><span class="material-symbols-outlined text-secondary text-lg">devices</span></span>
               <span class="text-sm font-medium text-base-content">View Sessions</span>
             </button>
-            <button class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-200 bg-white hover:bg-base-200/30 transition-colors" (click)="activeTab='activity'">
-              <span class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center"><span class="material-symbols-outlined text-blue-600 text-lg">history</span></span>
+            <button class="flex items-center gap-3 px-4 py-3 rounded-xl border border-base-200 bg-base-100 hover:bg-base-200/30 transition-colors" (click)="activeTab='activity'">
+              <span class="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center"><span class="material-symbols-outlined text-info text-lg">history</span></span>
               <span class="text-sm font-medium text-base-content">View Activity</span>
             </button>
           </div>
@@ -188,7 +187,7 @@ interface IUserDetail {
           </div>
           <p class="text-sm text-base-content/70">The user will be immediately signed out and cannot log in until reactivated.</p>
           <!-- Info box -->
-          <div class="bg-amber-50 border border-amber-200/60 rounded-lg px-4 py-2.5">
+          <div class="bg-warning/5 border border-warning/20 rounded-lg px-4 py-2.5">
             <p class="text-sm text-base-content/70 italic">This action can be undone.</p>
           </div>
           <!-- Reason dropdown -->
@@ -354,6 +353,7 @@ export class UserDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
 
   user: IUserDetail | null = null;
   loading = true;
@@ -457,8 +457,8 @@ export class UserDetailComponent implements OnInit {
 
   confirmDeactivation(): void {
     if (!this.user) return;
-    const endpoint = this.user.isActive ? `/api/v1/users/${this.user.id}/deactivate` : `/api/v1/users/${this.user.id}/reactivate`;
-    this.http.post(endpoint, {}).subscribe({
+    const endpoint = this.user.isActive ? `/api/v1/users/${this.user.id}/deactivate` : `/api/v1/users/${this.user.id}/activate`;
+    this.http.patch(endpoint, {}).subscribe({
       next: () => { this.showDeactivateDialog = false; this.toast.showSuccess(this.user!.isActive ? 'User deactivated' : 'User reactivated'); this.loadUser(this.user!.id); },
       error: () => { this.showDeactivateDialog = false; this.toast.showError('Operation failed'); }
     });
@@ -474,9 +474,20 @@ export class UserDetailComponent implements OnInit {
 
   revokeAllSessions(): void {
     if (!this.user) return;
-    this.http.post(`/api/v1/sessions/user/${this.user.id}/revoke-all`, {}).subscribe({
-      next: () => { this.toast.showSuccess('All sessions revoked'); },
-      error: () => { this.toast.showError('Failed to revoke sessions'); }
+    this.confirmDialog.confirm({
+      title: 'Revoke All Sessions',
+      message: `Are you sure you want to revoke all active sessions for ${this.user.firstName} ${this.user.lastName}? They will be signed out of all devices immediately.`,
+      confirmText: 'Revoke All',
+      cancelText: 'Cancel',
+      confirmClass: 'btn-error',
+      icon: 'logout',
+      iconClass: 'text-error'
+    }).then(confirmed => {
+      if (!confirmed || !this.user) return;
+      this.http.post(`/api/v1/sessions/user/${this.user.id}/revoke-all`, {}).subscribe({
+        next: () => { this.toast.showSuccess('All sessions revoked'); },
+        error: () => { this.toast.showError('Failed to revoke sessions'); }
+      });
     });
   }
 

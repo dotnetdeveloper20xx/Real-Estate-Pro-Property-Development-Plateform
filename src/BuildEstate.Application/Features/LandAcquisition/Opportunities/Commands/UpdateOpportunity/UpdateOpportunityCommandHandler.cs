@@ -42,7 +42,12 @@ public sealed class UpdateOpportunityCommandHandler : IRequestHandler<UpdateOppo
 
         opportunity.Name = request.Name;
         opportunity.Location = request.Location;
+        opportunity.County = request.County;
         opportunity.LandSize = request.LandSize;
+        opportunity.SiteType = request.SiteType;
+        opportunity.CurrentUse = request.CurrentUse;
+        opportunity.Tenure = request.Tenure;
+        opportunity.Description = request.Description;
         opportunity.Source = request.Source;
         opportunity.ExpectedAcquisition = request.ExpectedAcquisition;
         opportunity.UpdatedAt = DateTime.UtcNow;

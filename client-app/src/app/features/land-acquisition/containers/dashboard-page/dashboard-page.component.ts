@@ -6,7 +6,8 @@ import {
   OnDestroy,
   inject,
   ViewChild,
-  ElementRef
+  ElementRef,
+  signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -145,14 +146,25 @@ Chart.register(...registerables);
           <div class="card bg-base-100 border border-base-200 animate-in delay-5">
             <div class="card-body p-5">
               <h2 class="text-lg font-semibold text-base-content mb-4">Pipeline Summary</h2>
-              <div class="relative flex justify-center">
-                <canvas #pipelineDonutCanvas width="220" height="220"></canvas>
-                <div class="donut-center">
-                  <span class="text-2xl font-bold text-base-content">{{ getPipelineTotal(metrics) }}</span>
-                  <br/>
-                  <span class="text-xs text-base-content/60">Total</span>
+              <ng-container *ngIf="!chartError().pipelineDonut; else pipelineDonutError">
+                <div class="relative flex justify-center">
+                  <canvas #pipelineDonutCanvas width="220" height="220"></canvas>
+                  <div class="donut-center">
+                    <span class="text-2xl font-bold text-base-content">{{ getPipelineTotal(metrics) }}</span>
+                    <br/>
+                    <span class="text-xs text-base-content/60">Total</span>
+                  </div>
                 </div>
-              </div>
+              </ng-container>
+              <ng-template #pipelineDonutError>
+                <div class="flex flex-col items-center py-8 text-base-content/50">
+                  <span class="material-symbols-outlined text-3xl mb-2 text-error">error_outline</span>
+                  <p class="text-sm mb-3">Unable to render chart</p>
+                  <button class="btn btn-sm btn-outline btn-error" (click)="retryChart('pipelineDonut', metrics)">
+                    <span class="material-symbols-outlined text-base mr-1">refresh</span> Retry
+                  </button>
+                </div>
+              </ng-template>
               <!-- Legend -->
               <div class="mt-4 grid grid-cols-2 gap-2">
                 <div *ngFor="let status of pipelineStatuses"
@@ -172,9 +184,20 @@ Chart.register(...registerables);
           <div class="card bg-base-100 border border-base-200 animate-in delay-5">
             <div class="card-body p-5">
               <h2 class="text-lg font-semibold text-base-content mb-4">Pipeline by Status</h2>
-              <div class="w-full" style="position: relative; height: 260px;">
-                <canvas #pipelineBarCanvas></canvas>
-              </div>
+              <ng-container *ngIf="!chartError().pipelineBar; else pipelineBarError">
+                <div class="w-full" style="position: relative; height: 260px;">
+                  <canvas #pipelineBarCanvas></canvas>
+                </div>
+              </ng-container>
+              <ng-template #pipelineBarError>
+                <div class="flex flex-col items-center py-8 text-base-content/50">
+                  <span class="material-symbols-outlined text-3xl mb-2 text-error">error_outline</span>
+                  <p class="text-sm mb-3">Unable to render chart</p>
+                  <button class="btn btn-sm btn-outline btn-error" (click)="retryChart('pipelineBar', metrics)">
+                    <span class="material-symbols-outlined text-base mr-1">refresh</span> Retry
+                  </button>
+                </div>
+              </ng-template>
             </div>
           </div>
 
@@ -195,7 +218,7 @@ Chart.register(...registerables);
                     <span class="text-sm font-medium text-base-content">Offers Expiring Soon</span>
                     <span class="text-xs text-base-content/60">Expiring within 7 days</span>
                   </div>
-                  <span class="badge badge-warning badge-lg font-bold">{{ metrics.offersExpiringSoon }}</span>
+                  <span class="badge badge-warning badge-lg font-bold">{{ metrics.offersExpiringSoon ?? 0 }}</span>
                 </div>
 
                 <!-- Overdue Due Diligence -->
@@ -207,7 +230,7 @@ Chart.register(...registerables);
                     <span class="text-sm font-medium text-base-content">Overdue Due Diligence</span>
                     <span class="text-xs text-base-content/60">Past expected completion</span>
                   </div>
-                  <span class="badge badge-error badge-lg font-bold">{{ metrics.overdueDueDiligence }}</span>
+                  <span class="badge badge-error badge-lg font-bold">{{ metrics.overdueDueDiligence ?? 0 }}</span>
                 </div>
 
                 <!-- Approvals Pending -->
@@ -219,7 +242,7 @@ Chart.register(...registerables);
                     <span class="text-sm font-medium text-base-content">Approvals Pending</span>
                     <span class="text-xs text-base-content/60">Awaiting review</span>
                   </div>
-                  <span class="badge badge-info badge-lg font-bold">{{ metrics.approvalsPending }}</span>
+                  <span class="badge badge-info badge-lg font-bold">{{ metrics.approvalsPending ?? 0 }}</span>
                 </div>
               </div>
             </div>
@@ -233,9 +256,9 @@ Chart.register(...registerables);
           <div class="card bg-base-100 border border-base-200 animate-in delay-6">
             <div class="card-body p-5">
               <h2 class="text-lg font-semibold text-base-content mb-4">Recent Activity</h2>
-              <div class="relative pl-8 space-y-4" *ngIf="metrics.recentActivity.length > 0">
+              <div class="relative pl-8 space-y-4" *ngIf="(metrics.recentActivity ?? []).length > 0">
                 <div class="timeline-line"></div>
-                <div *ngFor="let item of metrics.recentActivity; let i = index"
+                <div *ngFor="let item of (metrics.recentActivity ?? []); let i = index"
                      class="relative">
                   <div class="timeline-dot" [style.top.px]="4"></div>
                   <div class="ml-4">
@@ -248,7 +271,7 @@ Chart.register(...registerables);
                   </div>
                 </div>
               </div>
-              <div *ngIf="metrics.recentActivity.length === 0"
+              <div *ngIf="(metrics.recentActivity ?? []).length === 0"
                    class="flex flex-col items-center py-8 text-base-content/50">
                 <span class="material-symbols-outlined text-3xl mb-2">history</span>
                 <p class="text-sm">No recent activity.</p>
@@ -263,8 +286,8 @@ Chart.register(...registerables);
           <div class="card bg-base-100 border border-base-200 animate-in delay-6">
             <div class="card-body p-5">
               <h2 class="text-lg font-semibold text-base-content mb-4">Top Opportunities</h2>
-              <div class="space-y-3" *ngIf="metrics.topOpportunities.length > 0">
-                <div *ngFor="let opp of metrics.topOpportunities; let i = index"
+              <div class="space-y-3" *ngIf="(metrics.topOpportunities ?? []).length > 0">
+                <div *ngFor="let opp of (metrics.topOpportunities ?? []); let i = index"
                      class="flex items-center gap-3 p-2 rounded-lg hover:bg-base-200/50 transition-colors">
                   <span class="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-sm font-bold shrink-0">
                     {{ i + 1 }}
@@ -282,7 +305,7 @@ Chart.register(...registerables);
                   </div>
                 </div>
               </div>
-              <div *ngIf="metrics.topOpportunities.length === 0"
+              <div *ngIf="(metrics.topOpportunities ?? []).length === 0"
                    class="flex flex-col items-center py-8 text-base-content/50">
                 <span class="material-symbols-outlined text-3xl mb-2">leaderboard</span>
                 <p class="text-sm">No opportunities with feasibility data.</p>
@@ -297,14 +320,25 @@ Chart.register(...registerables);
           <div class="card bg-base-100 border border-base-200 animate-in delay-6">
             <div class="card-body p-5">
               <h2 class="text-lg font-semibold text-base-content mb-4">Activity by Type (30 Days)</h2>
-              <div class="relative flex justify-center">
-                <canvas #activityDonutCanvas width="220" height="220"></canvas>
-                <div class="donut-center">
-                  <span class="text-2xl font-bold text-base-content">{{ getActivityTotal(metrics) }}</span>
-                  <br/>
-                  <span class="text-xs text-base-content/60">Total</span>
+              <ng-container *ngIf="!chartError().activityDonut; else activityDonutError">
+                <div class="relative flex justify-center">
+                  <canvas #activityDonutCanvas width="220" height="220"></canvas>
+                  <div class="donut-center">
+                    <span class="text-2xl font-bold text-base-content">{{ getActivityTotal(metrics) }}</span>
+                    <br/>
+                    <span class="text-xs text-base-content/60">Total</span>
+                  </div>
                 </div>
-              </div>
+              </ng-container>
+              <ng-template #activityDonutError>
+                <div class="flex flex-col items-center py-8 text-base-content/50">
+                  <span class="material-symbols-outlined text-3xl mb-2 text-error">error_outline</span>
+                  <p class="text-sm mb-3">Unable to render chart</p>
+                  <button class="btn btn-sm btn-outline btn-error" (click)="retryChart('activityDonut', metrics)">
+                    <span class="material-symbols-outlined text-base mr-1">refresh</span> Retry
+                  </button>
+                </div>
+              </ng-template>
               <!-- Legend -->
               <div class="mt-4 grid grid-cols-2 gap-2">
                 <div *ngFor="let entry of getActivityEntries(metrics)"
@@ -333,6 +367,13 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   private pipelineDonutChart: Chart | null = null;
   private pipelineBarChart: Chart | null = null;
   private activityDonutChart: Chart | null = null;
+
+  /** Signal tracking which charts have encountered rendering errors. */
+  readonly chartError = signal<{ pipelineDonut: boolean; pipelineBar: boolean; activityDonut: boolean }>({
+    pipelineDonut: false,
+    pipelineBar: false,
+    activityDonut: false
+  });
 
   @ViewChild('pipelineDonutCanvas') pipelineDonutCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('pipelineBarCanvas') pipelineBarCanvas!: ElementRef<HTMLCanvasElement>;
@@ -395,101 +436,131 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   // ─── Chart Rendering ─────────────────────────────────────────────────
 
   private renderPipelineDonut(metrics: IDashboardMetrics): void {
-    if (!this.pipelineDonutCanvas) return;
-    this.pipelineDonutChart?.destroy();
+    try {
+      if (!this.pipelineDonutCanvas) return;
+      this.pipelineDonutChart?.destroy();
 
-    const labels = this.pipelineStatuses.map(s => this.formatStatusLabel(s));
-    const data = this.pipelineStatuses.map(s => metrics.opportunitiesByStatus[s] ?? 0);
-    const colors = this.pipelineStatuses.map(s => this.statusColors[s]);
+      const labels = this.pipelineStatuses.map(s => this.formatStatusLabel(s));
+      const data = this.pipelineStatuses.map(s => metrics.opportunitiesByStatus[s] ?? 0);
+      const colors = this.pipelineStatuses.map(s => this.statusColors[s]);
 
-    this.pipelineDonutChart = new Chart(this.pipelineDonutCanvas.nativeElement, {
-      type: 'doughnut',
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: colors,
-          borderWidth: 0,
-          hoverOffset: 4
-        }]
-      },
-      options: {
-        responsive: false,
-        cutout: '65%',
-        plugins: {
-          legend: { display: false }
+      this.pipelineDonutChart = new Chart(this.pipelineDonutCanvas.nativeElement, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: false,
+          cutout: '65%',
+          plugins: {
+            legend: { display: false }
+          }
         }
-      }
-    });
+      });
+      this.chartError.update(state => ({ ...state, pipelineDonut: false }));
+    } catch (error) {
+      console.error('Failed to render pipeline donut chart:', error);
+      this.chartError.update(state => ({ ...state, pipelineDonut: true }));
+    }
   }
 
   private renderPipelineBar(metrics: IDashboardMetrics): void {
-    if (!this.pipelineBarCanvas) return;
-    this.pipelineBarChart?.destroy();
+    try {
+      if (!this.pipelineBarCanvas) return;
+      this.pipelineBarChart?.destroy();
 
-    const labels = this.pipelineStatuses.map(s => this.formatStatusLabel(s));
-    const data = this.pipelineStatuses.map(s => metrics.opportunitiesByStatus[s] ?? 0);
-    const colors = this.pipelineStatuses.map(s => this.statusColors[s]);
+      const labels = this.pipelineStatuses.map(s => this.formatStatusLabel(s));
+      const data = this.pipelineStatuses.map(s => metrics.opportunitiesByStatus[s] ?? 0);
+      const colors = this.pipelineStatuses.map(s => this.statusColors[s]);
 
-    this.pipelineBarChart = new Chart(this.pipelineBarCanvas.nativeElement, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: colors,
-          borderRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false }
+      this.pipelineBarChart = new Chart(this.pipelineBarCanvas.nativeElement, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderRadius: 4
+          }]
         },
-        scales: {
-          x: {
-            ticks: { font: { size: 11 } },
-            grid: { display: false }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
           },
-          y: {
-            beginAtZero: true,
-            ticks: { stepSize: 2, font: { size: 11 } },
-            grid: { color: 'rgba(0,0,0,0.05)' }
+          scales: {
+            x: {
+              ticks: { font: { size: 11 } },
+              grid: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 2, font: { size: 11 } },
+              grid: { color: 'rgba(0,0,0,0.05)' }
+            }
           }
         }
-      }
-    });
+      });
+      this.chartError.update(state => ({ ...state, pipelineBar: false }));
+    } catch (error) {
+      console.error('Failed to render pipeline bar chart:', error);
+      this.chartError.update(state => ({ ...state, pipelineBar: true }));
+    }
   }
 
   private renderActivityDonut(metrics: IDashboardMetrics): void {
-    if (!this.activityDonutCanvas) return;
-    this.activityDonutChart?.destroy();
+    try {
+      if (!this.activityDonutCanvas) return;
+      this.activityDonutChart?.destroy();
 
-    const entries = this.getActivityEntries(metrics);
-    const labels = entries.map(e => e.label);
-    const data = entries.map(e => e.count);
-    const colors = entries.map(e => e.color);
+      const entries = this.getActivityEntries(metrics);
+      const labels = entries.map(e => e.label);
+      const data = entries.map(e => e.count);
+      const colors = entries.map(e => e.color);
 
-    this.activityDonutChart = new Chart(this.activityDonutCanvas.nativeElement, {
-      type: 'doughnut',
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: colors,
-          borderWidth: 0,
-          hoverOffset: 4
-        }]
-      },
-      options: {
-        responsive: false,
-        cutout: '65%',
-        plugins: {
-          legend: { display: false }
+      this.activityDonutChart = new Chart(this.activityDonutCanvas.nativeElement, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: false,
+          cutout: '65%',
+          plugins: {
+            legend: { display: false }
+          }
         }
+      });
+      this.chartError.update(state => ({ ...state, activityDonut: false }));
+    } catch (error) {
+      console.error('Failed to render activity donut chart:', error);
+      this.chartError.update(state => ({ ...state, activityDonut: true }));
+    }
+  }
+
+  /** Retry rendering a specific chart after an error. */
+  retryChart(chartName: 'pipelineDonut' | 'pipelineBar' | 'activityDonut', metrics: IDashboardMetrics): void {
+    this.chartError.update(state => ({ ...state, [chartName]: false }));
+    setTimeout(() => {
+      switch (chartName) {
+        case 'pipelineDonut': this.renderPipelineDonut(metrics); break;
+        case 'pipelineBar': this.renderPipelineBar(metrics); break;
+        case 'activityDonut': this.renderActivityDonut(metrics); break;
       }
-    });
+    }, 50);
   }
 
   // ─── Template Helpers ────────────────────────────────────────────────
@@ -546,12 +617,12 @@ export class DashboardPageComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   getActivityTotal(metrics: IDashboardMetrics): number {
-    return Object.values(metrics.activityByType)
+    return Object.values(metrics.activityByType ?? {})
       .reduce((sum, count) => sum + count, 0);
   }
 
   getActivityEntries(metrics: IDashboardMetrics): Array<{ label: string; count: number; color: string }> {
-    return Object.entries(metrics.activityByType).map(([label, count]) => ({
+    return Object.entries(metrics.activityByType ?? {}).map(([label, count]) => ({
       label,
       count,
       color: this.activityColors[label] ?? '#94A3B8'

@@ -12,7 +12,7 @@ public class OpportunityStateMachine : IOpportunityStateMachine
 {
     private static readonly Dictionary<OpportunityStatus, List<OpportunityStatus>> TransitionMap = new()
     {
-        { OpportunityStatus.Identified, [OpportunityStatus.InitialReview] },
+        { OpportunityStatus.Identified, [OpportunityStatus.InitialReview, OpportunityStatus.Withdrawn] },
         { OpportunityStatus.InitialReview, [OpportunityStatus.DueDiligence, OpportunityStatus.Withdrawn] },
         { OpportunityStatus.DueDiligence, [OpportunityStatus.OfferMade, OpportunityStatus.Withdrawn] },
         { OpportunityStatus.OfferMade, [OpportunityStatus.UnderContract, OpportunityStatus.Withdrawn] },

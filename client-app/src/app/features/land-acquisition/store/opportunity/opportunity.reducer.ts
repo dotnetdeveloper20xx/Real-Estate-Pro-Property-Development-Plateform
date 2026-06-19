@@ -1,7 +1,7 @@
 import { createReducer, on } from '@ngrx/store';
 import { createEntityAdapter, EntityAdapter } from '@ngrx/entity';
 import { IOpportunityListItem } from '../../models/opportunity.model';
-import { OpportunityState } from './opportunity.state';
+import { OpportunityState, IOpportunityFilters, IPaginationMeta } from './opportunity.state';
 import { OpportunityActions } from './opportunity.actions';
 
 /**
@@ -15,12 +15,39 @@ export const opportunityAdapter: EntityAdapter<IOpportunityListItem> = createEnt
 });
 
 /**
+ * Default pagination metadata.
+ */
+const defaultPagination: IPaginationMeta = {
+  pageNumber: 1,
+  pageSize: 20,
+  totalCount: 0,
+  totalPages: 0
+};
+
+/**
+ * Default filter values.
+ */
+const defaultFilters: IOpportunityFilters = {
+  status: null,
+  search: '',
+  location: '',
+  source: '',
+  dateFrom: null,
+  dateTo: null,
+  sortBy: 'createdAt',
+  sortDirection: 'desc'
+};
+
+/**
  * Initial state using EntityAdapter's getInitialState plus custom properties.
  */
 export const initialOpportunityState: OpportunityState = opportunityAdapter.getInitialState({
   loading: false,
   error: null,
-  selectedId: null
+  selectedId: null,
+  pagination: defaultPagination,
+  filters: defaultFilters,
+  bulkDeleteInProgress: false
 });
 
 /**
@@ -36,11 +63,12 @@ export const opportunityReducer = createReducer(
     loading: true,
     error: null
   })),
-  on(OpportunityActions.loadOpportunitiesSuccess, (state, { opportunities }): OpportunityState =>
+  on(OpportunityActions.loadOpportunitiesSuccess, (state, { opportunities, pagination }): OpportunityState =>
     opportunityAdapter.setAll([...opportunities], {
       ...state,
       loading: false,
-      error: null
+      error: null,
+      pagination
     })
   ),
   on(OpportunityActions.loadOpportunitiesFailure, (state, { error }): OpportunityState => ({
@@ -129,5 +157,45 @@ export const opportunityReducer = createReducer(
   on(OpportunityActions.selectOpportunity, (state, { id }): OpportunityState => ({
     ...state,
     selectedId: id
+  })),
+
+  // Load with server-side params (pagination, filters, sorting)
+  on(OpportunityActions.loadOpportunitiesWithParams, (state): OpportunityState => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+
+  // Bulk Delete
+  on(OpportunityActions.bulkDeleteOpportunities, (state): OpportunityState => ({
+    ...state,
+    bulkDeleteInProgress: true
+  })),
+  on(OpportunityActions.bulkDeleteOpportunitiesSuccess, (state, { ids }): OpportunityState =>
+    opportunityAdapter.removeMany(ids, {
+      ...state,
+      bulkDeleteInProgress: false
+    })
+  ),
+  on(OpportunityActions.bulkDeleteOpportunitiesFailure, (state, { error }): OpportunityState => ({
+    ...state,
+    bulkDeleteInProgress: false,
+    error
+  })),
+
+  // Filters
+  on(OpportunityActions.updateFilters, (state, { filters }): OpportunityState => ({
+    ...state,
+    filters: { ...state.filters, ...filters }
+  })),
+  on(OpportunityActions.resetFilters, (state): OpportunityState => ({
+    ...state,
+    filters: defaultFilters
+  })),
+
+  // Reload (effect will handle actual re-fetch)
+  on(OpportunityActions.reloadOpportunities, (state): OpportunityState => ({
+    ...state,
+    loading: true
   }))
 );

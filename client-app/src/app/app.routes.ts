@@ -54,6 +54,7 @@ export const appRoutes: Routes = [
       import('./features/land-acquisition/land-acquisition.routes').then(
         m => m.landAcquisitionRoutes
       ),
+    canActivate: [authGuard],
     data: { breadcrumb: 'Land Acquisition', icon: 'terrain' }
   },
   {

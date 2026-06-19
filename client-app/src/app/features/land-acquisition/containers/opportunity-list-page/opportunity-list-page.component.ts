@@ -2,12 +2,26 @@ import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Store } from '@ngrx/store';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
-import { OpportunityService, IOpportunityQueryParams } from '../../services/opportunity.service';
 import { IOpportunityListItem, OpportunityStatus } from '../../models/opportunity.model';
+import { IOpportunityQueryParams } from '../../services/opportunity.service';
+import { CsvExportService } from '../../services/csv-export.service';
 import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { ColumnToggleComponent } from '../../components/column-toggle/column-toggle.component';
+import { SavedViewsComponent } from '../../components/saved-views/saved-views.component';
+import {
+  OpportunityActions,
+  selectAllOpportunities,
+  selectOpportunityLoading,
+  selectPagination,
+  selectBulkDeleteInProgress,
+  selectFilters,
+  IOpportunityFilters,
+  IPaginationMeta
+} from '../../store/opportunity';
 
 interface IOpportunityMetrics {
   total: number;
@@ -20,7 +34,7 @@ interface IOpportunityMetrics {
 @Component({
   selector: 'app-opportunity-list-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ColumnToggleComponent, SavedViewsComponent],
   template: `
     <div class="p-6 space-y-6">
       <!-- Page Header -->
@@ -134,6 +148,12 @@ interface IOpportunityMetrics {
                 <button class="text-xs text-primary hover:underline" (click)="resetFilters()">Reset</button>
               </div>
 
+              <!-- Saved Views -->
+              <app-saved-views
+                [currentFilters]="currentFilters"
+                (viewSelected)="onViewSelected($event)">
+              </app-saved-views>
+
               <!-- Search -->
               <div class="form-control">
                 <label class="label py-1"><span class="label-text text-xs font-medium">Search</span></label>
@@ -141,7 +161,7 @@ interface IOpportunityMetrics {
                   <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-base-content/40 text-sm">search</span>
                   <input type="text" placeholder="Search opportunities..."
                          class="input input-bordered input-sm pl-8 w-full"
-                         [(ngModel)]="filters.search"
+                         [(ngModel)]="localFilters.search"
                          (ngModelChange)="onSearchInput($event)" />
                 </div>
               </div>
@@ -150,7 +170,7 @@ interface IOpportunityMetrics {
               <div class="form-control">
                 <label class="label py-1"><span class="label-text text-xs font-medium">Status</span></label>
                 <select class="select select-bordered select-sm w-full"
-                        [(ngModel)]="filters.status" (ngModelChange)="applyFilters()">
+                        [(ngModel)]="localFilters.status" (ngModelChange)="onFilterChange()">
                   <option value="">All Status</option>
                   <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
                 </select>
@@ -159,52 +179,24 @@ interface IOpportunityMetrics {
               <!-- Location -->
               <div class="form-control">
                 <label class="label py-1"><span class="label-text text-xs font-medium">Location</span></label>
-                <select class="select select-bordered select-sm w-full"
-                        [(ngModel)]="filters.location" (ngModelChange)="applyFilters()">
-                  <option value="">All Locations</option>
-                  <option *ngFor="let loc of locations" [value]="loc">{{ loc }}</option>
-                </select>
+                <input type="text" placeholder="Filter by location..."
+                       class="input input-bordered input-sm w-full"
+                       [(ngModel)]="localFilters.location"
+                       (ngModelChange)="onFilterChange()" />
               </div>
 
               <!-- Source -->
               <div class="form-control">
                 <label class="label py-1"><span class="label-text text-xs font-medium">Source</span></label>
-                <select class="select select-bordered select-sm w-full"
-                        [(ngModel)]="filters.source" (ngModelChange)="applyFilters()">
-                  <option value="">All Sources</option>
-                  <option *ngFor="let src of sources" [value]="src">{{ src }}</option>
-                </select>
-              </div>
-
-              <!-- Land Size Range -->
-              <div class="form-control">
-                <label class="label py-1"><span class="label-text text-xs font-medium">Land Size</span></label>
-                <select class="select select-bordered select-sm w-full"
-                        [(ngModel)]="filters.landSize" (ngModelChange)="applyFilters()">
-                  <option value="">Any Size</option>
-                  <option value="small">Under 5 acres</option>
-                  <option value="medium">5 - 20 acres</option>
-                  <option value="large">Over 20 acres</option>
-                </select>
-              </div>
-
-              <!-- Created Date -->
-              <div class="form-control">
-                <label class="label py-1"><span class="label-text text-xs font-medium">Created Date</span></label>
-                <select class="select select-bordered select-sm w-full"
-                        [(ngModel)]="filters.createdDate" (ngModelChange)="applyFilters()">
-                  <option value="">Any Time</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                  <option value="quarter">This Quarter</option>
-                  <option value="year">This Year</option>
-                </select>
+                <input type="text" placeholder="Filter by source..."
+                       class="input input-bordered input-sm w-full"
+                       [(ngModel)]="localFilters.source"
+                       (ngModelChange)="onFilterChange()" />
               </div>
 
               <!-- Apply Filters -->
               <div class="flex gap-2 pt-2">
                 <button class="btn btn-ghost btn-sm flex-1" (click)="resetFilters()">Clear All</button>
-                <button class="btn btn-primary btn-sm flex-1" (click)="applyFilters()">Apply Filters</button>
               </div>
             </div>
           </div>
@@ -212,22 +204,28 @@ interface IOpportunityMetrics {
 
         <!-- Right: Table Section -->
         <div class="flex-1 min-w-0 space-y-4">
-          <!-- Bulk Actions Bar -->
-          <div class="flex items-center justify-between" *ngIf="selectedIds.size > 0">
-            <div class="flex items-center gap-3">
+          <!-- Toolbar: Column Toggle + Bulk Actions -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3" *ngIf="selectedIds.size > 0">
               <span class="text-sm font-medium text-base-content">
                 {{ selectedIds.size }} {{ selectedIds.size === 1 ? 'result' : 'results' }} selected
               </span>
-              <button class="text-xs text-primary hover:underline" (click)="selectAll()">Select all {{ totalCount }}</button>
+              <button class="text-xs text-primary hover:underline" (click)="selectAll()">Select all {{ pagination.totalCount }}</button>
               <button class="text-xs text-base-content/50 hover:underline" (click)="clearSelection()">Clear selection</button>
-            </div>
-            <div class="dropdown dropdown-end">
-              <div tabindex="0" role="button" class="btn btn-sm btn-outline gap-1">
-                Bulk Actions <span class="material-symbols-outlined text-sm">expand_more</span>
+              <div class="dropdown dropdown-end">
+                <div tabindex="0" role="button" class="btn btn-sm btn-outline gap-1"
+                     [class.btn-disabled]="bulkDeleteInProgress">
+                  <span *ngIf="bulkDeleteInProgress" class="loading loading-spinner loading-xs"></span>
+                  {{ bulkDeleteInProgress ? 'Deleting...' : 'Bulk Actions' }}
+                  <span class="material-symbols-outlined text-sm">expand_more</span>
+                </div>
+                <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-2 shadow-lg border border-base-200">
+                  <li><a (click)="bulkDelete()"><span class="material-symbols-outlined text-sm text-error">delete</span> Delete Selected</a></li>
+                </ul>
               </div>
-              <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-10 w-52 p-2 shadow-lg border border-base-200">
-                <li><a (click)="bulkDelete()"><span class="material-symbols-outlined text-sm text-error">delete</span> Delete Selected</a></li>
-              </ul>
+            </div>
+            <div class="flex items-center gap-2 ml-auto">
+              <app-column-toggle (columnsChanged)="onColumnsChanged($event)"></app-column-toggle>
             </div>
           </div>
 
@@ -241,7 +239,7 @@ interface IOpportunityMetrics {
                       <input type="checkbox" class="checkbox checkbox-sm checkbox-primary"
                              [checked]="isAllSelected" (change)="toggleSelectAll()" />
                     </th>
-                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                    <th *ngIf="isColumnVisible('name')" class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
                         (click)="onSort('name')">
                       <div class="flex items-center gap-1">Name
                         <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'name'">
@@ -249,7 +247,7 @@ interface IOpportunityMetrics {
                         </span>
                       </div>
                     </th>
-                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                    <th *ngIf="isColumnVisible('location')" class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
                         (click)="onSort('location')">
                       <div class="flex items-center gap-1">Location
                         <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'location'">
@@ -257,7 +255,7 @@ interface IOpportunityMetrics {
                         </span>
                       </div>
                     </th>
-                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                    <th *ngIf="isColumnVisible('landSize')" class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
                         (click)="onSort('landSize')">
                       <div class="flex items-center gap-1">Size (acres)
                         <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'landSize'">
@@ -265,7 +263,7 @@ interface IOpportunityMetrics {
                         </span>
                       </div>
                     </th>
-                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                    <th *ngIf="isColumnVisible('status')" class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
                         (click)="onSort('status')">
                       <div class="flex items-center gap-1">Status
                         <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'status'">
@@ -273,7 +271,7 @@ interface IOpportunityMetrics {
                         </span>
                       </div>
                     </th>
-                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                    <th *ngIf="isColumnVisible('source')" class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
                         (click)="onSort('source')">
                       <div class="flex items-center gap-1">Source
                         <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'source'">
@@ -281,7 +279,7 @@ interface IOpportunityMetrics {
                         </span>
                       </div>
                     </th>
-                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                    <th *ngIf="isColumnVisible('expectedAcquisition')" class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
                         (click)="onSort('expectedAcquisition')">
                       <div class="flex items-center gap-1">Expected Date
                         <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'expectedAcquisition'">
@@ -289,7 +287,7 @@ interface IOpportunityMetrics {
                         </span>
                       </div>
                     </th>
-                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
+                    <th *ngIf="isColumnVisible('createdAt')" class="text-xs font-semibold uppercase tracking-wider text-base-content/60 cursor-pointer select-none"
                         (click)="onSort('createdAt')">
                       <div class="flex items-center gap-1">Created
                         <span class="material-symbols-outlined text-xs" [class.text-primary]="sortColumn === 'createdAt'">
@@ -305,20 +303,20 @@ interface IOpportunityMetrics {
                   <ng-container *ngIf="loading">
                     <tr *ngFor="let row of skeletonRows" class="animate-pulse">
                       <td><div class="h-4 w-4 bg-base-300 rounded"></div></td>
-                      <td><div class="h-4 bg-base-300 rounded w-32"></div></td>
-                      <td><div class="h-4 bg-base-300 rounded w-28"></div></td>
-                      <td><div class="h-4 bg-base-300 rounded w-16"></div></td>
-                      <td><div class="h-4 bg-base-300 rounded w-20"></div></td>
-                      <td><div class="h-4 bg-base-300 rounded w-20"></div></td>
-                      <td><div class="h-4 bg-base-300 rounded w-24"></div></td>
-                      <td><div class="h-4 bg-base-300 rounded w-20"></div></td>
+                      <td *ngIf="isColumnVisible('name')"><div class="h-4 bg-base-300 rounded w-32"></div></td>
+                      <td *ngIf="isColumnVisible('location')"><div class="h-4 bg-base-300 rounded w-28"></div></td>
+                      <td *ngIf="isColumnVisible('landSize')"><div class="h-4 bg-base-300 rounded w-16"></div></td>
+                      <td *ngIf="isColumnVisible('status')"><div class="h-4 bg-base-300 rounded w-20"></div></td>
+                      <td *ngIf="isColumnVisible('source')"><div class="h-4 bg-base-300 rounded w-20"></div></td>
+                      <td *ngIf="isColumnVisible('expectedAcquisition')"><div class="h-4 bg-base-300 rounded w-24"></div></td>
+                      <td *ngIf="isColumnVisible('createdAt')"><div class="h-4 bg-base-300 rounded w-20"></div></td>
                       <td><div class="h-4 bg-base-300 rounded w-16"></div></td>
                     </tr>
                   </ng-container>
 
                   <!-- Empty state -->
-                  <tr *ngIf="!loading && filteredOpportunities.length === 0">
-                    <td colspan="9">
+                  <tr *ngIf="!loading && opportunities.length === 0">
+                    <td [attr.colspan]="visibleColumnCount + 2">
                       <div class="flex flex-col items-center justify-center py-12 text-base-content/50">
                         <span class="material-symbols-outlined text-5xl mb-3">terrain</span>
                         <p class="text-base font-medium">No opportunities found</p>
@@ -328,14 +326,14 @@ interface IOpportunityMetrics {
                   </tr>
 
                   <!-- Data rows -->
-                  <ng-container *ngIf="!loading && filteredOpportunities.length > 0">
-                    <tr *ngFor="let opp of paginatedOpportunities; trackBy: trackById"
+                  <ng-container *ngIf="!loading && opportunities.length > 0">
+                    <tr *ngFor="let opp of opportunities; trackBy: trackById"
                         class="hover:bg-base-200/30 transition-colors">
                       <td (click)="$event.stopPropagation()">
                         <input type="checkbox" class="checkbox checkbox-sm checkbox-primary"
                                [checked]="selectedIds.has(opp.id)" (change)="toggleSelect(opp.id)" />
                       </td>
-                      <td>
+                      <td *ngIf="isColumnVisible('name')">
                         <div class="flex items-center gap-3 cursor-pointer" (click)="navigateToDetail(opp.id)">
                           <div class="avatar placeholder">
                             <div class="rounded-lg w-9 h-9 flex items-center justify-center text-white text-xs font-bold"
@@ -346,16 +344,16 @@ interface IOpportunityMetrics {
                           <span class="font-medium text-sm text-base-content">{{ opp.name }}</span>
                         </div>
                       </td>
-                      <td class="text-sm text-base-content/70">{{ opp.location }}</td>
-                      <td class="text-sm text-base-content/70 font-mono">{{ opp.landSize | number:'1.1-1' }}</td>
-                      <td>
+                      <td *ngIf="isColumnVisible('location')" class="text-sm text-base-content/70">{{ opp.location }}</td>
+                      <td *ngIf="isColumnVisible('landSize')" class="text-sm text-base-content/70 font-mono">{{ opp.landSize | number:'1.1-1' }}</td>
+                      <td *ngIf="isColumnVisible('status')">
                         <span class="badge badge-sm font-medium" [ngClass]="getStatusBadgeClass(opp.status)">
                           {{ formatStatus(opp.status) }}
                         </span>
                       </td>
-                      <td class="text-sm text-base-content/70">{{ opp.source ?? '—' }}</td>
-                      <td class="text-sm text-base-content/60">{{ opp.expectedAcquisition ? (opp.expectedAcquisition | date:'dd MMM yyyy') : '—' }}</td>
-                      <td class="text-sm text-base-content/60">{{ opp.createdAt | date:'dd MMM yyyy' }}</td>
+                      <td *ngIf="isColumnVisible('source')" class="text-sm text-base-content/70">{{ opp.source ?? '—' }}</td>
+                      <td *ngIf="isColumnVisible('expectedAcquisition')" class="text-sm text-base-content/60">{{ opp.expectedAcquisition ? (opp.expectedAcquisition | date:'dd MMM yyyy') : '—' }}</td>
+                      <td *ngIf="isColumnVisible('createdAt')" class="text-sm text-base-content/60">{{ opp.createdAt | date:'dd MMM yyyy' }}</td>
                       <td (click)="$event.stopPropagation()">
                         <div class="flex items-center gap-0.5">
                           <button class="btn btn-ghost btn-xs btn-square" aria-label="View"
@@ -380,37 +378,38 @@ interface IOpportunityMetrics {
 
             <!-- Pagination footer -->
             <div class="flex flex-wrap items-center justify-between px-4 py-3 border-t border-base-200/80 bg-base-100/50 gap-2"
-                 *ngIf="!loading && filteredOpportunities.length > 0">
+                 *ngIf="!loading && opportunities.length > 0">
               <span class="text-sm text-base-content/60">
-                Showing {{ startRecord }} to {{ endRecord }} of {{ totalCount }} opportunities
+                Showing {{ startRecord }} to {{ endRecord }} of {{ pagination.totalCount }} opportunities
               </span>
               <div class="flex items-center gap-3">
                 <div class="join">
-                  <button class="join-item btn btn-sm" [disabled]="currentPage === 1"
+                  <button class="join-item btn btn-sm" [disabled]="pagination.pageNumber === 1"
                           (click)="goToPage(1)" aria-label="First page">
                     <span class="material-symbols-outlined text-sm">first_page</span>
                   </button>
-                  <button class="join-item btn btn-sm" [disabled]="currentPage === 1"
-                          (click)="goToPage(currentPage - 1)" aria-label="Previous page">
+                  <button class="join-item btn btn-sm" [disabled]="pagination.pageNumber === 1"
+                          (click)="goToPage(pagination.pageNumber - 1)" aria-label="Previous page">
                     <span class="material-symbols-outlined text-sm">chevron_left</span>
                   </button>
                   <ng-container *ngFor="let page of visiblePages">
                     <button class="join-item btn btn-sm"
-                            [class.btn-primary]="page === currentPage"
+                            [class.btn-primary]="page === pagination.pageNumber"
                             (click)="goToPage(page)">{{ page }}</button>
                   </ng-container>
-                  <button class="join-item btn btn-sm" [disabled]="currentPage === totalPages"
-                          (click)="goToPage(currentPage + 1)" aria-label="Next page">
+                  <button class="join-item btn btn-sm" [disabled]="pagination.pageNumber === pagination.totalPages"
+                          (click)="goToPage(pagination.pageNumber + 1)" aria-label="Next page">
                     <span class="material-symbols-outlined text-sm">chevron_right</span>
                   </button>
-                  <button class="join-item btn btn-sm" [disabled]="currentPage === totalPages"
-                          (click)="goToPage(totalPages)" aria-label="Last page">
+                  <button class="join-item btn btn-sm" [disabled]="pagination.pageNumber === pagination.totalPages"
+                          (click)="goToPage(pagination.totalPages)" aria-label="Last page">
                     <span class="material-symbols-outlined text-sm">last_page</span>
                   </button>
                 </div>
                 <select class="select select-bordered select-sm"
                         [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange($event)" aria-label="Page size">
                   <option [ngValue]="10">10 per page</option>
+                  <option [ngValue]="20">20 per page</option>
                   <option [ngValue]="25">25 per page</option>
                   <option [ngValue]="50">50 per page</option>
                 </select>
@@ -447,12 +446,12 @@ interface IOpportunityMetrics {
             <div class="flex flex-col items-center gap-1.5">
               <span class="material-symbols-outlined text-lg text-primary">view_column</span>
               <span class="text-xs font-semibold text-base-content">Column Customization</span>
-              <span class="text-[10px] text-base-content/50">Show/hide columns and reorder to your preference</span>
+              <span class="text-[10px] text-base-content/50">Show/hide columns to your preference</span>
             </div>
             <div class="flex flex-col items-center gap-1.5">
               <span class="material-symbols-outlined text-lg text-primary">download</span>
-              <span class="text-xs font-semibold text-base-content">Export Options</span>
-              <span class="text-[10px] text-base-content/50">Export data in CSV, Excel or PDF formats</span>
+              <span class="text-xs font-semibold text-base-content">CSV Export</span>
+              <span class="text-[10px] text-base-content/50">Export current filtered data as CSV</span>
             </div>
           </div>
         </div>
@@ -461,35 +460,36 @@ interface IOpportunityMetrics {
   `
 })
 export class OpportunityListPageComponent implements OnInit, OnDestroy {
-  private readonly opportunityService = inject(OpportunityService);
+  private readonly store = inject(Store);
   private readonly router = inject(Router);
+  private readonly csvExportService = inject(CsvExportService);
   private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly toast = inject(ToastService);
   private readonly destroy$ = new Subject<void>();
   private readonly searchSubject = new Subject<string>();
 
-  // Data state
+  // Store-driven state
   opportunities: IOpportunityListItem[] = [];
-  filteredOpportunities: IOpportunityListItem[] = [];
   loading = true;
-  totalCount = 0;
-  currentPage = 1;
-  pageSize = 10;
-  sortColumn = '';
-  sortDirection: 'asc' | 'desc' = 'asc';
+  pagination: IPaginationMeta = { pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 };
+  currentFilters: IOpportunityFilters = {
+    status: null, search: '', location: '', source: '',
+    dateFrom: null, dateTo: null, sortBy: 'createdAt', sortDirection: 'desc'
+  };
+  bulkDeleteInProgress = false;
 
-  // Selection
+  // Local UI state
   selectedIds = new Set<string>();
+  visibleColumns: string[] = ['name', 'location', 'landSize', 'status', 'source', 'expectedAcquisition', 'createdAt'];
+  pageSize = 20;
+  sortColumn = 'createdAt';
+  sortDirection: 'asc' | 'desc' = 'desc';
 
-  // Metrics
+  // Local filter form state (two-way bound to UI, dispatched on change)
+  localFilters = { search: '', status: '' as string, location: '', source: '' };
+
+  // Metrics computed from store data
   metrics: IOpportunityMetrics = { total: 0, active: 0, inDueDiligence: 0, acquired: 0, withdrawn: 0 };
-
-  // Filters
-  filters = { search: '', status: '', location: '', source: '', landSize: '', createdDate: '' };
-
-  // Derived filter options
-  locations: string[] = [];
-  sources: string[] = [];
 
   readonly skeletonRows = Array.from({ length: 8 });
 
@@ -524,16 +524,44 @@ export class OpportunityListPageComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit(): void {
+    // Subscribe to store selectors
+    this.store.select(selectAllOpportunities).pipe(takeUntil(this.destroy$)).subscribe(opps => {
+      this.opportunities = opps;
+      this.computeMetrics();
+    });
+
+    this.store.select(selectOpportunityLoading).pipe(takeUntil(this.destroy$)).subscribe(loading => {
+      this.loading = loading;
+    });
+
+    this.store.select(selectPagination).pipe(takeUntil(this.destroy$)).subscribe(pagination => {
+      this.pagination = pagination;
+    });
+
+    this.store.select(selectFilters).pipe(takeUntil(this.destroy$)).subscribe(filters => {
+      this.currentFilters = filters;
+      this.sortColumn = filters.sortBy;
+      this.sortDirection = filters.sortDirection;
+    });
+
+    this.store.select(selectBulkDeleteInProgress).pipe(takeUntil(this.destroy$)).subscribe(inProgress => {
+      this.bulkDeleteInProgress = inProgress;
+      if (!inProgress && this.selectedIds.size > 0) {
+        this.selectedIds.clear();
+      }
+    });
+
+    // Debounced search input
     this.searchSubject.pipe(
       debounceTime(300),
       distinctUntilChanged(),
       takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.currentPage = 1;
-      this.applyFilters();
+    ).subscribe(search => {
+      this.dispatchLoadWithFilters({ search });
     });
 
-    this.loadData();
+    // Initial load
+    this.dispatchLoad();
   }
 
   ngOnDestroy(): void {
@@ -543,53 +571,57 @@ export class OpportunityListPageComponent implements OnInit, OnDestroy {
 
   // ── Computed ────────────────────────────────────────────────────────────────
 
-  get totalPages(): number {
-    return Math.max(1, Math.ceil(this.filteredOpportunities.length / this.pageSize));
-  }
-
   get startRecord(): number {
-    if (this.filteredOpportunities.length === 0) return 0;
-    return (this.currentPage - 1) * this.pageSize + 1;
+    if (this.pagination.totalCount === 0) return 0;
+    return (this.pagination.pageNumber - 1) * this.pagination.pageSize + 1;
   }
 
   get endRecord(): number {
-    return Math.min(this.currentPage * this.pageSize, this.filteredOpportunities.length);
-  }
-
-  get paginatedOpportunities(): IOpportunityListItem[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.filteredOpportunities.slice(start, start + this.pageSize);
+    return Math.min(this.pagination.pageNumber * this.pagination.pageSize, this.pagination.totalCount);
   }
 
   get visiblePages(): number[] {
     const pages: number[] = [];
     const maxVisible = 7;
-    let startPage = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
-    const endPage = Math.min(this.totalPages, startPage + maxVisible - 1);
+    const totalPages = this.pagination.totalPages || 1;
+    let startPage = Math.max(1, this.pagination.pageNumber - Math.floor(maxVisible / 2));
+    const endPage = Math.min(totalPages, startPage + maxVisible - 1);
     if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
     for (let i = startPage; i <= endPage; i++) pages.push(i);
     return pages;
   }
 
   get isAllSelected(): boolean {
-    return this.paginatedOpportunities.length > 0 &&
-           this.paginatedOpportunities.every(o => this.selectedIds.has(o.id));
+    return this.opportunities.length > 0 &&
+           this.opportunities.every(o => this.selectedIds.has(o.id));
   }
 
   get activeFilterCount(): number {
     let count = 0;
-    if (this.filters.search) count++;
-    if (this.filters.status) count++;
-    if (this.filters.location) count++;
-    if (this.filters.source) count++;
-    if (this.filters.landSize) count++;
-    if (this.filters.createdDate) count++;
+    if (this.localFilters.search) count++;
+    if (this.localFilters.status) count++;
+    if (this.localFilters.location) count++;
+    if (this.localFilters.source) count++;
     return count;
+  }
+
+  get visibleColumnCount(): number {
+    return this.visibleColumns.length;
   }
 
   getActivePercentage(): string {
     if (this.metrics.total === 0) return '0';
     return ((this.metrics.active / this.metrics.total) * 100).toFixed(0);
+  }
+
+  // ── Column Visibility ───────────────────────────────────────────────────────
+
+  isColumnVisible(key: string): boolean {
+    return this.visibleColumns.includes(key);
+  }
+
+  onColumnsChanged(columns: string[]): void {
+    this.visibleColumns = columns;
   }
 
   // ── Events ──────────────────────────────────────────────────────────────────
@@ -598,9 +630,19 @@ export class OpportunityListPageComponent implements OnInit, OnDestroy {
     this.searchSubject.next(term);
   }
 
+  onFilterChange(): void {
+    const filterUpdates: Partial<IOpportunityFilters> = {
+      status: this.localFilters.status ? this.localFilters.status as OpportunityStatus : null,
+      location: this.localFilters.location,
+      source: this.localFilters.source
+    };
+
+    this.dispatchLoadWithFilters(filterUpdates);
+  }
+
   onPageSizeChange(size: number): void {
     this.pageSize = +size;
-    this.currentPage = 1;
+    this.dispatchLoadWithFilters({}, 1, this.pageSize);
   }
 
   onSort(column: string): void {
@@ -610,12 +652,28 @@ export class OpportunityListPageComponent implements OnInit, OnDestroy {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
-    this.applyFilters();
+    this.store.dispatch(OpportunityActions.updateFilters({
+      filters: { sortBy: this.sortColumn, sortDirection: this.sortDirection }
+    }));
+    this.dispatchLoad();
   }
 
   goToPage(page: number): void {
-    if (page < 1 || page > this.totalPages) return;
-    this.currentPage = page;
+    if (page < 1 || page > this.pagination.totalPages) return;
+    this.dispatchLoadWithFilters({}, page);
+  }
+
+  // ── Saved Views ─────────────────────────────────────────────────────────────
+
+  onViewSelected(filters: IOpportunityFilters): void {
+    this.store.dispatch(OpportunityActions.updateFilters({ filters }));
+    this.localFilters.search = filters.search;
+    this.localFilters.status = filters.status ?? '';
+    this.localFilters.location = filters.location;
+    this.localFilters.source = filters.source;
+    this.sortColumn = filters.sortBy;
+    this.sortDirection = filters.sortDirection;
+    this.dispatchLoad();
   }
 
   // ── Selection ───────────────────────────────────────────────────────────────
@@ -627,19 +685,39 @@ export class OpportunityListPageComponent implements OnInit, OnDestroy {
 
   toggleSelectAll(): void {
     if (this.isAllSelected) {
-      this.paginatedOpportunities.forEach(o => this.selectedIds.delete(o.id));
+      this.opportunities.forEach(o => this.selectedIds.delete(o.id));
     } else {
-      this.paginatedOpportunities.forEach(o => this.selectedIds.add(o.id));
+      this.opportunities.forEach(o => this.selectedIds.add(o.id));
     }
   }
 
-  selectAll(): void { this.filteredOpportunities.forEach(o => this.selectedIds.add(o.id)); }
-  clearSelection(): void { this.selectedIds.clear(); }
+  selectAll(): void {
+    this.opportunities.forEach(o => this.selectedIds.add(o.id));
+  }
+
+  clearSelection(): void {
+    this.selectedIds.clear();
+  }
 
   bulkDelete(): void {
-    this.toast.showSuccess(`${this.selectedIds.size} opportunities deleted`);
-    this.selectedIds.clear();
-    this.loadData();
+    if (this.selectedIds.size === 0 || this.bulkDeleteInProgress) return;
+
+    const count = this.selectedIds.size;
+    this.confirmDialog.confirm({
+      title: 'Delete Selected Opportunities',
+      message: `Are you sure you want to delete ${count} ${count === 1 ? 'opportunity' : 'opportunities'}? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      confirmClass: 'btn-error',
+      icon: 'delete_forever',
+      iconClass: 'text-error'
+    }).then(confirmed => {
+      if (confirmed) {
+        this.store.dispatch(OpportunityActions.bulkDeleteOpportunities({
+          ids: Array.from(this.selectedIds)
+        }));
+      }
+    });
   }
 
   // ── Navigation ──────────────────────────────────────────────────────────────
@@ -657,6 +735,11 @@ export class OpportunityListPageComponent implements OnInit, OnDestroy {
   }
 
   exportOpportunities(): void {
+    if (this.opportunities.length === 0) {
+      this.toast.showError('No data to export.');
+      return;
+    }
+    this.csvExportService.exportOpportunities(this.opportunities);
     this.toast.showSuccess('Export started — your file will download shortly.');
   }
 
@@ -671,10 +754,7 @@ export class OpportunityListPageComponent implements OnInit, OnDestroy {
       iconClass: 'text-error'
     }).then(confirmed => {
       if (confirmed) {
-        this.opportunityService.delete(opp.id).subscribe({
-          next: () => { this.toast.showSuccess('Opportunity deleted'); this.loadData(); },
-          error: () => {}
-        });
+        this.store.dispatch(OpportunityActions.deleteOpportunity({ id: opp.id }));
       }
     });
   }
@@ -682,77 +762,11 @@ export class OpportunityListPageComponent implements OnInit, OnDestroy {
   // ── Filters ─────────────────────────────────────────────────────────────────
 
   resetFilters(): void {
-    this.filters = { search: '', status: '', location: '', source: '', landSize: '', createdDate: '' };
-    this.applyFilters();
-  }
-
-  applyFilters(): void {
-    let result = [...this.opportunities];
-
-    if (this.filters.search.trim()) {
-      const term = this.filters.search.toLowerCase();
-      result = result.filter(o =>
-        o.name.toLowerCase().includes(term) ||
-        o.location.toLowerCase().includes(term) ||
-        (o.source ?? '').toLowerCase().includes(term)
-      );
-    }
-
-    if (this.filters.status) {
-      result = result.filter(o => o.status === this.filters.status);
-    }
-
-    if (this.filters.location) {
-      result = result.filter(o => o.location === this.filters.location);
-    }
-
-    if (this.filters.source) {
-      result = result.filter(o => o.source === this.filters.source);
-    }
-
-    if (this.filters.landSize) {
-      result = result.filter(o => {
-        if (this.filters.landSize === 'small') return o.landSize < 5;
-        if (this.filters.landSize === 'medium') return o.landSize >= 5 && o.landSize <= 20;
-        if (this.filters.landSize === 'large') return o.landSize > 20;
-        return true;
-      });
-    }
-
-    if (this.filters.createdDate) {
-      const now = new Date();
-      result = result.filter(o => {
-        const created = new Date(o.createdAt);
-        const diffMs = now.getTime() - created.getTime();
-        if (this.filters.createdDate === 'week') return diffMs <= 7 * 24 * 60 * 60 * 1000;
-        if (this.filters.createdDate === 'month') return diffMs <= 30 * 24 * 60 * 60 * 1000;
-        if (this.filters.createdDate === 'quarter') return diffMs <= 90 * 24 * 60 * 60 * 1000;
-        if (this.filters.createdDate === 'year') return diffMs <= 365 * 24 * 60 * 60 * 1000;
-        return true;
-      });
-    }
-
-    // Sorting
-    if (this.sortColumn) {
-      result.sort((a, b) => {
-        const aVal = (a as unknown as Record<string, unknown>)[this.sortColumn];
-        const bVal = (b as unknown as Record<string, unknown>)[this.sortColumn];
-        if (aVal == null && bVal == null) return 0;
-        if (aVal == null) return 1;
-        if (bVal == null) return -1;
-        let cmp: number;
-        if (typeof aVal === 'number' && typeof bVal === 'number') {
-          cmp = aVal - bVal;
-        } else {
-          cmp = String(aVal).localeCompare(String(bVal));
-        }
-        return this.sortDirection === 'asc' ? cmp : -cmp;
-      });
-    }
-
-    this.filteredOpportunities = result;
-    this.totalCount = result.length;
-    if (this.currentPage > this.totalPages) this.currentPage = 1;
+    this.localFilters = { search: '', status: '', location: '', source: '' };
+    this.sortColumn = 'createdAt';
+    this.sortDirection = 'desc';
+    this.store.dispatch(OpportunityActions.resetFilters());
+    this.dispatchLoad();
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -771,51 +785,67 @@ export class OpportunityListPageComponent implements OnInit, OnDestroy {
     return status.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z])([A-Z][a-z])/g, '$1 $2').trim();
   }
 
-  // ── Data loading ────────────────────────────────────────────────────────────
+  // ── Private: Dispatch Helpers ───────────────────────────────────────────────
 
-  private loadData(): void {
-    this.loading = true;
+  /**
+   * Dispatch load with current filters/sort/pagination from store,
+   * optionally overriding specific filter values and page.
+   */
+  private dispatchLoadWithFilters(
+    filterOverrides: Partial<IOpportunityFilters> = {},
+    pageNumber?: number,
+    pageSizeOverride?: number
+  ): void {
+    // Update filters in store
+    if (Object.keys(filterOverrides).length > 0) {
+      this.store.dispatch(OpportunityActions.updateFilters({ filters: filterOverrides }));
+    }
+
+    const resolvedPageSize = pageSizeOverride ?? this.pageSize;
+    const resolvedPage = pageNumber ?? 1;
 
     const params: IOpportunityQueryParams = {
-      pageNumber: 1,
-      pageSize: 200
+      pageNumber: resolvedPage,
+      pageSize: resolvedPageSize,
+      status: (filterOverrides.status !== undefined ? filterOverrides.status : this.currentFilters.status) ?? undefined,
+      search: (filterOverrides.search !== undefined ? filterOverrides.search : this.currentFilters.search) || undefined,
+      sortBy: this.sortColumn || undefined,
+      sortDirection: this.sortDirection || undefined
     };
 
-    this.opportunityService.getAll(params).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.opportunities = response.data as IOpportunityListItem[];
-        } else {
-          this.opportunities = [];
-        }
-        this.computeMetrics();
-        this.computeFilterOptions();
-        this.applyFilters();
-        this.loading = false;
-      },
-      error: () => {
-        this.opportunities = [];
-        this.filteredOpportunities = [];
-        this.loading = false;
-        this.toast.showError('Failed to load opportunities');
-      }
-    });
+    this.store.dispatch(OpportunityActions.loadOpportunitiesWithParams({ params }));
   }
 
+  /**
+   * Dispatch load using whatever is currently in the store filters + local page state.
+   */
+  private dispatchLoad(): void {
+    const params: IOpportunityQueryParams = {
+      pageNumber: this.pagination.pageNumber || 1,
+      pageSize: this.pageSize,
+      status: this.currentFilters.status ?? undefined,
+      search: this.currentFilters.search || undefined,
+      sortBy: this.sortColumn || undefined,
+      sortDirection: this.sortDirection || undefined
+    };
+    this.store.dispatch(OpportunityActions.loadOpportunitiesWithParams({ params }));
+  }
+
+  /**
+   * Compute summary metrics from the current page data.
+   * Note: These are approximate metrics based on currently loaded page.
+   * For accurate totals, a dedicated metrics endpoint would be ideal.
+   */
   private computeMetrics(): void {
+    const opps = this.opportunities;
     this.metrics = {
-      total: this.opportunities.length,
-      active: this.opportunities.filter(o =>
+      total: this.pagination.totalCount || opps.length,
+      active: opps.filter(o =>
         o.status !== OpportunityStatus.Withdrawn && o.status !== OpportunityStatus.Acquired
       ).length,
-      inDueDiligence: this.opportunities.filter(o => o.status === OpportunityStatus.DueDiligence).length,
-      acquired: this.opportunities.filter(o => o.status === OpportunityStatus.Acquired).length,
-      withdrawn: this.opportunities.filter(o => o.status === OpportunityStatus.Withdrawn).length
+      inDueDiligence: opps.filter(o => o.status === OpportunityStatus.DueDiligence).length,
+      acquired: opps.filter(o => o.status === OpportunityStatus.Acquired).length,
+      withdrawn: opps.filter(o => o.status === OpportunityStatus.Withdrawn).length
     };
-  }
-
-  private computeFilterOptions(): void {
-    this.locations = [...new Set(this.opportunities.map(o => o.location).filter(Boolean))].sort();
-    this.sources = [...new Set(this.opportunities.map(o => o.source).filter((s): s is string => !!s))].sort();
   }
 }

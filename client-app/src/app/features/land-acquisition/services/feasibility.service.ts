@@ -32,7 +32,7 @@ export class FeasibilityService {
   ): Observable<IApiResponse<IFeasibilityAssessment>> {
     return this.http.post<IApiResponse<IFeasibilityAssessment>>(
       `${this.baseUrl}/${opportunityId}/feasibility`,
-      dto
+      { opportunityId, ...dto }
     );
   }
 }

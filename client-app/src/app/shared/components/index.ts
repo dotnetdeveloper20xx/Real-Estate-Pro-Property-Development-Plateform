@@ -26,3 +26,7 @@ export type { IStatusTransitionEvent } from './status-transition-dialog/status-t
 
 export { ApprovalPanelComponent } from './approval-panel/approval-panel.component';
 export type { IApprovalRequest, IApprovalDecision, IRejectionDecision } from './approval-panel/approval-panel.component';
+
+export { NotificationPanelComponent, getNotificationIcon } from './notification-panel/notification-panel.component';
+
+export { ModalShellComponent } from './modal-shell/modal-shell.component';

@@ -88,6 +88,26 @@ public class GlobalExceptionHandlerMiddleware
                 HttpStatusCode.Forbidden,
                 new List<string> { forbiddenException.Message }),
 
+            BuildEstate.Domain.Exceptions.BusinessRuleViolationException businessRuleEx => (
+                HttpStatusCode.BadRequest,
+                new List<string> { businessRuleEx.Message }),
+
+            BuildEstate.Domain.Exceptions.InvalidStateTransitionException stateEx => (
+                HttpStatusCode.BadRequest,
+                new List<string> { stateEx.Message }),
+
+            BuildEstate.Domain.Exceptions.ApprovalRequiredException approvalEx => (
+                HttpStatusCode.BadRequest,
+                new List<string> { approvalEx.Message }),
+
+            BuildEstate.Domain.Exceptions.EntityNotFoundException entityNotFoundEx => (
+                HttpStatusCode.NotFound,
+                new List<string> { entityNotFoundEx.Message }),
+
+            BuildEstate.Domain.Exceptions.DuplicateEntityException duplicateEx => (
+                HttpStatusCode.Conflict,
+                new List<string> { duplicateEx.Message }),
+
             _ => (
                 HttpStatusCode.InternalServerError,
                 new List<string> { "An internal server error has occurred." })

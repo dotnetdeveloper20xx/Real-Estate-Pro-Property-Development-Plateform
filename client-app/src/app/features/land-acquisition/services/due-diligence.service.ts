@@ -18,7 +18,7 @@ export interface IDueDiligenceQueryParams {
 
 /** Payload for transitioning a due diligence check to a new status. */
 export interface ITransitionDueDiligenceStatus {
-  readonly newStatus: DueDiligenceStatus;
+  readonly targetStatus: DueDiligenceStatus;
   readonly findings?: string | null;
 }
 

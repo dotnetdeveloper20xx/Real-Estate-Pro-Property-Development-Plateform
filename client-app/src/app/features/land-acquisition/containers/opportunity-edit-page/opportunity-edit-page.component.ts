@@ -246,6 +246,9 @@ export class OpportunityEditPageComponent implements OnInit, HasUnsavedChanges {
   /** Whether the opportunity data has loaded into the form. */
   opportunityLoaded = false;
 
+  /** The current rowVersion for optimistic concurrency. */
+  private currentRowVersion = '';
+
   /** Loading state from the store. */
   readonly loading$ = this.store.select(selectOpportunityLoading);
 
@@ -385,7 +388,8 @@ export class OpportunityEditPageComponent implements OnInit, HasUnsavedChanges {
       location: formValue.location.trim(),
       landSize: formValue.landSize!,
       source: formValue.source?.trim() || null,
-      expectedAcquisition: formValue.expectedAcquisition || null
+      expectedAcquisition: formValue.expectedAcquisition || null,
+      rowVersion: this.currentRowVersion
     };
 
     this.store.dispatch(
@@ -446,6 +450,7 @@ export class OpportunityEditPageComponent implements OnInit, HasUnsavedChanges {
    * Populate the form with existing opportunity data.
    */
   private populateForm(opportunity: IOpportunityListItem): void {
+    this.currentRowVersion = opportunity.rowVersion;
     this.form.patchValue({
       name: opportunity.name,
       location: opportunity.location,

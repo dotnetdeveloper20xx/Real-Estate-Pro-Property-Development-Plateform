@@ -340,7 +340,7 @@ export class DueDiligenceTabComponent implements OnInit {
   onTransitionStatus(check: IDueDiligence, newStatus: DueDiligenceStatus): void {
     this.transitioning.set(true);
 
-    const dto: ITransitionDueDiligenceStatus = { newStatus };
+    const dto: ITransitionDueDiligenceStatus = { targetStatus: newStatus };
 
     this.ddService
       .transitionStatus(this.opportunityId, check.id, dto)

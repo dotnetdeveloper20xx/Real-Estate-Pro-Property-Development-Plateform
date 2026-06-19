@@ -67,19 +67,35 @@ public sealed class TransitionOfferStatusCommandHandler : IRequestHandler<Transi
             offer.OriginalOfferId = request.OriginalOfferId;
         }
 
-        // Handle Accepted: auto-transition opportunity to UnderContract if currently OfferMade
-        if (request.TargetStatus == OfferStatus.Accepted
-            && offer.Opportunity.Status == OpportunityStatus.OfferMade)
+        // Handle Accepted: auto-transition opportunity status
+        if (request.TargetStatus == OfferStatus.Accepted)
         {
-            _opportunityStateMachine.ValidateTransition(
-                offer.Opportunity.Status,
-                OpportunityStatus.UnderContract);
+            // If opportunity is in DueDiligence → auto-advance to OfferMade
+            if (offer.Opportunity.Status == OpportunityStatus.DueDiligence)
+            {
+                _opportunityStateMachine.ValidateTransition(
+                    offer.Opportunity.Status,
+                    OpportunityStatus.OfferMade);
 
-            offer.Opportunity.Status = OpportunityStatus.UnderContract;
-            offer.Opportunity.UpdatedAt = DateTime.UtcNow;
-            offer.Opportunity.UpdatedBy = _currentUserService.UserId ?? string.Empty;
+                offer.Opportunity.Status = OpportunityStatus.OfferMade;
+                offer.Opportunity.UpdatedAt = DateTime.UtcNow;
+                offer.Opportunity.UpdatedBy = _currentUserService.UserId ?? string.Empty;
 
-            _opportunityRepository.Update(offer.Opportunity);
+                _opportunityRepository.Update(offer.Opportunity);
+            }
+            // If opportunity is in OfferMade → auto-advance to UnderContract
+            else if (offer.Opportunity.Status == OpportunityStatus.OfferMade)
+            {
+                _opportunityStateMachine.ValidateTransition(
+                    offer.Opportunity.Status,
+                    OpportunityStatus.UnderContract);
+
+                offer.Opportunity.Status = OpportunityStatus.UnderContract;
+                offer.Opportunity.UpdatedAt = DateTime.UtcNow;
+                offer.Opportunity.UpdatedBy = _currentUserService.UserId ?? string.Empty;
+
+                _opportunityRepository.Update(offer.Opportunity);
+            }
         }
 
         // Apply the offer status transition

@@ -13,7 +13,7 @@ export interface ICreateContract {
 
 /** Payload for transitioning a contract to a new status. */
 export interface ITransitionContractStatus {
-  readonly newStatus: ContractStatus;
+  readonly targetStatus: ContractStatus;
   readonly depositAmount?: number | null;
 }
 
@@ -38,7 +38,7 @@ export class ContractService {
   create(opportunityId: string, dto: ICreateContract): Observable<IApiResponse<IContract>> {
     return this.http.post<IApiResponse<IContract>>(
       `${this.baseUrl}/${opportunityId}/contracts`,
-      dto
+      { opportunityId, ...dto }
     );
   }
 
@@ -50,7 +50,7 @@ export class ContractService {
   ): Observable<IApiResponse<IContract>> {
     return this.http.patch<IApiResponse<IContract>>(
       `${this.baseUrl}/${opportunityId}/contracts/${contractId}/status`,
-      dto
+      { contractId, ...dto }
     );
   }
 }

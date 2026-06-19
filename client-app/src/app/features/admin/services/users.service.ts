@@ -26,7 +26,7 @@ export class UsersService {
    */
   getUsers(params: IUsersQueryParams): Observable<IPagedUsersResponse> {
     let httpParams = new HttpParams()
-      .set('page', params.page.toString())
+      .set('pageNumber', params.page.toString())
       .set('pageSize', params.pageSize.toString());
 
     if (params.search) {
@@ -63,16 +63,18 @@ export class UsersService {
 
   /**
    * Deactivate a user account. Immediately revokes all sessions.
+   * Backend uses PATCH /api/v1/users/{id}/deactivate
    */
   deactivateUser(id: string): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/${id}/deactivate`, {});
+    return this.http.patch<void>(`${this.baseUrl}/${id}/deactivate`, {});
   }
 
   /**
    * Reactivate a previously deactivated user account.
+   * Backend uses PATCH /api/v1/users/{id}/activate
    */
   reactivateUser(id: string): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/${id}/reactivate`, {});
+    return this.http.patch<void>(`${this.baseUrl}/${id}/activate`, {});
   }
 
   /**

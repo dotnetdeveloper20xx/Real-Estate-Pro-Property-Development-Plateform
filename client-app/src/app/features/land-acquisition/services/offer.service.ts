@@ -11,7 +11,7 @@ import {
 
 /** Payload for transitioning an offer to a new status. */
 export interface ITransitionOfferStatus {
-  readonly newStatus: OfferStatus;
+  readonly targetStatus: OfferStatus;
   readonly counterOfferAmount?: number | null;
 }
 

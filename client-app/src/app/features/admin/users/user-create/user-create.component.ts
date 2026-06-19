@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Subject } from 'rxjs';
 import { ToastService } from '../../../../core/services/toast.service';
+import { UsersService } from '../../services/users.service';
 
 interface IRoleOption {
   readonly id: string;
@@ -38,11 +39,9 @@ interface IUserData {
   template: `
     <div class="p-6 max-w-5xl mx-auto space-y-6">
       <!-- Page Header -->
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-          <span class="material-symbols-outlined text-white text-lg">3</span>
-        </div>
-        <h1 class="text-xl font-bold text-base-content uppercase tracking-wide">Create / Edit User</h1>
+      <div class="mb-2">
+        <h1 class="text-2xl font-bold text-base-content">{{ isEditMode ? 'Edit User' : 'Create User' }}</h1>
+        <p class="text-sm text-base-content/60 mt-1">{{ isEditMode ? 'Update user details and role assignments.' : 'Create a new user account with role assignments.' }}</p>
       </div>
 
       <!-- Tabs -->
@@ -161,6 +160,7 @@ interface IUserData {
 })
 export class UserCreateComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
+  private readonly usersService = inject(UsersService);
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -229,24 +229,33 @@ export class UserCreateComponent implements OnInit, OnDestroy {
   onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.submitting = true;
-    const { firstName, lastName, email, password, status, roles } = this.form.getRawValue();
+    const { firstName, lastName, email, password, roles } = this.form.getRawValue();
 
     if (this.isEditMode && this.userId) {
-      this.http.put(`/api/v1/users/${this.userId}`, {
-        firstName, lastName, email, isActive: status === 'active'
+      this.usersService.updateUser(this.userId, {
+        firstName, lastName, email, roles
       }).subscribe({
         next: () => {
-          this.http.put(`/api/v1/users/${this.userId}/roles`, { roles }).subscribe({
-            next: () => { this.submitting = false; this.toast.showSuccess('User updated successfully'); this.router.navigate(['/admin/users']); },
-            error: () => { this.submitting = false; this.toast.showSuccess('User updated but roles failed'); this.router.navigate(['/admin/users']); }
-          });
+          this.submitting = false;
+          this.toast.showSuccess('User updated successfully');
+          this.router.navigate(['/admin/users']);
         },
-        error: (err) => { this.submitting = false; this.toast.showError(err?.error?.errors?.[0] ?? 'Failed to update user'); }
+        error: (err) => {
+          this.submitting = false;
+          this.toast.showError(err?.error?.errors?.[0] ?? 'Failed to update user');
+        }
       });
     } else {
-      this.http.post('/api/v1/users', { firstName, lastName, email, password, roles }).subscribe({
-        next: () => { this.submitting = false; this.toast.showSuccess('User created successfully'); this.router.navigate(['/admin/users']); },
-        error: (err) => { this.submitting = false; this.toast.showError(err?.error?.errors?.[0] ?? 'Failed to create user'); }
+      this.usersService.createUser({ firstName, lastName, email, password, roles }).subscribe({
+        next: () => {
+          this.submitting = false;
+          this.toast.showSuccess('User created successfully');
+          this.router.navigate(['/admin/users']);
+        },
+        error: (err) => {
+          this.submitting = false;
+          this.toast.showError(err?.error?.errors?.[0] ?? 'Failed to create user');
+        }
       });
     }
   }
@@ -277,10 +286,16 @@ export class UserCreateComponent implements OnInit, OnDestroy {
   }
 
   private loadUser(id: string): void {
-    this.http.get<any>(`/api/v1/users/${id}`).subscribe({
-      next: (response) => {
-        const user = response.data ?? response;
-        this.userData = user;
+    this.usersService.getUserById(id).subscribe({
+      next: (user) => {
+        this.userData = {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          roles: [...user.roles],
+          isActive: user.isActive
+        };
         this.form.patchValue({
           firstName: user.firstName,
           lastName: user.lastName,

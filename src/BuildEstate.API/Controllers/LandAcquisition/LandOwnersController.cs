@@ -1,4 +1,5 @@
 using BuildEstate.Application.Features.LandAcquisition.LandOwners.Commands.CreateLandOwner;
+using BuildEstate.Application.Features.LandAcquisition.LandOwners.Commands.DeleteLandOwner;
 using BuildEstate.Application.Features.LandAcquisition.LandOwners.Commands.UpdateLandOwner;
 using BuildEstate.Application.Features.LandAcquisition.LandOwners.DTOs;
 using Microsoft.AspNetCore.Authorization;
@@ -75,5 +76,25 @@ public class LandOwnersController : BaseApiController
         var result = await Mediator.Send(command, cancellationToken);
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Soft-deletes a land owner associated with the specified opportunity.
+    /// </summary>
+    /// <param name="opportunityId">The parent opportunity identifier.</param>
+    /// <param name="ownerId">The land owner identifier to delete.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>204 No Content on success.</returns>
+    [HttpDelete("{ownerId:guid}")]
+    [Authorize(Policy = "opportunities.delete")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(
+        [FromRoute] Guid opportunityId,
+        [FromRoute] Guid ownerId,
+        CancellationToken cancellationToken)
+    {
+        await Mediator.Send(new DeleteLandOwnerCommand { Id = ownerId, OpportunityId = opportunityId }, cancellationToken);
+        return NoContent();
     }
 }

@@ -46,9 +46,11 @@ public sealed class TransitionOpportunityStatusCommandHandler
         TransitionOpportunityStatusCommand request,
         CancellationToken cancellationToken)
     {
-        // Load opportunity with DueDiligences and ApprovalRequests for gate checks
+        // Load opportunity with DueDiligences, Offers, Contract, and ApprovalRequests for gate checks
         var opportunity = await _opportunityRepository.Query()
             .Include(o => o.DueDiligences)
+            .Include(o => o.Offers)
+            .Include(o => o.Contract)
             .Include(o => o.ApprovalRequests)
             .FirstOrDefaultAsync(o => o.Id == request.OpportunityId, cancellationToken);
 
@@ -84,6 +86,32 @@ public sealed class TransitionOpportunityStatusCommandHandler
             && request.TargetStatus == OpportunityStatus.OfferMade)
         {
             ValidateDueDiligenceCompletionGate(opportunity);
+        }
+
+        // Accepted offer gate: OfferMade → UnderContract
+        if (previousStatus == OpportunityStatus.OfferMade
+            && request.TargetStatus == OpportunityStatus.UnderContract)
+        {
+            var hasAcceptedOffer = opportunity.Offers.Any(o => o.Status == OfferStatus.Accepted);
+            if (!hasAcceptedOffer)
+            {
+                throw new BusinessRuleViolationException(
+                    "AcceptedOfferGate",
+                    "Cannot transition to Under Contract without at least one accepted offer. Please accept an offer first.");
+            }
+        }
+
+        // Contract gate: UnderContract → Acquired
+        if (previousStatus == OpportunityStatus.UnderContract
+            && request.TargetStatus == OpportunityStatus.Acquired)
+        {
+            var hasContract = opportunity.Contract != null;
+            if (!hasContract)
+            {
+                throw new BusinessRuleViolationException(
+                    "ContractGate",
+                    "Cannot mark as Acquired without a completed contract. Please create a contract first.");
+            }
         }
 
         // Apply the transition

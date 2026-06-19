@@ -1,5 +1,5 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import { OpportunityState } from './opportunity.state';
+import { IPaginationMeta, IOpportunityFilters, OpportunityState } from './opportunity.state';
 import { opportunityAdapter } from './opportunity.reducer';
 import { IOpportunityListItem, OpportunityStatus } from '../../models/opportunity.model';
 
@@ -95,4 +95,44 @@ export const selectOpportunityLoading = createSelector(
 export const selectOpportunityError = createSelector(
   selectOpportunityState,
   (state: OpportunityState) => state.error
+);
+
+/**
+ * Select the pagination metadata (page number, page size, total count, total pages).
+ */
+export const selectPagination = createSelector(
+  selectOpportunityState,
+  (state: OpportunityState): IPaginationMeta => state.pagination
+);
+
+/**
+ * Select the current filter and sort parameters.
+ */
+export const selectFilters = createSelector(
+  selectOpportunityState,
+  (state: OpportunityState): IOpportunityFilters => state.filters
+);
+
+/**
+ * Select whether a bulk delete operation is currently in progress.
+ */
+export const selectBulkDeleteInProgress = createSelector(
+  selectOpportunityState,
+  (state: OpportunityState): boolean => state.bulkDeleteInProgress
+);
+
+/**
+ * Derived selector: total record count from pagination metadata.
+ */
+export const selectTotalCount = createSelector(
+  selectPagination,
+  (pagination: IPaginationMeta): number => pagination.totalCount
+);
+
+/**
+ * Derived selector: current page number from pagination metadata.
+ */
+export const selectCurrentPage = createSelector(
+  selectPagination,
+  (pagination: IPaginationMeta): number => pagination.pageNumber
 );

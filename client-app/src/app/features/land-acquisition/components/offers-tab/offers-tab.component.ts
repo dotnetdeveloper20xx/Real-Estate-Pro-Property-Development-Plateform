@@ -449,7 +449,7 @@ export class OffersTabComponent implements OnInit {
     }
 
     this.transitioning.set(true);
-    const dto: ITransitionOfferStatus = { newStatus };
+    const dto: ITransitionOfferStatus = { targetStatus: newStatus };
 
     this.offerService
       .transitionStatus(this.opportunityId, offer.id, dto)
@@ -475,7 +475,7 @@ export class OffersTabComponent implements OnInit {
 
     this.transitioning.set(true);
     const dto: ITransitionOfferStatus = {
-      newStatus: OfferStatus.CounterOffered,
+      targetStatus: OfferStatus.CounterOffered,
       counterOfferAmount: this.counterOfferAmountControl.value
     };
 

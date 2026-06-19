@@ -1,4 +1,4 @@
-export { OpportunityState } from './opportunity.state';
+export { OpportunityState, IPaginationMeta, IOpportunityFilters } from './opportunity.state';
 export { OpportunityActions } from './opportunity.actions';
 export { opportunityReducer, opportunityAdapter, initialOpportunityState } from './opportunity.reducer';
 export { OpportunityEffects } from './opportunity.effects';
@@ -11,5 +11,10 @@ export {
   selectOpportunityById,
   selectOpportunitiesByStatus,
   selectOpportunityLoading,
-  selectOpportunityError
+  selectOpportunityError,
+  selectPagination,
+  selectFilters,
+  selectBulkDeleteInProgress,
+  selectTotalCount,
+  selectCurrentPage
 } from './opportunity.selectors';

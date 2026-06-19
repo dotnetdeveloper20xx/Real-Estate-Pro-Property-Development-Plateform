@@ -493,7 +493,7 @@ export class ContractTabComponent implements OnInit {
     this.transitioning.set(true);
 
     const dto: ITransitionContractStatus = {
-      newStatus,
+      targetStatus: newStatus,
       depositAmount: depositAmount ?? null
     };
 

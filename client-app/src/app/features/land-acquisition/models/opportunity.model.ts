@@ -36,6 +36,7 @@ export interface IOpportunity {
   readonly createdBy: string;
   readonly updatedAt: string | null;
   readonly updatedBy: string | null;
+  readonly rowVersion: string;
 }
 
 /**
@@ -63,6 +64,7 @@ export interface IOpportunityListItem {
   readonly source: string | null;
   readonly expectedAcquisition: string | null;
   readonly createdAt: string;
+  readonly rowVersion: string;
 }
 
 /**
@@ -95,4 +97,5 @@ export interface IUpdateOpportunity {
   readonly description?: string | null;
   readonly source?: string | null;
   readonly expectedAcquisition?: string | null;
+  readonly rowVersion: string;
 }

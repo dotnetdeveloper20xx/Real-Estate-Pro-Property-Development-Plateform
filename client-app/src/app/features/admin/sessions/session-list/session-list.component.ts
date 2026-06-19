@@ -25,11 +25,9 @@ interface ISessionItem {
   template: `
     <div class="p-6 space-y-6">
       <!-- Page Header -->
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-          <span class="text-white text-sm font-bold">7</span>
-        </div>
-        <h1 class="text-xl font-bold text-base-content uppercase tracking-wide">Session Management</h1>
+      <div class="mb-2">
+        <h1 class="text-2xl font-bold text-base-content">Session Management</h1>
+        <p class="text-sm text-base-content/60 mt-1">Monitor and manage active user sessions across the platform.</p>
       </div>
 
       <!-- Loading -->
@@ -46,7 +44,7 @@ interface ISessionItem {
         </div>
 
         <div *ngIf="sessions.length > 0" class="overflow-x-auto">
-          <table class="table">
+          <table class="table table-sm">
             <thead>
               <tr class="bg-base-200/30">
                 <th class="text-xs font-bold text-base-content uppercase">Device</th>
@@ -65,15 +63,15 @@ interface ISessionItem {
                 <td class="text-sm">{{ session.lastActiveAt | date:'dd MMM yyyy, hh:mm a' }}</td>
                 <td>
                   <span *ngIf="session.isCurrent"
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-success text-success bg-success/5">
+                        class="badge badge-sm badge-success">
                     Current
                   </span>
                   <span *ngIf="!session.isCurrent && !session.isRevoked"
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-success text-success bg-success/5">
+                        class="badge badge-sm badge-success">
                     Active
                   </span>
                   <span *ngIf="session.isRevoked"
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-error text-error bg-error/5">
+                        class="badge badge-sm badge-error">
                     Expired
                   </span>
                 </td>

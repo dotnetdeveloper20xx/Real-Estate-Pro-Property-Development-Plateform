@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { provideState } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
-import { roleGuard } from './guards/role.guard';
+import { roleGuard } from '@core/guards/role.guard';
 import { unsavedChangesGuard } from './guards/unsaved-changes.guard';
 
 import { opportunityReducer } from './store/opportunity';
@@ -69,7 +69,7 @@ export const landAcquisitionRoutes: Routes = [
     ],
     canActivate: [roleGuard],
     canDeactivate: [unsavedChangesGuard],
-    data: { breadcrumb: 'Create Opportunity' }
+    data: { breadcrumb: 'Create Opportunity', roles: ['AcquisitionManager', 'AdminSupport', 'SuperAdmin'] }
   },
   {
     path: 'opportunities/:id',
@@ -86,8 +86,8 @@ export const landAcquisitionRoutes: Routes = [
   {
     path: 'opportunities/:id/edit',
     loadComponent: () =>
-      import('./containers/opportunity-edit-page/opportunity-edit-page.component').then(
-        m => m.OpportunityEditPageComponent
+      import('./containers/opportunity-create-page/opportunity-create-page.component').then(
+        m => m.OpportunityCreatePageComponent
       ),
     providers: [
       provideState('opportunities', opportunityReducer),
@@ -95,6 +95,6 @@ export const landAcquisitionRoutes: Routes = [
     ],
     canActivate: [roleGuard],
     canDeactivate: [unsavedChangesGuard],
-    data: { breadcrumb: 'Edit Opportunity' }
+    data: { breadcrumb: 'Edit Opportunity', roles: ['AcquisitionManager', 'AdminSupport', 'SuperAdmin'] }
   }
 ];

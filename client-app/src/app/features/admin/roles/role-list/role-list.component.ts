@@ -32,11 +32,9 @@ interface IPermissionItem {
   template: `
     <div class="p-6 space-y-6">
       <!-- Page Header -->
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-          <span class="text-white text-sm font-bold">5</span>
-        </div>
-        <h1 class="text-xl font-bold text-base-content uppercase tracking-wide">Role Management</h1>
+      <div class="mb-2">
+        <h1 class="text-2xl font-bold text-base-content">Role Management</h1>
+        <p class="text-sm text-base-content/60 mt-1">Configure roles and assign permissions to control platform access.</p>
       </div>
 
       <!-- Main 2-Panel Layout -->
@@ -61,10 +59,10 @@ interface IPermissionItem {
               <table class="table">
                 <thead>
                   <tr class="bg-base-200/30">
-                    <th class="text-xs font-bold text-base-content uppercase">Role Name</th>
-                    <th class="text-xs font-bold text-base-content uppercase">Description</th>
-                    <th class="text-xs font-bold text-base-content uppercase text-center w-20">Users</th>
-                    <th class="text-xs font-bold text-base-content uppercase text-center w-24">Actions</th>
+                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Role Name</th>
+                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60">Description</th>
+                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 text-center w-20">Users</th>
+                    <th class="text-xs font-semibold uppercase tracking-wider text-base-content/60 text-center w-24">Actions</th>
                   </tr>
                 </thead>
                 <tbody>

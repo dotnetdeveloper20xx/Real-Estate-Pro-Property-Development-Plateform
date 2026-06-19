@@ -5,6 +5,8 @@ import {
   IUpdateOpportunity,
   OpportunityStatus
 } from '../../models/opportunity.model';
+import { IPaginationMeta, IOpportunityFilters } from './opportunity.state';
+import { IOpportunityQueryParams } from '../../services/opportunity.service';
 
 /**
  * NgRx action group for opportunity state management.
@@ -16,7 +18,7 @@ export const OpportunityActions = createActionGroup({
     /** Trigger loading of all opportunities */
     'Load Opportunities': emptyProps(),
     /** Successfully loaded opportunities from API */
-    'Load Opportunities Success': props<{ opportunities: readonly IOpportunityListItem[] }>(),
+    'Load Opportunities Success': props<{ opportunities: readonly IOpportunityListItem[]; pagination: IPaginationMeta }>(),
     /** Failed to load opportunities */
     'Load Opportunities Failure': props<{ error: string }>(),
 
@@ -50,5 +52,23 @@ export const OpportunityActions = createActionGroup({
 
     /** Select an opportunity (for detail view navigation) */
     'Select Opportunity': props<{ id: string | null }>(),
+
+    /** Trigger loading of opportunities with server-side pagination, filtering, and sorting params */
+    'Load Opportunities With Params': props<{ params: IOpportunityQueryParams }>(),
+
+    /** Trigger bulk deletion of multiple opportunities */
+    'Bulk Delete Opportunities': props<{ ids: string[] }>(),
+    /** Successfully bulk deleted opportunities */
+    'Bulk Delete Opportunities Success': props<{ ids: string[]; count: number }>(),
+    /** Failed to bulk delete one or more opportunities */
+    'Bulk Delete Opportunities Failure': props<{ error: string; failedIds: string[] }>(),
+
+    /** Update filter state with partial filter values */
+    'Update Filters': props<{ filters: Partial<IOpportunityFilters> }>(),
+    /** Reset all filters to default values */
+    'Reset Filters': emptyProps(),
+
+    /** Trigger a reload of opportunities using current filters from store */
+    'Reload Opportunities': emptyProps(),
   }
 });
