@@ -42,6 +42,9 @@ interface INavItem {
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent, HasRoleDirective, NotificationPanelComponent],
   template: `
+    <!-- Skip Navigation Link (Req 18.8) — first focusable element -->
+    <a class="skip-nav-link" href="#main-content">Skip to main content</a>
+
     <div class="flex h-screen bg-base-200">
       <!-- Sidebar -->
       <aside
@@ -272,7 +275,7 @@ interface INavItem {
         </header>
 
         <!-- Page Content -->
-        <main class="flex-1 overflow-y-auto" style="background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 50%, #f5f7ff 100%);">
+        <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto" style="background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 50%, #f5f7ff 100%);">
           <router-outlet></router-outlet>
         </main>
       </div>

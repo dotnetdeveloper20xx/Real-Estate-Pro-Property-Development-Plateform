@@ -1,0 +1,39 @@
+/**
+ * BuildEstate Pro Design System — CSS Custom Properties
+ *
+ * Font scale tokens for the three supported display modes:
+ * - Regular (default, 1.0x baseline)
+ * - Small (0.85x)
+ * - Large (1.2x)
+ *
+ * These properties drive font-size, line-height, spacing, table row height,
+ * and input height across the entire application. They are toggled at runtime
+ * by the FontScaleService via the `data-scale` attribute on <html>.
+ */
+
+:root {
+  /* Regular (1.0x baseline) */
+  --ds-font-size-base: 1rem;
+  --ds-line-height-base: 1.5;
+  --ds-spacing-unit: 0.25rem;
+  --ds-table-row-height: 2.5rem;
+  --ds-input-height: 2.5rem;
+}
+
+:root[data-scale="small"] {
+  /* Small (0.85x) */
+  --ds-font-size-base: 0.85rem;
+  --ds-line-height-base: 1.4;
+  --ds-spacing-unit: 0.2rem;
+  --ds-table-row-height: 2rem;
+  --ds-input-height: 2rem;
+}
+
+:root[data-scale="large"] {
+  /* Large (1.2x) */
+  --ds-font-size-base: 1.2rem;
+  --ds-line-height-base: 1.6;
+  --ds-spacing-unit: 0.3rem;
+  --ds-table-row-height: 3rem;
+  --ds-input-height: 3rem;
+}

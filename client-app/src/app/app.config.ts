@@ -1,7 +1,7 @@
 import { ApplicationConfig, provideZoneChangeDetection, APP_INITIALIZER, inject } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideStore } from '@ngrx/store';
+import { provideStore, Store } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 
@@ -18,17 +18,25 @@ import { usersReducer, UsersEffects } from './features/admin/store/users';
 import { rolesReducer, RolesEffects } from './features/admin/store/roles';
 import { sessionsReducer, SessionsEffects } from './features/admin/store/sessions';
 import { auditLogsReducer, AuditLogsEffects } from './features/admin/store/audit-logs';
+import { preferencesReducer, PreferencesEffects, PreferencesActions } from './shared/design-system';
 
 /**
- * App initializer that loads the current user profile on startup
- * and initializes the theme service to apply the persisted theme.
+ * App initializer that loads the current user profile on startup,
+ * initializes the theme service to apply the persisted theme,
+ * and dispatches the loadPreferences action to fetch user display preferences
+ * from the backend (theme, font scale, density) on bootstrap.
  * If a token exists in localStorage, fetches user from /auth/me to restore session.
  */
 function initializeApp(): () => void {
   const authService = inject(AuthService);
+  const store = inject(Store);
   // Inject ThemeService to trigger constructor, which applies the stored theme
   inject(ThemeService);
-  return () => authService.loadUserProfile();
+  return () => {
+    authService.loadUserProfile();
+    // Load user display preferences on bootstrap via NgRx effect
+    store.dispatch(PreferencesActions.loadPreferences());
+  };
 }
 
 /**
@@ -55,6 +63,7 @@ export const appConfig: ApplicationConfig = {
     },
     provideStore({
       auth: authReducer,
+      preferences: preferencesReducer,
       planningApplications: applicationReducer,
       planningDashboard: dashboardReducer,
       adminUsers: usersReducer,
@@ -62,7 +71,7 @@ export const appConfig: ApplicationConfig = {
       adminSessions: sessionsReducer,
       adminAuditLogs: auditLogsReducer
     }),
-    provideEffects([AuthEffects, ApplicationEffects, DashboardEffects, UsersEffects, RolesEffects, SessionsEffects, AuditLogsEffects]),
+    provideEffects([AuthEffects, PreferencesEffects, ApplicationEffects, DashboardEffects, UsersEffects, RolesEffects, SessionsEffects, AuditLogsEffects]),
     provideStoreDevtools({ maxAge: 25, logOnly: false })
   ]
 };

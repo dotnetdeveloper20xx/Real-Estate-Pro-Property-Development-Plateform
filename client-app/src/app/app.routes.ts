@@ -130,6 +130,22 @@ export const appRoutes: Routes = [
     data: { breadcrumb: 'Reports', icon: 'analytics' }
   },
   {
+    path: 'preferences',
+    loadComponent: () =>
+      import('./shared/design-system/preferences/preferences-page/preferences-page.component').then(
+        m => m.PreferencesPageComponent
+      ),
+    data: { breadcrumb: 'Preferences', icon: 'tune' }
+  },
+  {
+    path: 'preferences/playground',
+    loadComponent: () =>
+      import('./shared/design-system/preferences/preview-lab/preview-lab.component').then(
+        m => m.PreviewLabComponent
+      ),
+    data: { breadcrumb: 'Component Playground', icon: 'science' }
+  },
+  {
     path: 'admin',
     loadChildren: () =>
       import('./features/admin/admin.routes').then(

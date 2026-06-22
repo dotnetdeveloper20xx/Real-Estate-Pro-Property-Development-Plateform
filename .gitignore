@@ -1,3 +1,7 @@
+# Compiled test output
+out-tsc/
+client-app/out-tsc/
+
 # .NET
 bin/
 obj/
