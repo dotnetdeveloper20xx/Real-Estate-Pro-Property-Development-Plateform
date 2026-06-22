@@ -6,7 +6,7 @@ import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { ConfirmDialogService } from './shared/design-system/services/confirm-dialog.service';
 import { ToastContainerComponent } from './shared/components/toast-container/toast-container.component';
-import { NotificationPanelComponent } from './shared/components/notification-panel/notification-panel.component';
+import { NotificationPanelComponent } from './shared/design-system/notifications/notification-panel/notification-panel.component';
 import { AuthService, ICurrentUser } from './core/services/auth.service';
 import { HasRoleDirective } from './shared/directives/has-role.directive';
 import { selectCurrentUser, selectUserRoles } from './core/store/auth/auth.selectors';

@@ -17,7 +17,6 @@ import { INotification } from '@features/land-acquisition/models/notification.mo
 /**
  * Icon mapping for notification event types.
  * Uses Material Symbols Outlined icon names.
- * Falls back to 'notifications' for unrecognized types.
  */
 const EVENT_TYPE_ICON_MAP: Record<string, string> = {
   'StatusChange': 'swap_horiz',
@@ -60,8 +59,6 @@ export function getNotificationIcon(eventType: string): string {
  * - Fetches notifications on init and every 60 seconds
  * - On notification click: marks as read and emits navigation event
  * - Loading state and empty state handled
- *
- * Lives in shared/components because it's used application-wide in the app header.
  */
 @Component({
   selector: 'app-notification-panel',
@@ -177,7 +174,6 @@ export function getNotificationIcon(eventType: string): string {
   `
 })
 export class NotificationPanelComponent implements OnInit, OnDestroy {
-  /** Emitted when user clicks a notification — parent should navigate to the relevant entity */
   @Output() navigate = new EventEmitter<{ entityId: string; entityType: string }>();
 
   notifications: INotification[] = [];
@@ -194,7 +190,6 @@ export class NotificationPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Fetch notifications immediately and then every 60 seconds
     interval(this.POLL_INTERVAL_MS)
       .pipe(
         startWith(0),
@@ -226,19 +221,16 @@ export class NotificationPanelComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /** Toggle panel visibility — DaisyUI handles this via the dropdown focus pattern */
   togglePanel(): void {
     // DaisyUI dropdown handles open/close via tabindex focus
   }
 
-  /** Handle notification click: mark as read and emit navigation event */
   onNotificationClick(notification: INotification): void {
     if (!notification.isRead) {
       this.notificationService.markAsRead(notification.id)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
-            // Update local state optimistically
             this.notifications = this.notifications.map(n =>
               n.id === notification.id ? { ...n, isRead: true } : n
             );
@@ -254,19 +246,15 @@ export class NotificationPanelComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Emit a generic view-all event (parent handles navigation) */
   onViewAll(): void {
     this.navigate.emit({ entityId: '', entityType: 'all' });
   }
 
-  /** Get the Material Symbols icon name for a notification event type */
   getIcon(eventType: string): string {
     return getNotificationIcon(eventType);
   }
 
-  /** Get the background/text color class for the icon container based on event type */
   getIconContainerClass(eventType: string): string {
-    // Categorize event types into color groups
     const warningTypes = ['ApprovalRequest', 'ApprovalRequested', 'OfferExpiry', 'OfferExpired'];
     const errorTypes = ['DueDiligenceFailure', 'DueDiligenceFailed', 'OpportunityWithdrawn'];
     const successTypes = ['ContractSigned', 'ContractExchanged', 'OfferAccepted', 'OpportunityAcquired', 'DueDiligenceCompleted', 'ApprovalDecided'];
@@ -279,7 +267,6 @@ export class NotificationPanelComponent implements OnInit, OnDestroy {
     return 'bg-base-200 text-base-content/60';
   }
 
-  /** Convert ISO date string to relative time display (e.g., "2 hours ago") */
   getRelativeTime(dateStr: string): string {
     const date = new Date(dateStr);
     const now = new Date();
@@ -289,20 +276,13 @@ export class NotificationPanelComponent implements OnInit, OnDestroy {
     const diffHours = Math.floor(diffMinutes / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffSeconds < 60) {
-      return 'Just now';
-    } else if (diffMinutes < 60) {
-      return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
-    } else if (diffHours < 24) {
-      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    } else if (diffDays < 7) {
-      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    } else {
-      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
+    if (diffSeconds < 60) return 'Just now';
+    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
-  /** TrackBy function for notification list performance */
   trackById(_index: number, item: INotification): string {
     return item.id;
   }

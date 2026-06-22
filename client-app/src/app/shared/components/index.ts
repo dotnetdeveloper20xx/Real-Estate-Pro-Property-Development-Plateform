@@ -1,25 +1,18 @@
-// Consolidated shared components (still in active use)
-export { KpiCardComponent } from './kpi-card/kpi-card.component';
-export type { IKpiTrend, TrendDirection } from './kpi-card/kpi-card.component';
-
-export { TimelineComponent } from './timeline/timeline.component';
-export type { ITimelineItem } from './timeline/timeline.component';
-
-export { LifecycleStepperComponent } from './lifecycle-stepper/lifecycle-stepper.component';
-export type { ILifecycleStep } from './lifecycle-stepper/lifecycle-stepper.component';
-
-export { PipelineColumnComponent } from './pipeline-column/pipeline-column.component';
-
-export { DocumentUploadComponent } from './document-upload/document-upload.component';
-export type { IDocumentTypeOption } from './document-upload/document-upload.component';
-
-export { StatusTransitionDialogComponent } from './status-transition-dialog/status-transition-dialog.component';
-export type { IStatusTransitionEvent } from './status-transition-dialog/status-transition-dialog.component';
-
-export { ApprovalPanelComponent } from './approval-panel/approval-panel.component';
-export type { IApprovalRequest, IApprovalDecision, IRejectionDecision } from './approval-panel/approval-panel.component';
-
-export { NotificationPanelComponent, getNotificationIcon } from './notification-panel/notification-panel.component';
+// --- Components now in Design System (backward-compatible re-exports) ---
+export { KpiCardComponent } from '../design-system/dashboard/kpi-card/kpi-card.component';
+export type { IKpiTrend, TrendDirection } from '../design-system/dashboard/kpi-card/kpi-card.component';
+export { TimelineComponent } from '../design-system/timeline/timeline.component';
+export type { ITimelineItem } from '../design-system/timeline/timeline.component';
+export { LifecycleStepperComponent } from '../design-system/stepper/lifecycle-stepper.component';
+export type { ILifecycleStep } from '../design-system/stepper/lifecycle-stepper.component';
+export { PipelineColumnComponent } from '../design-system/pipeline/pipeline-column.component';
+export { DocumentUploadComponent } from '../design-system/uploads/document-upload/document-upload.component';
+export type { IDocumentTypeOption } from '../design-system/uploads/document-upload/document-upload.component';
+export { StatusTransitionDialogComponent } from '../design-system/dialogs/status-transition-dialog/status-transition-dialog.component';
+export type { IStatusTransitionEvent } from '../design-system/dialogs/status-transition-dialog/status-transition-dialog.component';
+export { ApprovalPanelComponent } from '../design-system/workflows/approval-panel/approval-panel.component';
+export type { IApprovalRequest, IApprovalDecision, IRejectionDecision } from '../design-system/workflows/approval-panel/approval-panel.component';
+export { NotificationPanelComponent, getNotificationIcon } from '../design-system/notifications/notification-panel/notification-panel.component';
 
 
 // ─── Design System Re-exports (Compatibility Layer) ──────────────────────────

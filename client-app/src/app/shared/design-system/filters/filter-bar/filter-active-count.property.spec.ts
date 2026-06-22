@@ -143,9 +143,11 @@ describe('Filter Active Count Accuracy Property', () => {
     // Arbitrary for date-range: each part is either null or a date string
     const datePartArb = fc.oneof(
       fc.constant(null as string | null),
-      fc.date({ min: new Date(2020, 0, 1), max: new Date(2030, 11, 31) }).map(
-        (d) => d.toISOString().split('T')[0]
-      )
+      fc.tuple(
+        fc.integer({ min: 2020, max: 2030 }),
+        fc.integer({ min: 1, max: 12 }),
+        fc.integer({ min: 1, max: 28 })
+      ).map(([y, m, d]) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
     );
     const dateRangeArb = fc.tuple(datePartArb, datePartArb).map(
       ([start, end]): IDateRangeValue => ({ start, end })

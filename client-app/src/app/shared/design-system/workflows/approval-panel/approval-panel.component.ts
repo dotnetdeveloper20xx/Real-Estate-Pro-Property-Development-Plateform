@@ -53,7 +53,6 @@ interface IApprovalForm {
  * Unified ApprovalPanelComponent — A generic approval action panel that displays
  * pending approval request details and provides approve/reject actions.
  *
- * Moved from features/land-acquisition to shared — already generic.
  * Works with any entity that follows the approval workflow pattern.
  *
  * @example
@@ -220,45 +219,15 @@ interface IApprovalForm {
   `
 })
 export class ApprovalPanelComponent implements OnInit, OnChanges {
-  /**
-   * The approval request to display and act upon.
-   */
   @Input({ required: true }) approval!: IApprovalRequest;
-
-  /**
-   * Statuses considered actionable/pending. Defaults to ['Pending', 'UnderReview'].
-   */
   @Input() pendingStatuses: readonly string[] = ['Pending', 'UnderReview'];
-
-  /**
-   * Status value that represents an approved decision. Defaults to 'Approved'.
-   */
   @Input() approvedStatus = 'Approved';
-
-  /**
-   * Status value that represents a rejected decision. Defaults to 'Rejected'.
-   */
   @Input() rejectedStatus = 'Rejected';
-
-  /**
-   * Label for the entity ID field. Defaults to 'Entity ID'.
-   */
   @Input() entityLabel = 'Entity ID';
-
-  /**
-   * Emitted when the approver approves the request.
-   */
   @Output() approved = new EventEmitter<IApprovalDecision>();
-
-  /**
-   * Emitted when the approver rejects the request.
-   */
   @Output() rejected = new EventEmitter<IRejectionDecision>();
 
-  /** Reactive form for approve/reject fields */
   form!: FormGroup<IApprovalForm>;
-
-  /** Track whether reject was attempted (for validation display) */
   private rejectAttempted = false;
 
   constructor(private readonly fb: FormBuilder) {}
@@ -274,22 +243,18 @@ export class ApprovalPanelComponent implements OnInit, OnChanges {
     }
   }
 
-  /** Whether the approval is in a pending/actionable state. */
   get isPending(): boolean {
     return this.pendingStatuses.includes(this.approval?.status);
   }
 
-  /** Whether the approval was approved. */
   get isApproved(): boolean {
     return this.approval?.status === this.approvedStatus;
   }
 
-  /** Whether the approval was rejected. */
   get isRejected(): boolean {
     return this.approval?.status === this.rejectedStatus;
   }
 
-  /** CSS class for the status badge. */
   get statusBadgeClass(): string {
     if (this.pendingStatuses.includes(this.approval?.status)) return 'badge-warning';
     if (this.isApproved) return 'badge-success';
@@ -297,20 +262,17 @@ export class ApprovalPanelComponent implements OnInit, OnChanges {
     return 'badge-ghost';
   }
 
-  /** Whether the reason field should show validation errors. */
   get isReasonInvalid(): boolean {
     const control = this.form?.controls.reason;
     return !!control && control.invalid && (control.touched || this.rejectAttempted);
   }
 
-  /** Handle approve action. */
   onApprove(): void {
     if (!this.approval) return;
     const notes = this.form.controls.notes.value.trim();
     this.approved.emit({ approvalId: this.approval.id, notes });
   }
 
-  /** Handle reject action. */
   onReject(): void {
     if (!this.approval) return;
     this.rejectAttempted = true;
@@ -323,7 +285,6 @@ export class ApprovalPanelComponent implements OnInit, OnChanges {
     this.rejected.emit({ approvalId: this.approval.id, reason });
   }
 
-  /** Initialize or reset the reactive form. */
   private initForm(): void {
     this.form = this.fb.group<IApprovalForm>({
       notes: this.fb.control('', { nonNullable: true }),

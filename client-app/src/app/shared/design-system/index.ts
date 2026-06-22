@@ -114,3 +114,33 @@ export { EmptyStateComponent } from './empty-states/empty-state/empty-state.comp
 // --- Preferences ---
 export { PreferencesPageComponent } from './preferences/preferences-page/preferences-page.component';
 export { PreviewLabComponent } from './preferences/preview-lab/preview-lab.component';
+
+// --- Dashboard ---
+export { KpiCardComponent } from './dashboard/kpi-card/kpi-card.component';
+export type { IKpiTrend, TrendDirection } from './dashboard/kpi-card/kpi-card.component';
+
+// --- Timeline ---
+export { TimelineComponent } from './timeline/timeline.component';
+export type { ITimelineItem } from './timeline/timeline.component';
+
+// --- Stepper ---
+export { LifecycleStepperComponent } from './stepper/lifecycle-stepper.component';
+export type { ILifecycleStep } from './stepper/lifecycle-stepper.component';
+
+// --- Pipeline ---
+export { PipelineColumnComponent } from './pipeline/pipeline-column.component';
+
+// --- Document Upload ---
+export { DocumentUploadComponent } from './uploads/document-upload/document-upload.component';
+export type { IDocumentTypeOption } from './uploads/document-upload/document-upload.component';
+
+// --- Status Transition Dialog ---
+export { StatusTransitionDialogComponent } from './dialogs/status-transition-dialog/status-transition-dialog.component';
+export type { IStatusTransitionEvent } from './dialogs/status-transition-dialog/status-transition-dialog.component';
+
+// --- Approval Workflow ---
+export { ApprovalPanelComponent } from './workflows/approval-panel/approval-panel.component';
+export type { IApprovalRequest, IApprovalDecision, IRejectionDecision } from './workflows/approval-panel/approval-panel.component';
+
+// --- Notifications ---
+export { NotificationPanelComponent, getNotificationIcon } from './notifications/notification-panel/notification-panel.component';
