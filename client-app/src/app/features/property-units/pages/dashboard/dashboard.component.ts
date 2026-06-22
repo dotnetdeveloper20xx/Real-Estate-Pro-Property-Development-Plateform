@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { StatusBadgeComponent, IBadgeMapEntry } from '../../../../shared/design-system';
 
 interface IPropertyUnit {
   readonly block: string;
@@ -13,7 +14,7 @@ interface IPropertyUnit {
 @Component({
   selector: 'app-property-units-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StatusBadgeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host {
@@ -151,15 +152,7 @@ interface IPropertyUnit {
                   </td>
                   <td class="text-right font-mono text-sm">{{ unit.price }}</td>
                   <td>
-                    <span class="badge badge-sm"
-                      [ngClass]="{
-                        'badge-success': unit.status === 'Available',
-                        'badge-warning': unit.status === 'Reserved',
-                        'badge-info': unit.status === 'Sold',
-                        'badge-ghost': unit.status === 'Under Offer'
-                      }">
-                      {{ unit.status }}
-                    </span>
+                    <app-status-badge [value]="unit.status" [badgeMap]="unitBadgeMap" size="sm" />
                   </td>
                   <td class="text-sm text-base-content/70">{{ unit.buyer || '—' }}</td>
                 </tr>
@@ -172,6 +165,13 @@ interface IPropertyUnit {
   `
 })
 export class PropertyUnitsDashboardComponent {
+  readonly unitBadgeMap: Record<string, IBadgeMapEntry> = {
+    'Available': { label: 'Available', cssClass: 'badge-success', icon: 'check_circle' },
+    'Reserved': { label: 'Reserved', cssClass: 'badge-warning', icon: 'bookmark' },
+    'Sold': { label: 'Sold', cssClass: 'badge-info', icon: 'sell' },
+    'Under Offer': { label: 'Under Offer', cssClass: 'badge-ghost', icon: 'handshake' },
+  };
+
   readonly units: readonly IPropertyUnit[] = [
     { block: 'Block A', floor: 'Ground', type: '2-Bed', price: '£425,000', status: 'Sold', buyer: 'Mr & Mrs Patel' },
     { block: 'Block A', floor: '1st', type: '1-Bed', price: '£320,000', status: 'Sold', buyer: 'J. Thompson' },

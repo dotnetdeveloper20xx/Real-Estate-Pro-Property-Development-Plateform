@@ -12,7 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { ModalShellComponent } from '../../../../shared/components/modal-shell/modal-shell.component';
+import { ModalComponent } from '../../../../shared/design-system';
 import { ContractService } from '../../services';
 import { ToastService } from '../../../../core/services/toast.service';
 
@@ -33,10 +33,10 @@ import { ToastService } from '../../../../core/services/toast.service';
 @Component({
   selector: 'app-contract-form-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalShellComponent],
+  imports: [CommonModule, FormsModule, ModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-modal-shell
+    <app-modal
       [visible]="visible"
       title="Create Contract"
       icon="description"
@@ -128,7 +128,7 @@ import { ToastService } from '../../../../core/services/toast.service';
           Create Contract
         </button>
       </div>
-    </app-modal-shell>
+    </app-modal>
   `
 })
 export class ContractFormModalComponent implements OnChanges {

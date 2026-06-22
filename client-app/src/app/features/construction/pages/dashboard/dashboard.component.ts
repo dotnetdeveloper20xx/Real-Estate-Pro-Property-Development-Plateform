@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { StatusBadgeComponent, IBadgeMapEntry } from '../../../../shared/design-system';
 
 interface IConstructionStage {
   readonly site: string;
@@ -13,7 +14,7 @@ interface IConstructionStage {
 @Component({
   selector: 'app-construction-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StatusBadgeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host {
@@ -156,15 +157,7 @@ interface IConstructionStage {
                     </div>
                   </td>
                   <td>
-                    <span class="badge badge-sm"
-                      [ngClass]="{
-                        'badge-success': stage.status === 'On Track',
-                        'badge-error': stage.status === 'Delayed',
-                        'badge-ghost': stage.status === 'Completed',
-                        'badge-warning': stage.status === 'At Risk'
-                      }">
-                      {{ stage.status }}
-                    </span>
+                    <app-status-badge [value]="stage.status" [badgeMap]="constructionBadgeMap" size="sm" />
                   </td>
                   <td class="text-sm">{{ stage.nextMilestone }}</td>
                   <td class="text-sm text-base-content/70">{{ stage.dueDate }}</td>
@@ -178,6 +171,13 @@ interface IConstructionStage {
   `
 })
 export class ConstructionDashboardComponent {
+  readonly constructionBadgeMap: Record<string, IBadgeMapEntry> = {
+    'On Track': { label: 'On Track', cssClass: 'badge-success', icon: 'check_circle' },
+    'Delayed': { label: 'Delayed', cssClass: 'badge-error', icon: 'error' },
+    'Completed': { label: 'Completed', cssClass: 'badge-ghost', icon: 'task_alt' },
+    'At Risk': { label: 'At Risk', cssClass: 'badge-warning', icon: 'warning' },
+  };
+
   readonly stages: readonly IConstructionStage[] = [
     { site: 'Greenwich Waterfront', phase: 'Frame & Superstructure', progress: 65, status: 'On Track', nextMilestone: 'Roof completion Block A', dueDate: '15 Feb 2025' },
     { site: 'Greenwich Waterfront', phase: 'First Fix — Block B', progress: 30, status: 'On Track', nextMilestone: 'Electrical rough-in', dueDate: '28 Feb 2025' },

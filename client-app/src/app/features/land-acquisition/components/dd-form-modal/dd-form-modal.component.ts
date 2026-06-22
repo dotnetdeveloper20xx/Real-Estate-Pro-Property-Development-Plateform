@@ -12,7 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { ModalShellComponent } from '../../../../shared/components/modal-shell/modal-shell.component';
+import { ModalComponent } from '../../../../shared/design-system';
 import { DueDiligenceService } from '../../services';
 import { ToastService } from '../../../../core/services/toast.service';
 import {
@@ -41,10 +41,10 @@ import {
 @Component({
   selector: 'app-dd-form-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalShellComponent],
+  imports: [CommonModule, FormsModule, ModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-modal-shell
+    <app-modal
       [visible]="visible"
       [title]="editMode ? 'Update Due Diligence' : 'Add Due Diligence Check'"
       icon="fact_check"
@@ -149,7 +149,7 @@ import {
           {{ editMode ? 'Update' : 'Add Check' }}
         </button>
       </div>
-    </app-modal-shell>
+    </app-modal>
   `
 })
 export class DueDiligenceFormModalComponent implements OnChanges {

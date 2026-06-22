@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 
-import { ModalShellComponent } from '../../../../shared/components/modal-shell/modal-shell.component';
+import { ModalComponent } from '../../../../shared/design-system';
 import { CurrencyInputComponent } from '../../../../shared/components/currency-input/currency-input.component';
 import { ToastService } from '../../../../core/services/toast.service';
 import { IApiResponse } from '../../models';
@@ -35,10 +35,10 @@ import { IApiResponse } from '../../models';
 @Component({
   selector: 'app-approval-request-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalShellComponent, CurrencyInputComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, CurrencyInputComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-modal-shell
+    <app-modal
       [visible]="visible"
       title="Request Approval"
       subtitle="Submit for Finance Director review"
@@ -98,7 +98,7 @@ import { IApiResponse } from '../../models';
           Submit Request
         </button>
       </div>
-    </app-modal-shell>
+    </app-modal>
   `
 })
 export class ApprovalRequestModalComponent implements OnChanges {

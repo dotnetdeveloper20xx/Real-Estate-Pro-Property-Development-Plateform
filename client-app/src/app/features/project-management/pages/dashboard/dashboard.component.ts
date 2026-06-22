@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { StatusBadgeComponent, IBadgeMapEntry } from '../../../../shared/design-system';
 
 interface IProject {
   readonly name: string;
@@ -13,7 +14,7 @@ interface IProject {
 @Component({
   selector: 'app-project-management-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StatusBadgeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host {
@@ -143,15 +144,7 @@ interface IProject {
                 <tr *ngFor="let project of projects" class="hover:bg-base-200/30">
                   <td class="font-medium">{{ project.name }}</td>
                   <td>
-                    <span class="badge badge-sm"
-                      [ngClass]="{
-                        'badge-success': project.status === 'Active',
-                        'badge-info': project.status === 'Planning',
-                        'badge-ghost': project.status === 'Completed',
-                        'badge-warning': project.status === 'On Hold'
-                      }">
-                      {{ project.status }}
-                    </span>
+                    <app-status-badge [value]="project.status" [badgeMap]="projectBadgeMap" size="sm" />
                   </td>
                   <td>{{ project.budget }}</td>
                   <td class="text-sm text-base-content/70">{{ project.timeline }}</td>
@@ -172,6 +165,13 @@ interface IProject {
   `
 })
 export class ProjectManagementDashboardComponent {
+  readonly projectBadgeMap: Record<string, IBadgeMapEntry> = {
+    'Active': { label: 'Active', cssClass: 'badge-success', icon: 'check_circle' },
+    'Planning': { label: 'Planning', cssClass: 'badge-info', icon: 'edit_calendar' },
+    'Completed': { label: 'Completed', cssClass: 'badge-ghost', icon: 'task_alt' },
+    'On Hold': { label: 'On Hold', cssClass: 'badge-warning', icon: 'pause_circle' },
+  };
+
   readonly projects: readonly IProject[] = [
     { name: 'Greenwich Waterfront 150 Units', status: 'Active', budget: '£18.5M', timeline: 'Jan 2024 – Dec 2025', manager: 'James Mitchell', completion: 42 },
     { name: 'Battersea Apartments Phase 1', status: 'Active', budget: '£12.3M', timeline: 'Mar 2024 – Sep 2025', manager: 'Sarah Williams', completion: 28 },

@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { DataGridComponent, IGridColumn } from '../../../shared/components/data-grid/data-grid.component';
+import { DataTableComponent, IColumnDefinition, ITableAction, IActionClickEvent } from '../../../shared/design-system';
 import { ToastService } from '../../../core/services/toast.service';
 
 /**
@@ -36,7 +36,7 @@ interface IRoleForm {
 @Component({
   selector: 'app-role-management',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DataGridComponent],
+  imports: [CommonModule, ReactiveFormsModule, DataTableComponent],
   template: `
     <div class="p-6 space-y-6">
       <!-- Page Header -->
@@ -53,23 +53,21 @@ interface IRoleForm {
         </button>
       </div>
 
-      <!-- Roles Data Grid -->
-      <app-data-grid
+      <!-- Roles Data Table -->
+      <app-data-table
         [data]="rolesGridData"
         [columns]="columns"
         [loading]="loading"
         [totalCount]="totalCount"
-        [showActions]="true"
-        title="Roles"
+        [actions]="tableActions"
         searchPlaceholder="Search roles..."
         emptyIcon="admin_panel_settings"
         emptyMessage="No roles found"
         emptySubtext="Create a new role to get started"
-        (editClick)="onEditRole($event)"
-        (deleteClick)="onDeleteRole($event)"
+        (actionClick)="onActionClick($event)"
         (rowClick)="onRowClick($event)"
         (searchChange)="onSearch($event)">
-      </app-data-grid>
+      </app-data-table>
 
       <!-- Create/Edit Role Modal -->
       <dialog class="modal" [class.modal-open]="showModal">
@@ -216,10 +214,15 @@ export class RoleManagementComponent implements OnInit {
   selectedRoleName = '';
   roleUsers: Array<{ firstName: string; lastName: string; email: string }> = [];
 
-  readonly columns: IGridColumn[] = [
-    { key: 'name', label: 'Role Name', sortable: true, type: 'text' },
-    { key: 'description', label: 'Description', type: 'text' },
-    { key: 'userCount', label: 'Users', sortable: true, type: 'number', width: '100px' }
+  readonly columns: IColumnDefinition[] = [
+    { key: 'name', label: 'Role Name', sortable: true, type: 'text', visible: true },
+    { key: 'description', label: 'Description', sortable: false, type: 'text', visible: true },
+    { key: 'userCount', label: 'Users', sortable: true, type: 'number', visible: true, width: '100px' }
+  ];
+
+  readonly tableActions: ITableAction[] = [
+    { label: 'Edit', icon: 'edit', event: 'edit' },
+    { label: 'Delete', icon: 'delete', event: 'delete' }
   ];
 
   /** Form for creating/editing roles. */
@@ -267,8 +270,21 @@ export class RoleManagementComponent implements OnInit {
     }
   }
 
-  onRowClick(row: Record<string, unknown>): void {
-    const role = this.roles.find(r => r.id === row['id']);
+  onActionClick(event: IActionClickEvent): void {
+    const row = event.row as Record<string, unknown>;
+    switch (event.action) {
+      case 'edit':
+        this.onEditRole(row);
+        break;
+      case 'delete':
+        this.onDeleteRole(row);
+        break;
+    }
+  }
+
+  onRowClick(row: Record<string, unknown> | unknown): void {
+    const r = row as Record<string, unknown>;
+    const role = this.roles.find(rl => rl.id === r['id']);
     if (!role) return;
     this.selectedRoleName = role.name;
     this.loadRoleUsers(role.id);

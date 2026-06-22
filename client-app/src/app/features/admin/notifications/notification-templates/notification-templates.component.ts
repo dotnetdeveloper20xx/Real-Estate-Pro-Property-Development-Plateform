@@ -5,7 +5,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { NotificationAdminService, INotificationTemplate } from '../../services/notification-admin.service';
-import { ModalShellComponent } from '../../../../shared/components/modal-shell/modal-shell.component';
+import { ModalComponent } from '../../../../shared/design-system';
 
 /**
  * Notification Templates management page.
@@ -15,7 +15,7 @@ import { ModalShellComponent } from '../../../../shared/components/modal-shell/m
 @Component({
   selector: 'app-notification-templates',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalShellComponent],
+  imports: [CommonModule, FormsModule, ModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Page Header -->
@@ -131,7 +131,7 @@ import { ModalShellComponent } from '../../../../shared/components/modal-shell/m
     </div>
 
     <!-- Create/Edit Template Modal -->
-    <app-modal-shell
+    <app-modal
       *ngIf="modalOpen"
       [visible]="modalOpen"
       [title]="editingTemplate ? 'Edit Notification Template' : 'Create Notification Template'"
@@ -233,10 +233,10 @@ import { ModalShellComponent } from '../../../../shared/components/modal-shell/m
           </button>
         </div>
       </div>
-    </app-modal-shell>
+    </app-modal>
 
     <!-- Delete Confirmation -->
-    <app-modal-shell
+    <app-modal
       *ngIf="deleteModalOpen"
       [visible]="deleteModalOpen"
       title="Delete Notification Template"
@@ -260,7 +260,7 @@ import { ModalShellComponent } from '../../../../shared/components/modal-shell/m
           </button>
         </div>
       </div>
-    </app-modal-shell>
+    </app-modal>
   `
 })
 export class NotificationTemplatesComponent implements OnInit, OnDestroy {

@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { DataGridComponent, IGridColumn } from '../../../shared/components/data-grid/data-grid.component';
+import { DataTableComponent, IColumnDefinition, ITableAction, IActionClickEvent } from '../../../shared/design-system';
 import { ToastService } from '../../../core/services/toast.service';
 
 /**
@@ -50,7 +50,7 @@ interface IUserForm {
 @Component({
   selector: 'app-user-management',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DataGridComponent],
+  imports: [CommonModule, ReactiveFormsModule, DataTableComponent],
   template: `
     <div class="p-6 space-y-6">
       <!-- Page Header -->
@@ -67,25 +67,23 @@ interface IUserForm {
         </button>
       </div>
 
-      <!-- Users Data Grid -->
-      <app-data-grid
+      <!-- Users Data Table -->
+      <app-data-table
         [data]="usersGridData"
         [columns]="columns"
         [loading]="loading"
         [totalCount]="totalCount"
-        [pageSize]="pageSize"
-        [currentPage]="currentPage"
-        [showActions]="true"
-        title="Users"
+        [pageSizeOptions]="[10, 25, 50]"
+        [actions]="tableActions"
         searchPlaceholder="Search users..."
         emptyIcon="people"
         emptyMessage="No users found"
         emptySubtext="Create a new user to get started"
-        (editClick)="onEditUser($event)"
-        (pageChange)="onPageChange($event)"
-        (searchChange)="onSearch($event)"
-        (pageSizeChange)="onPageSizeChange($event)">
-      </app-data-grid>
+        (actionClick)="onActionClick($event)"
+        (rowClick)="onEditUser($event)"
+        (pageChange)="onTablePageChange($event)"
+        (searchChange)="onSearch($event)">
+      </app-data-table>
 
       <!-- Create/Edit User Modal -->
       <dialog class="modal" [class.modal-open]="showModal">
@@ -245,20 +243,26 @@ export class UserManagementComponent implements OnInit {
   // Available roles for the multi-select
   availableRoles: IRoleOption[] = [];
 
-  readonly columns: IGridColumn[] = [
-    { key: 'name', label: 'Name', sortable: true, type: 'text' },
-    { key: 'email', label: 'Email', sortable: true, type: 'text' },
-    { key: 'rolesDisplay', label: 'Roles', type: 'text' },
+  readonly columns: IColumnDefinition[] = [
+    { key: 'name', label: 'Name', sortable: true, type: 'text', visible: true },
+    { key: 'email', label: 'Email', sortable: true, type: 'text', visible: true },
+    { key: 'rolesDisplay', label: 'Roles', sortable: false, type: 'text', visible: true },
     {
       key: 'statusDisplay',
       label: 'Status',
       type: 'badge',
       sortable: true,
+      visible: true,
       badgeMap: {
-        'Active': 'badge-success',
-        'Inactive': 'badge-error'
+        'Active': { label: 'Active', cssClass: 'badge-success' },
+        'Inactive': { label: 'Inactive', cssClass: 'badge-error' }
       }
     }
+  ];
+
+  readonly tableActions: ITableAction[] = [
+    { label: 'Edit', icon: 'edit', event: 'edit' },
+    { label: 'Reset Password', icon: 'lock_reset', event: 'resetPassword' }
   ];
 
   /** Form for creating/editing users. */
@@ -333,10 +337,30 @@ export class UserManagementComponent implements OnInit {
     this.loadUsers();
   }
 
+  onTablePageChange(event: { page: number; pageSize: number }): void {
+    this.currentPage = event.page;
+    this.pageSize = event.pageSize;
+    this.loadUsers();
+  }
+
   onPageSizeChange(size: number): void {
     this.pageSize = size;
     this.currentPage = 1;
     this.loadUsers();
+  }
+
+  onActionClick(event: IActionClickEvent): void {
+    const row = event.row as Record<string, unknown>;
+    switch (event.action) {
+      case 'edit':
+        this.onEditUser(row);
+        break;
+      case 'resetPassword': {
+        const user = this.users.find(u => u.id === row['id']);
+        if (user) this.openResetPassword(user);
+        break;
+      }
+    }
   }
 
   onSearch(term: string): void {
@@ -355,8 +379,9 @@ export class UserManagementComponent implements OnInit {
     this.showModal = true;
   }
 
-  onEditUser(row: Record<string, unknown>): void {
-    const user = this.users.find(u => u.id === row['id']);
+  onEditUser(row: Record<string, unknown> | unknown): void {
+    const r = row as Record<string, unknown>;
+    const user = this.users.find(u => u.id === r['id']);
     if (!user) return;
 
     this.editingUser = user;

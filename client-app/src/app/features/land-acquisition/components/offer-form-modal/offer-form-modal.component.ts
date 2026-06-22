@@ -12,14 +12,14 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { ModalShellComponent } from '../../../../shared/components/modal-shell/modal-shell.component';
+import { ModalComponent } from '../../../../shared/design-system';
 import { CurrencyInputComponent } from '../../../../shared/components/currency-input/currency-input.component';
 import { OfferService } from '../../services';
 import { ToastService } from '../../../../core/services/toast.service';
 
 /**
  * Modal for submitting a new offer or counter-offer on an opportunity.
- * Uses ModalShellComponent as the outer wrapper with CurrencyInputComponent for amount entry.
+ * Uses ModalComponent as the outer wrapper with CurrencyInputComponent for amount entry.
  *
  * Usage:
  * ```html
@@ -35,10 +35,10 @@ import { ToastService } from '../../../../core/services/toast.service';
 @Component({
   selector: 'app-offer-form-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalShellComponent, CurrencyInputComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, CurrencyInputComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-modal-shell
+    <app-modal
       [visible]="visible"
       [title]="isCounterOffer ? 'Counter Offer' : 'Submit Offer'"
       icon="request_quote"
@@ -128,7 +128,7 @@ import { ToastService } from '../../../../core/services/toast.service';
           {{ isCounterOffer ? 'Submit Counter Offer' : 'Submit Offer' }}
         </button>
       </div>
-    </app-modal-shell>
+    </app-modal>
   `
 })
 export class OfferFormModalComponent implements OnChanges {

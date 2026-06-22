@@ -14,7 +14,7 @@ import { HttpClient } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Store } from '@ngrx/store';
 import { Actions, ofType } from '@ngrx/effects';
-import { take } from 'rxjs';
+import { firstValueFrom, take } from 'rxjs';
 
 import { OpportunityService } from '../../services/opportunity.service';
 import {
@@ -26,7 +26,7 @@ import {
   LandOwnerService,
   AuditService
 } from '../../services';
-import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
+import { ConfirmDialogService } from '../../../../shared/design-system/services/confirm-dialog.service';
 import { ToastService } from '@core/services/toast.service';
 import { AuthService } from '@core/services/auth.service';
 import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
@@ -1884,15 +1884,13 @@ export class OpportunityDetailPageComponent implements OnInit {
     const currentLabel = this.formatStatusLabel(opp.status);
     const targetLabel = this.formatStatusLabel(targetStatus);
 
-    const confirmed = await this.confirmDialog.confirm({
+    const confirmed = await firstValueFrom(this.confirmDialog.confirm({
       title: 'Confirm Status Transition',
       message: `Are you sure you want to move this opportunity from "${currentLabel}" to "${targetLabel}"?`,
       confirmText: 'Confirm Transition',
       cancelText: 'Cancel',
-      confirmClass: 'btn-primary',
-      icon: 'swap_horiz',
-      iconClass: 'text-primary'
-    });
+      severity: 'info',
+    }));
 
     if (!confirmed) return;
 
@@ -2159,15 +2157,13 @@ export class OpportunityDetailPageComponent implements OnInit {
     const doc = opp.documents.find(d => d.id === docId);
     const docName = doc?.fileName ?? 'this document';
 
-    const confirmed = await this.confirmDialog.confirm({
+    const confirmed = await firstValueFrom(this.confirmDialog.confirm({
       title: 'Delete Document',
       message: `Are you sure you want to delete "${docName}"? This action cannot be undone.`,
       confirmText: 'Delete Document',
       cancelText: 'Cancel',
-      confirmClass: 'btn-error',
-      icon: 'delete',
-      iconClass: 'text-error'
-    });
+      severity: 'danger',
+    }));
 
     if (!confirmed) return;
 
@@ -2348,15 +2344,13 @@ export class OpportunityDetailPageComponent implements OnInit {
     const opp = this.opportunity();
     if (!opp) return;
 
-    const confirmed = await this.confirmDialog.confirm({
+    const confirmed = await firstValueFrom(this.confirmDialog.confirm({
       title: 'Accept Offer',
       message: 'Are you sure you want to accept this offer? This will mark the offer as accepted and may progress the opportunity.',
       confirmText: 'Accept Offer',
       cancelText: 'Cancel',
-      confirmClass: 'btn-success',
-      icon: 'check_circle',
-      iconClass: 'text-success'
-    });
+      severity: 'info',
+    }));
 
     if (!confirmed) return;
 
@@ -2378,15 +2372,13 @@ export class OpportunityDetailPageComponent implements OnInit {
     const opp = this.opportunity();
     if (!opp) return;
 
-    const confirmed = await this.confirmDialog.confirm({
+    const confirmed = await firstValueFrom(this.confirmDialog.confirm({
       title: 'Reject Offer',
       message: 'Are you sure you want to reject this offer? This action cannot be undone.',
       confirmText: 'Reject Offer',
       cancelText: 'Cancel',
-      confirmClass: 'btn-error',
-      icon: 'cancel',
-      iconClass: 'text-error'
-    });
+      severity: 'danger',
+    }));
 
     if (!confirmed) return;
 
@@ -2477,15 +2469,13 @@ export class OpportunityDetailPageComponent implements OnInit {
     const opp = this.opportunity();
     if (!opp || !opp.landOwner) return;
 
-    const confirmed = await this.confirmDialog.confirm({
+    const confirmed = await firstValueFrom(this.confirmDialog.confirm({
       title: 'Delete Land Owner',
       message: `Are you sure you want to delete "${opp.landOwner.name}"? This action cannot be undone.`,
       confirmText: 'Delete Owner',
       cancelText: 'Cancel',
-      confirmClass: 'btn-error',
-      icon: 'delete',
-      iconClass: 'text-error'
-    });
+      severity: 'danger',
+    }));
 
     if (!confirmed) return;
 

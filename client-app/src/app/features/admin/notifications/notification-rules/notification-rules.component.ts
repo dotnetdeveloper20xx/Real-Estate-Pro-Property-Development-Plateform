@@ -5,7 +5,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { NotificationAdminService, INotificationRule, INotificationTemplate } from '../../services/notification-admin.service';
-import { ModalShellComponent } from '../../../../shared/components/modal-shell/modal-shell.component';
+import { ModalComponent } from '../../../../shared/design-system';
 
 /**
  * Notification Rules management page.
@@ -15,7 +15,7 @@ import { ModalShellComponent } from '../../../../shared/components/modal-shell/m
 @Component({
   selector: 'app-notification-rules',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalShellComponent],
+  imports: [CommonModule, FormsModule, ModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Page Header -->
@@ -143,7 +143,7 @@ import { ModalShellComponent } from '../../../../shared/components/modal-shell/m
     </div>
 
     <!-- Create/Edit Rule Modal -->
-    <app-modal-shell
+    <app-modal
       *ngIf="modalOpen"
       [visible]="modalOpen"
       [title]="editingRule ? 'Edit Notification Rule' : 'Create Notification Rule'"
@@ -253,10 +253,10 @@ import { ModalShellComponent } from '../../../../shared/components/modal-shell/m
           </button>
         </div>
       </div>
-    </app-modal-shell>
+    </app-modal>
 
     <!-- Delete Confirmation Modal -->
-    <app-modal-shell
+    <app-modal
       *ngIf="deleteModalOpen"
       [visible]="deleteModalOpen"
       title="Delete Notification Rule"
@@ -278,7 +278,7 @@ import { ModalShellComponent } from '../../../../shared/components/modal-shell/m
           </button>
         </div>
       </div>
-    </app-modal-shell>
+    </app-modal>
   `
 })
 export class NotificationRulesComponent implements OnInit, OnDestroy {

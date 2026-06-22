@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { StatusBadgeComponent, IBadgeMapEntry } from '../../../../shared/design-system';
 
 interface IDocument {
   readonly name: string;
@@ -14,7 +15,7 @@ interface IDocument {
 @Component({
   selector: 'app-documents-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StatusBadgeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host {
@@ -162,15 +163,7 @@ interface IDocument {
                   <td class="text-sm text-base-content/70">{{ doc.date }}</td>
                   <td class="text-sm text-base-content/70">{{ doc.size }}</td>
                   <td>
-                    <span class="badge badge-sm"
-                      [ngClass]="{
-                        'badge-success': doc.status === 'Approved',
-                        'badge-warning': doc.status === 'Pending Review',
-                        'badge-ghost': doc.status === 'Draft',
-                        'badge-error': doc.status === 'Expired'
-                      }">
-                      {{ doc.status }}
-                    </span>
+                    <app-status-badge [value]="doc.status" [badgeMap]="documentBadgeMap" size="sm" />
                   </td>
                 </tr>
               </tbody>
@@ -182,6 +175,13 @@ interface IDocument {
   `
 })
 export class DocumentsDashboardComponent {
+  readonly documentBadgeMap: Record<string, IBadgeMapEntry> = {
+    'Approved': { label: 'Approved', cssClass: 'badge-success', icon: 'check_circle' },
+    'Pending Review': { label: 'Pending Review', cssClass: 'badge-warning', icon: 'schedule' },
+    'Draft': { label: 'Draft', cssClass: 'badge-ghost', icon: 'edit_note' },
+    'Expired': { label: 'Expired', cssClass: 'badge-error', icon: 'error' },
+  };
+
   readonly documents: readonly IDocument[] = [
     { name: 'Planning Permission — Block A', type: 'Planning', project: 'Greenwich Waterfront', uploadedBy: 'Sarah Williams', date: '12 Dec 2024', size: '4.2 MB', status: 'Approved' },
     { name: 'Construction Contract Rev 3', type: 'Contract', project: 'Battersea Phase 1', uploadedBy: 'James Mitchell', date: '10 Dec 2024', size: '1.8 MB', status: 'Pending Review' },

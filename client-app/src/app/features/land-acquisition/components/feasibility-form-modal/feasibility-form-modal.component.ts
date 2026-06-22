@@ -12,7 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { ModalShellComponent } from '../../../../shared/components/modal-shell/modal-shell.component';
+import { ModalComponent } from '../../../../shared/design-system';
 import { CurrencyInputComponent } from '../../../../shared/components/currency-input/currency-input.component';
 import { FeasibilityService } from '../../services';
 import { ToastService } from '../../../../core/services/toast.service';
@@ -37,10 +37,10 @@ import { IFeasibilityAssessment, FeasibilityScenario, ICreateFeasibility } from 
 @Component({
   selector: 'app-feasibility-form-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalShellComponent, CurrencyInputComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, CurrencyInputComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-modal-shell
+    <app-modal
       [visible]="visible"
       [title]="editMode ? 'Edit Feasibility Assessment' : 'Create Feasibility Assessment'"
       icon="analytics"
@@ -206,7 +206,7 @@ import { IFeasibilityAssessment, FeasibilityScenario, ICreateFeasibility } from 
           {{ editMode ? 'Update Assessment' : 'Save Assessment' }}
         </button>
       </div>
-    </app-modal-shell>
+    </app-modal>
   `
 })
 export class FeasibilityFormModalComponent implements OnChanges {

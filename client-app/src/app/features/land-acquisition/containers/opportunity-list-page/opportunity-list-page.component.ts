@@ -8,7 +8,7 @@ import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { IOpportunityListItem, OpportunityStatus } from '../../models/opportunity.model';
 import { IOpportunityQueryParams } from '../../services/opportunity.service';
 import { CsvExportService } from '../../services/csv-export.service';
-import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
+import { ConfirmDialogService } from '../../../../shared/design-system/services/confirm-dialog.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ColumnToggleComponent } from '../../components/column-toggle/column-toggle.component';
 import { SavedViewsComponent } from '../../components/saved-views/saved-views.component';
@@ -708,10 +708,8 @@ export class OpportunityListPageComponent implements OnInit, OnDestroy {
       message: `Are you sure you want to delete ${count} ${count === 1 ? 'opportunity' : 'opportunities'}? This action cannot be undone.`,
       confirmText: 'Delete',
       cancelText: 'Cancel',
-      confirmClass: 'btn-error',
-      icon: 'delete_forever',
-      iconClass: 'text-error'
-    }).then(confirmed => {
+      severity: 'danger',
+    }).subscribe(confirmed => {
       if (confirmed) {
         this.store.dispatch(OpportunityActions.bulkDeleteOpportunities({
           ids: Array.from(this.selectedIds)
@@ -749,10 +747,8 @@ export class OpportunityListPageComponent implements OnInit, OnDestroy {
       message: `Are you sure you want to delete "${opp.name}"? This action cannot be undone.`,
       confirmText: 'Delete',
       cancelText: 'Cancel',
-      confirmClass: 'btn-error',
-      icon: 'delete_forever',
-      iconClass: 'text-error'
-    }).then(confirmed => {
+      severity: 'danger',
+    }).subscribe(confirmed => {
       if (confirmed) {
         this.store.dispatch(OpportunityActions.deleteOpportunity({ id: opp.id }));
       }

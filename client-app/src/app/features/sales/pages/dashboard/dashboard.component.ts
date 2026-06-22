@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { StatusBadgeComponent, IBadgeMapEntry } from '../../../../shared/design-system';
 
 interface ISalesPipeline {
   readonly buyer: string;
@@ -13,7 +14,7 @@ interface ISalesPipeline {
 @Component({
   selector: 'app-sales-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StatusBadgeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     :host {
@@ -149,16 +150,7 @@ interface ISalesPipeline {
                   <td class="font-medium">{{ item.buyer }}</td>
                   <td>{{ item.unit }}</td>
                   <td>
-                    <span class="badge badge-sm"
-                      [ngClass]="{
-                        'badge-ghost': item.status === 'Lead',
-                        'badge-info': item.status === 'Viewing',
-                        'badge-warning': item.status === 'Reserved',
-                        'badge-primary': item.status === 'Exchanged',
-                        'badge-success': item.status === 'Complete'
-                      }">
-                      {{ item.status }}
-                    </span>
+                    <app-status-badge [value]="item.status" [badgeMap]="salesBadgeMap" size="sm" />
                   </td>
                   <td class="text-right font-mono text-sm">{{ item.value }}</td>
                   <td class="text-sm">{{ item.solicitor }}</td>
@@ -173,6 +165,14 @@ interface ISalesPipeline {
   `
 })
 export class SalesDashboardComponent {
+  readonly salesBadgeMap: Record<string, IBadgeMapEntry> = {
+    'Lead': { label: 'Lead', cssClass: 'badge-ghost', icon: 'person_add' },
+    'Viewing': { label: 'Viewing', cssClass: 'badge-info', icon: 'visibility' },
+    'Reserved': { label: 'Reserved', cssClass: 'badge-warning', icon: 'bookmark_added' },
+    'Exchanged': { label: 'Exchanged', cssClass: 'badge-primary', icon: 'swap_horiz' },
+    'Complete': { label: 'Complete', cssClass: 'badge-success', icon: 'handshake' },
+  };
+
   readonly pipeline: readonly ISalesPipeline[] = [
     { buyer: 'Mr & Mrs Harrison', unit: 'Block A, Unit 12', status: 'Complete', value: '£485,000', solicitor: 'Carter & Associates', lastActivity: '2 days ago' },
     { buyer: 'David Chen', unit: 'Block B, Unit 7', status: 'Exchanged', value: '£410,000', solicitor: 'Patel Law Group', lastActivity: '1 day ago' },

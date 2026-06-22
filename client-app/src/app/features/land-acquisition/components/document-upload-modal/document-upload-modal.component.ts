@@ -12,7 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { ModalShellComponent } from '../../../../shared/components/modal-shell/modal-shell.component';
+import { ModalComponent } from '../../../../shared/design-system';
 import { DocumentService } from '../../services';
 import { ToastService } from '../../../../core/services/toast.service';
 import { DocumentType } from '../../models';
@@ -51,10 +51,10 @@ const ACCEPTED_TYPES = [
 @Component({
   selector: 'app-document-upload-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalShellComponent],
+  imports: [CommonModule, FormsModule, ModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-modal-shell
+    <app-modal
       [visible]="visible"
       title="Upload Document"
       icon="upload_file"
@@ -171,7 +171,7 @@ const ACCEPTED_TYPES = [
           Upload
         </button>
       </div>
-    </app-modal-shell>
+    </app-modal>
   `
 })
 export class DocumentUploadModalComponent implements OnChanges {

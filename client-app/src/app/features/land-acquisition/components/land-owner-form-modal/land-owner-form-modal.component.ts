@@ -12,7 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { ModalShellComponent } from '../../../../shared/components/modal-shell/modal-shell.component';
+import { ModalComponent } from '../../../../shared/design-system';
 import { LandOwnerService } from '../../services';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ILandOwner, OwnershipType } from '../../models';
@@ -36,10 +36,10 @@ import { ILandOwner, OwnershipType } from '../../models';
 @Component({
   selector: 'app-land-owner-form-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalShellComponent],
+  imports: [CommonModule, FormsModule, ModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-modal-shell
+    <app-modal
       [visible]="visible"
       [title]="editMode ? 'Edit Land Owner' : 'Add Land Owner'"
       icon="person"
@@ -166,7 +166,7 @@ import { ILandOwner, OwnershipType } from '../../models';
           {{ editMode ? 'Update Owner' : 'Add Owner' }}
         </button>
       </div>
-    </app-modal-shell>
+    </app-modal>
   `
 })
 export class LandOwnerFormModalComponent implements OnChanges {
