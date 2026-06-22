@@ -12,8 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { ModalComponent } from '../../../../shared/design-system';
-import { CurrencyInputComponent } from '../../../../shared/components/currency-input/currency-input.component';
+import { ModalComponent, CurrencyDisplayComponent } from '../../../../shared/design-system';
 import { FeasibilityService } from '../../services';
 import { ToastService } from '../../../../core/services/toast.service';
 import { IFeasibilityAssessment, FeasibilityScenario, ICreateFeasibility } from '../../models';
@@ -37,7 +36,7 @@ import { IFeasibilityAssessment, FeasibilityScenario, ICreateFeasibility } from 
 @Component({
   selector: 'app-feasibility-form-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent, CurrencyInputComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, CurrencyDisplayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal
@@ -56,13 +55,13 @@ import { IFeasibilityAssessment, FeasibilityScenario, ICreateFeasibility } from 
             <label class="label" for="feas-land-cost">
               <span class="label-text font-medium">Estimated Land Cost (£) <span class="text-error">*</span></span>
             </label>
-            <app-currency-input
+            <app-currency
+              mode="edit"
               [(ngModel)]="estimatedLandCost"
               name="estimatedLandCost"
               #landCostField="ngModel"
-              [required]="true"
-              ariaLabel="Estimated land cost in GBP">
-            </app-currency-input>
+              [required]="true">
+            </app-currency>
             <label class="label" *ngIf="landCostField.touched && estimatedLandCost <= 0">
               <span class="label-text-alt text-error">Please enter a positive amount</span>
             </label>
@@ -73,13 +72,13 @@ import { IFeasibilityAssessment, FeasibilityScenario, ICreateFeasibility } from 
             <label class="label" for="feas-build-cost">
               <span class="label-text font-medium">Estimated Build Cost (£) <span class="text-error">*</span></span>
             </label>
-            <app-currency-input
+            <app-currency
+              mode="edit"
               [(ngModel)]="estimatedBuildCost"
               name="estimatedBuildCost"
               #buildCostField="ngModel"
-              [required]="true"
-              ariaLabel="Estimated build cost in GBP">
-            </app-currency-input>
+              [required]="true">
+            </app-currency>
             <label class="label" *ngIf="buildCostField.touched && estimatedBuildCost <= 0">
               <span class="label-text-alt text-error">Please enter a positive amount</span>
             </label>
@@ -90,13 +89,13 @@ import { IFeasibilityAssessment, FeasibilityScenario, ICreateFeasibility } from 
             <label class="label" for="feas-fees">
               <span class="label-text font-medium">Professional Fees (£) <span class="text-error">*</span></span>
             </label>
-            <app-currency-input
+            <app-currency
+              mode="edit"
               [(ngModel)]="professionalFees"
               name="professionalFees"
               #feesField="ngModel"
-              [required]="true"
-              ariaLabel="Professional fees in GBP">
-            </app-currency-input>
+              [required]="true">
+            </app-currency>
             <label class="label" *ngIf="feesField.touched && professionalFees < 0">
               <span class="label-text-alt text-error">Please enter a valid amount</span>
             </label>
@@ -107,13 +106,13 @@ import { IFeasibilityAssessment, FeasibilityScenario, ICreateFeasibility } from 
             <label class="label" for="feas-finance">
               <span class="label-text font-medium">Finance Costs (£) <span class="text-error">*</span></span>
             </label>
-            <app-currency-input
+            <app-currency
+              mode="edit"
               [(ngModel)]="financeCosts"
               name="financeCosts"
               #financeField="ngModel"
-              [required]="true"
-              ariaLabel="Finance costs in GBP">
-            </app-currency-input>
+              [required]="true">
+            </app-currency>
             <label class="label" *ngIf="financeField.touched && financeCosts < 0">
               <span class="label-text-alt text-error">Please enter a valid amount</span>
             </label>
@@ -124,13 +123,13 @@ import { IFeasibilityAssessment, FeasibilityScenario, ICreateFeasibility } from 
             <label class="label" for="feas-revenue">
               <span class="label-text font-medium">Expected Sales Revenue (£) <span class="text-error">*</span></span>
             </label>
-            <app-currency-input
+            <app-currency
+              mode="edit"
               [(ngModel)]="expectedSalesRevenue"
               name="expectedSalesRevenue"
               #revenueField="ngModel"
-              [required]="true"
-              ariaLabel="Expected sales revenue in GBP">
-            </app-currency-input>
+              [required]="true">
+            </app-currency>
             <label class="label" *ngIf="revenueField.touched && expectedSalesRevenue <= 0">
               <span class="label-text-alt text-error">Please enter a positive amount</span>
             </label>

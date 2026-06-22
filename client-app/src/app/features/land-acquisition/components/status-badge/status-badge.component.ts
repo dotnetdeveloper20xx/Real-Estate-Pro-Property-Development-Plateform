@@ -1,76 +1,47 @@
 import { Component, ChangeDetectionStrategy, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { StatusBadgeComponent as DsStatusBadgeComponent } from '../../../../shared/design-system/badges/status-badge/status-badge.component';
+import { IBadgeMapEntry } from '../../../../shared/design-system/badges/base-badge.component';
 import { OpportunityStatus } from '../../models';
 
 /**
- * Colour mapping for opportunity statuses following the UX colour system:
+ * Opportunity status badge — thin wrapper around the design system StatusBadgeComponent
+ * that provides an OpportunityStatus-specific badge map.
+ *
+ * Colour mapping follows the UX colour system:
  * Green = Success (Acquired), Blue = Information (InitialReview, OfferMade),
  * Amber = Warning (DueDiligence, UnderContract), Red = Critical (Withdrawn),
  * Grey = Neutral (Identified).
- */
-const STATUS_BADGE_CONFIG: Record<OpportunityStatus, { label: string; cssClass: string }> = {
-  [OpportunityStatus.Identified]: {
-    label: 'Identified',
-    cssClass: 'badge-ghost'
-  },
-  [OpportunityStatus.InitialReview]: {
-    label: 'Initial Review',
-    cssClass: 'badge-info'
-  },
-  [OpportunityStatus.DueDiligence]: {
-    label: 'Due Diligence',
-    cssClass: 'badge-warning'
-  },
-  [OpportunityStatus.OfferMade]: {
-    label: 'Offer Made',
-    cssClass: 'badge-info'
-  },
-  [OpportunityStatus.UnderContract]: {
-    label: 'Under Contract',
-    cssClass: 'badge-warning'
-  },
-  [OpportunityStatus.Acquired]: {
-    label: 'Acquired',
-    cssClass: 'badge-success'
-  },
-  [OpportunityStatus.Withdrawn]: {
-    label: 'Withdrawn',
-    cssClass: 'badge-error'
-  }
-};
-
-/**
- * Presentational component that renders a colored DaisyUI badge
- * based on the current OpportunityStatus value.
  *
  * Usage:
  * ```html
- * <app-status-badge [status]="opportunity.status"></app-status-badge>
+ * <app-opportunity-status-badge [status]="opportunity.status" />
  * ```
  */
+
+const OPPORTUNITY_BADGE_MAP: Record<string, IBadgeMapEntry> = {
+  [OpportunityStatus.Identified]: { label: 'Identified', cssClass: 'badge-ghost' },
+  [OpportunityStatus.InitialReview]: { label: 'Initial Review', cssClass: 'badge-info' },
+  [OpportunityStatus.DueDiligence]: { label: 'Due Diligence', cssClass: 'badge-warning' },
+  [OpportunityStatus.OfferMade]: { label: 'Offer Made', cssClass: 'badge-info' },
+  [OpportunityStatus.UnderContract]: { label: 'Under Contract', cssClass: 'badge-warning' },
+  [OpportunityStatus.Acquired]: { label: 'Acquired', cssClass: 'badge-success' },
+  [OpportunityStatus.Withdrawn]: { label: 'Withdrawn', cssClass: 'badge-error' },
+};
+
 @Component({
-  selector: 'app-status-badge',
+  selector: 'app-opportunity-status-badge',
   standalone: true,
-  imports: [CommonModule],
+  imports: [DsStatusBadgeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <span
-      class="badge badge-sm font-medium"
-      [ngClass]="badgeClass"
-      [attr.aria-label]="'Status: ' + label"
-      role="status">
-      {{ label }}
-    </span>
+    <app-status-badge
+      [value]="status"
+      [badgeMap]="badgeMap"
+      size="sm" />
   `
 })
-export class StatusBadgeComponent {
+export class OpportunityStatusBadgeComponent {
   @Input({ required: true }) status!: OpportunityStatus;
 
-  get label(): string {
-    return STATUS_BADGE_CONFIG[this.status]?.label ?? this.status;
-  }
-
-  get badgeClass(): string {
-    return STATUS_BADGE_CONFIG[this.status]?.cssClass ?? 'badge-ghost';
-  }
+  readonly badgeMap = OPPORTUNITY_BADGE_MAP;
 }

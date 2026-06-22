@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../../../core/services/toast.service';
-import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
+import { ConfirmDialogService } from '../../../../shared/design-system/services/confirm-dialog.service';
 
 interface IUserDetail {
   readonly id: string;
@@ -479,10 +479,8 @@ export class UserDetailComponent implements OnInit {
       message: `Are you sure you want to revoke all active sessions for ${this.user.firstName} ${this.user.lastName}? They will be signed out of all devices immediately.`,
       confirmText: 'Revoke All',
       cancelText: 'Cancel',
-      confirmClass: 'btn-error',
-      icon: 'logout',
-      iconClass: 'text-error'
-    }).then(confirmed => {
+      severity: 'danger',
+    }).subscribe(confirmed => {
       if (!confirmed || !this.user) return;
       this.http.post(`/api/v1/sessions/user/${this.user.id}/revoke-all`, {}).subscribe({
         next: () => { this.toast.showSuccess('All sessions revoked'); },

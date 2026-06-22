@@ -13,8 +13,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 
-import { ModalComponent } from '../../../../shared/design-system';
-import { CurrencyInputComponent } from '../../../../shared/components/currency-input/currency-input.component';
+import { ModalComponent, CurrencyDisplayComponent } from '../../../../shared/design-system';
 import { ToastService } from '../../../../core/services/toast.service';
 import { IApiResponse } from '../../models';
 
@@ -35,7 +34,7 @@ import { IApiResponse } from '../../models';
 @Component({
   selector: 'app-approval-request-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent, CurrencyInputComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, CurrencyDisplayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal
@@ -54,13 +53,13 @@ import { IApiResponse } from '../../models';
           <label class="label" for="approval-amount">
             <span class="label-text font-medium">Requested Amount (£) <span class="text-error">*</span></span>
           </label>
-          <app-currency-input
+          <app-currency
+            mode="edit"
             [(ngModel)]="requestedAmount"
             name="requestedAmount"
             #amountField="ngModel"
-            [required]="true"
-            ariaLabel="Requested approval amount in GBP">
-          </app-currency-input>
+            [required]="true">
+          </app-currency>
           <label class="label" *ngIf="amountField.touched && requestedAmount <= 0">
             <span class="label-text-alt text-error">Please enter a positive amount</span>
           </label>

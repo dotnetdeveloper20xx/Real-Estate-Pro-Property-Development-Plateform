@@ -29,10 +29,10 @@ import {
 import { ConfirmDialogService } from '../../../../shared/design-system/services/confirm-dialog.service';
 import { ToastService } from '@core/services/toast.service';
 import { AuthService } from '@core/services/auth.service';
-import { StatusBadgeComponent } from '../../components/status-badge/status-badge.component';
+import { OpportunityStatusBadgeComponent } from '../../components/status-badge/status-badge.component';
 import { ActivityTimelineComponent } from '../../components/activity-timeline/activity-timeline.component';
 import { ApprovalPanelComponent, IApprovalDecision, IRejectionDecision } from '../../components/approval-panel/approval-panel.component';
-import { CurrencyInputComponent } from '../../../../shared/components/currency-input/currency-input.component';
+import { CurrencyDisplayComponent } from '../../../../shared/design-system';
 import { WithdrawalModalComponent } from '../../components/withdrawal-modal/withdrawal-modal.component';
 import { ContractTransitionComponent } from '../../components/contract-transition/contract-transition.component';
 import { AcquisitionTabComponent } from '../../components/acquisition-tab/acquisition-tab.component';
@@ -90,10 +90,10 @@ interface IActionButton {
     RouterLink,
     DatePipe,
     DecimalPipe,
-    StatusBadgeComponent,
+    OpportunityStatusBadgeComponent,
     ActivityTimelineComponent,
     ApprovalPanelComponent,
-    CurrencyInputComponent,
+    CurrencyDisplayComponent,
     WithdrawalModalComponent,
     ContractTransitionComponent,
     AcquisitionTabComponent,
@@ -191,7 +191,7 @@ interface IActionButton {
               <div class="flex flex-col gap-2">
                 <div class="flex items-center gap-3 flex-wrap">
                   <h1 class="text-2xl font-bold text-base-content">{{ opportunity()!.name }}</h1>
-                  <app-status-badge [status]="opportunity()!.status"></app-status-badge>
+                  <app-opportunity-status-badge [status]="opportunity()!.status"></app-opportunity-status-badge>
                 </div>
                 <!-- Meta Bar -->
                 <div class="flex flex-wrap items-center gap-3 text-sm text-base-content/60">
@@ -375,7 +375,7 @@ interface IActionButton {
                       </div>
                       <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
                         <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Status</span>
-                        <app-status-badge [status]="opportunity()!.status"></app-status-badge>
+                        <app-opportunity-status-badge [status]="opportunity()!.status"></app-opportunity-status-badge>
                       </div>
                       <div class="flex flex-col gap-1 p-3 rounded-lg bg-base-200/30">
                         <span class="text-[11px] text-base-content/50 uppercase font-semibold tracking-wide">Source</span>
@@ -882,7 +882,7 @@ interface IActionButton {
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Amount (£)</span></label>
-                      <app-currency-input [(ngModel)]="offerForm.amount" placeholder="e.g. 1,200,000" ariaLabel="Offer amount"></app-currency-input>
+                      <app-currency mode="edit" [(ngModel)]="offerForm.amount"></app-currency>
                     </div>
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Currency</span></label>
@@ -1231,23 +1231,23 @@ interface IActionButton {
                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Estimated Land Cost (£)</span></label>
-                      <app-currency-input [(ngModel)]="feasibilityForm.landCost" placeholder="e.g. 500,000" ariaLabel="Estimated land cost"></app-currency-input>
+                      <app-currency mode="edit" [(ngModel)]="feasibilityForm.landCost"></app-currency>
                     </div>
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Estimated Build Cost (£)</span></label>
-                      <app-currency-input [(ngModel)]="feasibilityForm.buildCost" placeholder="e.g. 2,000,000" ariaLabel="Estimated build cost"></app-currency-input>
+                      <app-currency mode="edit" [(ngModel)]="feasibilityForm.buildCost"></app-currency>
                     </div>
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Professional Fees (£)</span></label>
-                      <app-currency-input [(ngModel)]="feasibilityForm.fees" placeholder="e.g. 150,000" ariaLabel="Professional fees"></app-currency-input>
+                      <app-currency mode="edit" [(ngModel)]="feasibilityForm.fees"></app-currency>
                     </div>
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Finance Costs (£)</span></label>
-                      <app-currency-input [(ngModel)]="feasibilityForm.financeCosts" placeholder="e.g. 100,000" ariaLabel="Finance costs"></app-currency-input>
+                      <app-currency mode="edit" [(ngModel)]="feasibilityForm.financeCosts"></app-currency>
                     </div>
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Expected Sales Revenue (£)</span></label>
-                      <app-currency-input [(ngModel)]="feasibilityForm.revenue" placeholder="e.g. 4,000,000" ariaLabel="Expected sales revenue"></app-currency-input>
+                      <app-currency mode="edit" [(ngModel)]="feasibilityForm.revenue"></app-currency>
                     </div>
                     <div class="form-control w-full">
                       <label class="label"><span class="label-text text-xs font-medium">Scenario</span></label>
@@ -1331,7 +1331,7 @@ interface IActionButton {
                   <p class="text-sm text-base-content/60">Submit this opportunity for management approval. Enter the requested investment amount.</p>
                   <div class="form-control w-full max-w-sm">
                     <label class="label"><span class="label-text font-medium">Requested Amount (£)</span></label>
-                    <app-currency-input [(ngModel)]="approvalForm.requestedAmount" placeholder="e.g. 1,500,000" ariaLabel="Requested approval amount"></app-currency-input>
+                    <app-currency mode="edit" [(ngModel)]="approvalForm.requestedAmount"></app-currency>
                   </div>
                   <div class="flex justify-end gap-2 pt-2">
                     <button class="btn btn-ghost btn-sm" (click)="showApprovalForm.set(false)">Cancel</button>

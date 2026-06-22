@@ -12,8 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { ModalComponent } from '../../../../shared/design-system';
-import { CurrencyInputComponent } from '../../../../shared/components/currency-input/currency-input.component';
+import { ModalComponent, CurrencyDisplayComponent } from '../../../../shared/design-system';
 import { OfferService } from '../../services';
 import { ToastService } from '../../../../core/services/toast.service';
 
@@ -35,7 +34,7 @@ import { ToastService } from '../../../../core/services/toast.service';
 @Component({
   selector: 'app-offer-form-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent, CurrencyInputComponent],
+  imports: [CommonModule, FormsModule, ModalComponent, CurrencyDisplayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-modal
@@ -53,13 +52,13 @@ import { ToastService } from '../../../../core/services/toast.service';
           <label class="label" for="offer-amount">
             <span class="label-text font-medium">Amount (£) <span class="text-error">*</span></span>
           </label>
-          <app-currency-input
+          <app-currency
+            mode="edit"
             [(ngModel)]="amount"
             name="amount"
             #amountField="ngModel"
-            [required]="true"
-            ariaLabel="Offer amount in GBP">
-          </app-currency-input>
+            [required]="true">
+          </app-currency>
           <label class="label" *ngIf="amountField.touched && (amount <= 0)">
             <span class="label-text-alt text-error">Please enter a positive amount</span>
           </label>

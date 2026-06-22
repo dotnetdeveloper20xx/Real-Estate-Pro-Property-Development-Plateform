@@ -4,7 +4,7 @@ import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } fro
 import { Store } from '@ngrx/store';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
-import { ConfirmDialogService } from './shared/services/confirm-dialog.service';
+import { ConfirmDialogService } from './shared/design-system/services/confirm-dialog.service';
 import { ToastContainerComponent } from './shared/components/toast-container/toast-container.component';
 import { NotificationPanelComponent } from './shared/components/notification-panel/notification-panel.component';
 import { AuthService, ICurrentUser } from './core/services/auth.service';
@@ -490,10 +490,8 @@ export class AppComponent implements OnInit, OnDestroy {
       message: 'Are you sure you want to sign out of BuildEstate Pro?',
       confirmText: 'Sign Out',
       cancelText: 'Cancel',
-      confirmClass: 'btn-error',
-      icon: 'logout',
-      iconClass: 'text-error'
-    }).then(confirmed => {
+      severity: 'danger',
+    }).subscribe(confirmed => {
       if (confirmed) {
         this.authService.logout();
       }

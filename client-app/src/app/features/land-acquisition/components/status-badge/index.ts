@@ -1,1 +1,1 @@
-export { StatusBadgeComponent } from './status-badge.component';
+export { OpportunityStatusBadgeComponent } from './status-badge.component';

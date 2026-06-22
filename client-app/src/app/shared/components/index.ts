@@ -1,14 +1,6 @@
-// Existing shared components
-export { DataGridComponent } from './data-grid/data-grid.component';
-export type { IGridColumn, IFilterOption, ISortEvent } from './data-grid/data-grid.component';
-export { CurrencyInputComponent } from './currency-input/currency-input.component';
-
-// Consolidated shared components
+// Consolidated shared components (still in active use)
 export { KpiCardComponent } from './kpi-card/kpi-card.component';
 export type { IKpiTrend, TrendDirection } from './kpi-card/kpi-card.component';
-
-export { StatusBadgeComponent } from './status-badge/status-badge.component';
-export type { IBadgeMapEntry } from './status-badge/status-badge.component';
 
 export { TimelineComponent } from './timeline/timeline.component';
 export type { ITimelineItem } from './timeline/timeline.component';
@@ -29,7 +21,6 @@ export type { IApprovalRequest, IApprovalDecision, IRejectionDecision } from './
 
 export { NotificationPanelComponent, getNotificationIcon } from './notification-panel/notification-panel.component';
 
-export { ModalShellComponent } from './modal-shell/modal-shell.component';
 
 // ─── Design System Re-exports (Compatibility Layer) ──────────────────────────
 // These re-exports allow existing consumers to import from shared/components

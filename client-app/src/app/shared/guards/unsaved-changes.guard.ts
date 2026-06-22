@@ -1,6 +1,6 @@
 import { CanDeactivateFn } from '@angular/router';
 import { inject } from '@angular/core';
-import { ConfirmDialogService } from '../services/confirm-dialog.service';
+import { ConfirmDialogService } from '../design-system/services/confirm-dialog.service';
 
 /**
  * Interface for components that track unsaved form state.
@@ -38,9 +38,7 @@ export const unsavedChangesGuard: CanDeactivateFn<HasUnsavedChanges> = (
       message: 'You have unsaved changes. Are you sure you want to leave this page? Your changes will be lost.',
       confirmText: 'Leave Page',
       cancelText: 'Stay',
-      confirmClass: 'btn-error',
-      icon: 'warning',
-      iconClass: 'text-warning'
+      severity: 'warning',
     });
   }
   return true;

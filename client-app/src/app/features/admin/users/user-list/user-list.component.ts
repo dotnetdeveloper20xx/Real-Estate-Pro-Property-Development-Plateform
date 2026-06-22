@@ -3,10 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Subject, forkJoin } from 'rxjs';
+import { Subject, forkJoin, firstValueFrom } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ToastService } from '../../../../core/services/toast.service';
-import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
+import { ConfirmDialogService } from '../../../../shared/design-system/services/confirm-dialog.service';
 import { UsersService } from '../../services/users.service';
 import { UsersActions } from '../../store/users/users.actions';
 import {
@@ -568,14 +568,12 @@ export class UserListComponent implements OnInit, OnDestroy {
 
   async bulkActivate(): Promise<void> {
     const count = this.selectedIds.size;
-    const confirmed = await this.confirmDialog.confirm({
+    const confirmed = await firstValueFrom(this.confirmDialog.confirm({
       title: 'Activate Users',
       message: `Are you sure you want to activate ${count} ${count === 1 ? 'user' : 'users'}?`,
       confirmText: 'Activate',
-      confirmClass: 'btn-success',
-      icon: 'check_circle',
-      iconClass: 'text-success'
-    });
+      severity: 'info',
+    }));
     if (!confirmed) return;
 
     const ids = Array.from(this.selectedIds);
@@ -594,14 +592,12 @@ export class UserListComponent implements OnInit, OnDestroy {
 
   async bulkDeactivate(): Promise<void> {
     const count = this.selectedIds.size;
-    const confirmed = await this.confirmDialog.confirm({
+    const confirmed = await firstValueFrom(this.confirmDialog.confirm({
       title: 'Deactivate Users',
       message: `Are you sure you want to deactivate ${count} ${count === 1 ? 'user' : 'users'}? Their sessions will be revoked immediately.`,
       confirmText: 'Deactivate',
-      confirmClass: 'btn-warning',
-      icon: 'pause_circle',
-      iconClass: 'text-warning'
-    });
+      severity: 'warning',
+    }));
     if (!confirmed) return;
 
     const ids = Array.from(this.selectedIds);
@@ -620,14 +616,12 @@ export class UserListComponent implements OnInit, OnDestroy {
 
   async bulkDelete(): Promise<void> {
     const count = this.selectedIds.size;
-    const confirmed = await this.confirmDialog.confirm({
+    const confirmed = await firstValueFrom(this.confirmDialog.confirm({
       title: 'Delete Users',
       message: `WARNING: You are about to permanently deactivate ${count} ${count === 1 ? 'user' : 'users'}. This will revoke all their sessions and prevent future access. This action cannot be easily undone.`,
       confirmText: 'Delete Users',
-      confirmClass: 'btn-error',
-      icon: 'delete_forever',
-      iconClass: 'text-error'
-    });
+      severity: 'danger',
+    }));
     if (!confirmed) return;
 
     const ids = Array.from(this.selectedIds);
