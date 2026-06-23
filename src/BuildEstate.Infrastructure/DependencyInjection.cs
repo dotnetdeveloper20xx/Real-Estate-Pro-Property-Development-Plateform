@@ -1,5 +1,6 @@
 using BuildEstate.Application.Common.Interfaces;
 using BuildEstate.Application.Features.LegalCompliance.AuditTrail;
+using BuildEstate.Application.Features.Search.Interfaces;
 using BuildEstate.Application.Interfaces;
 using BuildEstate.Application.Settings;
 using BuildEstate.Domain.Common;
@@ -8,6 +9,7 @@ using BuildEstate.Infrastructure.Identity;
 using BuildEstate.Infrastructure.Persistence;
 using BuildEstate.Infrastructure.Persistence.Interceptors;
 using BuildEstate.Infrastructure.Persistence.Services;
+using BuildEstate.Infrastructure.Search.Providers;
 using BuildEstate.Infrastructure.Services;
 using BuildEstate.Infrastructure.Services.BackgroundServices;
 using BuildEstate.Infrastructure.Services.LegalCompliance;
@@ -15,6 +17,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace BuildEstate.Infrastructure;
 
@@ -46,6 +49,8 @@ public static class InfrastructureDependencyInjection
         // 2. Bind configuration settings
         services.Configure<PlanningFeeSettings>(
             configuration.GetSection(PlanningFeeSettings.SectionName));
+        services.Configure<SearchSettings>(
+            configuration.GetSection(SearchSettings.SectionName));
 
         // 3. Register AuditInterceptor as scoped
         services.AddScoped<AuditInterceptor>();
@@ -164,6 +169,27 @@ public static class InfrastructureDependencyInjection
         services.AddHostedService<OfferExpiryBackgroundService>();
         services.AddHostedService<InsuranceExpiryCheckService>();
         services.AddHostedService<ComplianceOverdueCheckService>();
+
+        // 17. Register Search Providers (scoped — they use DbContext)
+        // Each provider implements ISearchProvider and is resolved via IEnumerable<ISearchProvider>
+        // in the SearchAggregator for parallel provider execution.
+        services.AddScoped<ISearchProvider, LandOpportunitySearchProvider>();
+        services.AddScoped<ISearchProvider, LandOwnerSearchProvider>();
+        services.AddScoped<ISearchProvider, DueDiligenceSearchProvider>();
+        services.AddScoped<ISearchProvider, OfferSearchProvider>();
+        services.AddScoped<ISearchProvider, ContractSearchProvider>();
+        services.AddScoped<ISearchProvider, AcquisitionSearchProvider>();
+        services.AddScoped<ISearchProvider, PlanningApplicationSearchProvider>();
+        services.AddScoped<ISearchProvider, PlanningConditionSearchProvider>();
+        services.AddScoped<ISearchProvider, LegalCaseSearchProvider>();
+        services.AddScoped<ISearchProvider, ComplianceCheckSearchProvider>();
+        services.AddScoped<ISearchProvider, UserSearchProvider>();
+        services.AddScoped<ISearchProvider, RoleSearchProvider>();
+        services.AddScoped<ISearchProvider, DocumentSearchProvider>();
+        services.AddScoped<ISearchProvider, NotificationSearchProvider>();
+
+        // 18. Register search provider startup validation (validates all providers resolve correctly)
+        services.AddHostedService<Search.SearchProviderValidationService>();
 
         return services;
     }

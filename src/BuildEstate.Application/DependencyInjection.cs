@@ -1,5 +1,7 @@
 using System.Reflection;
 using BuildEstate.Application.Behaviors;
+using BuildEstate.Application.Features.Search.Interfaces;
+using BuildEstate.Application.Features.Search.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +36,12 @@ public static class ApplicationDependencyInjection
 
         // Register AutoMapper profiles via assembly scanning
         services.AddAutoMapper(cfg => cfg.AddMaps(assembly));
+
+        // Register Search services
+        services.AddScoped<ISearchSynonymService, SearchSynonymService>();
+        services.AddScoped<ISearchScoringService, SearchScoringService>();
+        services.AddScoped<ISearchHighlightService, SearchHighlightService>();
+        services.AddScoped<ISearchAggregator, SearchAggregator>();
 
         return services;
     }

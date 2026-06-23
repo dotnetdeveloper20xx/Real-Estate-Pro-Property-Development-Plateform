@@ -127,10 +127,15 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(origins)
               .AllowAnyMethod()
               .WithHeaders("Authorization", "Content-Type", "X-Correlation-ID", "X-CSRF-TOKEN")
-              .WithExposedHeaders("X-Correlation-ID", "X-CSRF-TOKEN")
+              .WithExposedHeaders("X-Correlation-ID", "X-CSRF-TOKEN", "Retry-After")
               .AllowCredentials();
     });
 });
+
+// ──────────────────────────────────────────────────────────────────
+// In-Memory Caching
+// ──────────────────────────────────────────────────────────────────
+builder.Services.AddMemoryCache();
 
 // ──────────────────────────────────────────────────────────────────
 // Controllers & JSON Serialization
@@ -163,7 +168,47 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 10
             }));
 
+    // Per-user rate limit for search endpoints: 10 requests per second
+    options.AddPolicy("SearchRateLimit", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "anonymous",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromSeconds(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0 // Do not queue — reject immediately
+            }));
+
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            context.HttpContext.Response.Headers.RetryAfter =
+                ((int)retryAfter.TotalSeconds).ToString();
+        }
+        else
+        {
+            // Default retry-after of 1 second for the fixed window policy
+            context.HttpContext.Response.Headers.RetryAfter = "1";
+        }
+
+        context.HttpContext.Response.ContentType = "application/json";
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            success = false,
+            error = "Rate limit exceeded. Please try again later.",
+            retryAfterSeconds = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retry)
+                ? (int)retry.TotalSeconds
+                : 1
+        }, cancellationToken);
+    };
 });
 
 // ──────────────────────────────────────────────────────────────────

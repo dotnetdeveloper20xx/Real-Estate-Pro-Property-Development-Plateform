@@ -3,6 +3,7 @@ using BuildEstate.Domain.Entities.LandAcquisition;
 using BuildEstate.Domain.Entities.LegalCompliance;
 using BuildEstate.Domain.Entities.Notifications;
 using BuildEstate.Domain.Entities.PlanningApprovals;
+using BuildEstate.Domain.Entities.Search;
 using BuildEstate.Domain.Entities.UserManagement;
 using BuildEstate.Infrastructure.Identity;
 using BuildEstate.Infrastructure.Persistence.Configurations.UserManagement;
@@ -58,6 +59,11 @@ public class BuildEstateDbContext : IdentityDbContext<ApplicationUser, Applicati
     public DbSet<NotificationRule> NotificationRules => Set<NotificationRule>();
     public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
     public DbSet<UserNotificationPreference> UserNotificationPreferences => Set<UserNotificationPreference>();
+
+    // Search entities
+    public DbSet<RecentSearch> RecentSearches => Set<RecentSearch>();
+    public DbSet<PinnedItem> PinnedItems => Set<PinnedItem>();
+    public DbSet<SavedSearch> SavedSearches => Set<SavedSearch>();
 
     // Legal & Compliance entities
     public DbSet<LegalCase> LegalCases => Set<LegalCase>();

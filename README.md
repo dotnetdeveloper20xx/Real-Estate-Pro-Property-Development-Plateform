@@ -69,6 +69,7 @@ These cross-cutting systems power every module. They are not afterthoughts — t
 | [**Security & Authorization**](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md) | ✅ Complete | JWT + 43 permissions, policy-based enforcement, session revocation, account lockout |
 | [**User Management**](developer-notes/user-management-feature/README.md) | ✅ Complete | Enterprise identity console, 13 roles, bulk operations, session control, audit trail |
 | [**Enterprise Notification System**](developer-notes/notification-system-module/enterprise-notification-system.md) | ✅ Complete | Rule-based engine, template-driven, admin-configurable, multi-module, delivery audit |
+| [**Global Search**](docs/features/global-search-front-end-features.md) | ✅ Complete | Command palette UX, 7-layer scoring, 14 providers, permission-aware, Ctrl+K everywhere |
 
 ---
 
@@ -294,6 +295,45 @@ A component without governance is just code. BuildEstate Pro enforces:
 - [Testing & Correctness](docs/frontend/showcase/04-TESTING-AND-CORRECTNESS.md)
 - [Governance & Process](docs/frontend/showcase/05-GOVERNANCE-AND-PROCESS.md)
 - [Developer Quick Start](docs/frontend/showcase/06-DEVELOPER-QUICK-START.md)
+
+---
+
+## 🔍 Global Search — Enterprise Command Palette
+
+> *Ctrl+K from anywhere. 14 modules searchable. 7-layer relevancy. Permission-aware. Sub-300ms.*
+
+Global Search is platform infrastructure — accessible from every page via the top navigation bar or `Ctrl+K` / `Cmd+K` keyboard shortcut. It provides intelligent, fast, grouped results across all modules with layered matching (exact, starts-with, contains, token, fuzzy, phonetic, synonym), contextual boosting, and real-time permission filtering.
+
+| Capability | Implementation |
+|-----------|---------------|
+| **Search Providers** | 14 (one per searchable entity type across 6 modules) |
+| **Scoring Layers** | 7 (exact → starts-with → contains → token → fuzzy → phonetic → synonym) |
+| **Boost Rules** | 6 (recently viewed, recently modified, active, creator, department, frequent) |
+| **Permission Model** | Server-side per-provider (users only see entities they can access) |
+| **Performance** | Parallel provider execution, 5s timeout, 30s cache, 10 req/s rate limit |
+| **UX** | Modal overlay, keyboard navigation, grouped tabs, preview panel, responsive |
+| **Accessibility** | WCAG 2.1 AA (dialog role, focus trap, aria-live, keyboard navigation) |
+| **Extensibility** | New modules add one `ISearchProvider` class — zero aggregator/frontend changes |
+
+### Features
+
+- **Instant results** — 300ms debounce with in-flight cancellation (switchMap)
+- **Category tabs** — Results grouped by module with count badges
+- **Match highlighting** — Server-generated `<mark>` elements, XSS-safe
+- **Keyboard navigation** — Arrow keys, Enter to open, Ctrl+Enter new tab, Escape to close
+- **Recent searches** — Auto-persisted, ordered by most recent
+- **Pinned items** — Bookmark entities for quick access
+- **Saved searches** — Named presets with filters (max 50 per user)
+- **Advanced filters** — Module, status, date range, creator, tags
+- **Command palette** — `>` prefix for page navigation and action commands
+- **Preview panel** — Entity details on desktop (≥1440px) without leaving search
+- **Responsive** — Desktop (with preview), laptop, tablet, mobile (simplified)
+
+📖 **Documentation:**
+- [Frontend Architecture](docs/features/global-search-front-end-features.md) — Components, NgRx, services, accessibility, performance
+- [Backend Architecture](docs/features/global-search-back-end-features.md) — Providers, scoring, aggregation, caching, security
+- [Adding Search to New Modules](docs/guides/adding-search-to-new-module.md) — Step-by-step developer guide
+- [Search Provider Template](docs/templates/search-provider-template.md) — Copy-and-fill template for new providers
 
 ---
 
@@ -540,6 +580,21 @@ This is not a prototype. This is not a tutorial project. This is a **production-
 - **Enterprise UX** — Modal-first workflows, DaisyUI design system, accessible, responsive, dark-mode ready
 
 Every line of code is written to survive a Principal Engineer review, a CTO walkthrough, and a Fortune 500 architecture board.
+
+---
+
+## 📖 Documentation
+
+> **[→ Open the Documentation Portal](docs/README.md)** — the central hub for all BuildEstate Pro documentation.
+
+| Area | Document | Description |
+|------|----------|-------------|
+| 🏗️ Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Clean Architecture, CQRS, layers, module boundaries |
+| 🔒 Security | [Security Feature](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md) | JWT, RBAC, 43 permissions, session management |
+| 🔍 Global Search | [Frontend](docs/features/global-search-front-end-features.md) / [Backend](docs/features/global-search-back-end-features.md) | 7-layer scoring, 14 providers, permission-aware |
+| 🎨 Design System | [Component Showcase](docs/frontend/showcase/00-EXECUTIVE-SUMMARY.md) | 49 components, 188 tests, WCAG 2.1 AA |
+| 🏞️ Land Acquisition | [Module Docs](developer-notes/land-acquisition-module/00-INDEX.md) | Pipeline, due diligence, offers, contracts |
+| 📊 Product Vision | [PROJECT-VISION.md](docs/PROJECT-VISION.md) | Business context, roadmap, future modules |
 
 ---
 

@@ -19,6 +19,7 @@ import { rolesReducer, RolesEffects } from './features/admin/store/roles';
 import { sessionsReducer, SessionsEffects } from './features/admin/store/sessions';
 import { auditLogsReducer, AuditLogsEffects } from './features/admin/store/audit-logs';
 import { preferencesReducer, PreferencesEffects, PreferencesActions } from './shared/design-system';
+import { provideGlobalSearch } from './features/global-search/global-search.providers';
 
 /**
  * App initializer that loads the current user profile on startup,
@@ -72,6 +73,7 @@ export const appConfig: ApplicationConfig = {
       adminAuditLogs: auditLogsReducer
     }),
     provideEffects([AuthEffects, PreferencesEffects, ApplicationEffects, DashboardEffects, UsersEffects, RolesEffects, SessionsEffects, AuditLogsEffects]),
-    provideStoreDevtools({ maxAge: 25, logOnly: false })
+    provideStoreDevtools({ maxAge: 25, logOnly: false }),
+    provideGlobalSearch()
   ]
 };

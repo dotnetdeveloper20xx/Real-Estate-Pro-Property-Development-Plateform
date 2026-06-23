@@ -11,6 +11,9 @@ import { AuthService, ICurrentUser } from './core/services/auth.service';
 import { HasRoleDirective } from './shared/directives/has-role.directive';
 import { selectCurrentUser, selectUserRoles } from './core/store/auth/auth.selectors';
 import { NAV_ITEMS, ADMIN_NAV_ITEMS, getVisibleNavItems, INavItem as INavItemConfig } from './core/navigation/nav-items';
+import { SearchKeyboardService } from './features/global-search/services/search-keyboard.service';
+import { SearchContainerComponent } from './features/global-search/containers/search-container/search-container.component';
+import { SearchTriggerComponent } from './features/global-search/components/search-trigger/search-trigger.component';
 
 /**
  * Navigation item with optional children for hierarchical sidebar.
@@ -40,7 +43,7 @@ interface INavItem {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent, HasRoleDirective, NotificationPanelComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent, HasRoleDirective, NotificationPanelComponent, SearchContainerComponent, SearchTriggerComponent],
   template: `
     <!-- Skip Navigation Link (Req 18.8) — first focusable element -->
     <a class="skip-nav-link" href="#main-content">Skip to main content</a>
@@ -236,6 +239,9 @@ interface INavItem {
           </div>
 
           <div class="flex items-center gap-2">
+            <!-- Global Search Trigger (Ctrl+K) -->
+            <app-search-trigger></app-search-trigger>
+
             <!-- Notifications Panel (real data from API) -->
             <app-notification-panel (navigate)="handleNotificationNavigate($event)"></app-notification-panel>
 
@@ -281,6 +287,9 @@ interface INavItem {
       </div>
     </div>
 
+    <!-- Global Search Overlay (renders when overlayOpen is true) -->
+    <app-search-container></app-search-container>
+
     <!-- Toast Notifications -->
     <app-toast-container></app-toast-container>
   `
@@ -313,6 +322,9 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(private readonly router: Router) {}
 
   ngOnInit(): void {
+    // Register global Ctrl+K / Cmd+K shortcut for search overlay
+    this.searchKeyboardService.register();
+
     // Set initial URL and expand active module
     this.currentUrl = this.router.url;
 
@@ -439,6 +451,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly authService = inject(AuthService);
+  private readonly searchKeyboardService = inject(SearchKeyboardService);
 
   viewAllNotifications(): void {
     this.router.navigate(['/admin/notification-history']);
