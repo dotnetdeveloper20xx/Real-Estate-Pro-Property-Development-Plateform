@@ -589,6 +589,7 @@ Every line of code is written to survive a Principal Engineer review, a CTO walk
 
 | Area | Document | Description |
 |------|----------|-------------|
+| 🎓 Developer Academy | [**docs/academy/00-learning-path.md**](docs/academy/00-learning-path.md) | **32-document engineering knowledge base — start here if you're new** |
 | 🏗️ Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Clean Architecture, CQRS, layers, module boundaries |
 | 🔒 Security | [Security Feature](developer-notes/Security-authentication-authorization-feature/security-authentication-authorization-full-feature-details.md) | JWT, RBAC, 43 permissions, session management |
 | 🔍 Global Search | [Frontend](docs/features/global-search-front-end-features.md) / [Backend](docs/features/global-search-back-end-features.md) | 7-layer scoring, 14 providers, permission-aware |

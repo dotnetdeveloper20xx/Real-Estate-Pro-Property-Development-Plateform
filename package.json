@@ -1,0 +1,19 @@
+{
+  "name": "buildestate-pro-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BuildEstate Pro tooling scripts (validation, generation)",
+  "scripts": {
+    "validate-academy": "ts-node --project tsconfig.scripts.json scripts/validate-academy.ts",
+    "validate-academy-accuracy": "ts-node --project tsconfig.scripts.json scripts/validate-academy-accuracy.ts",
+    "test": "jest --config jest.config.ts"
+  },
+  "devDependencies": {
+    "ts-node": "10.9.2",
+    "typescript": "5.5.4",
+    "@types/node": "20.14.10",
+    "jest": "29.7.0",
+    "@types/jest": "29.5.12",
+    "ts-jest": "29.2.5"
+  }
+}
